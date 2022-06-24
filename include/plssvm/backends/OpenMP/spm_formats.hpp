@@ -15,7 +15,7 @@
 namespace plssvm::openmp {
 
 template <typename T>
-class COO {
+class coo {
         // only float and doubles are allowed
     static_assert(std::is_same_v<T, float> || std::is_same_v<T, double>, "The template type can only be 'float' or 'double'!");
 
@@ -28,7 +28,7 @@ class COO {
         const std::vector<size_t> row_ids;
         const std::vector<real_type> values;
 
-        COO();
+        coo();
 
         void insert_element(size_t col_id, size_t row_id, real_type value);
 };
