@@ -8,20 +8,24 @@
  * @brief Defines data structure(s) for sparse matrices
  */
 
-#include "plssvm/backends/OpenMP/spm_formats.hpp"
+#include "plssvm/backends/OpenMP/spm_formats.hpp" 
 
 namespace plssvm::openmp {
 
-template <typename real_type>
-COO<real_type>::COO() 
+template <typename T>
+coo<T>::coo() 
     : nnz(0), col_ids(new std::vector<size_t>()), row_ids(new std::vector<size_t>()), data(new std::vector<real_type>()) { }
 
 template <typename real_type>
-void COO<real_type>::insert_element(size_t col_id, size_t row_id, real_type value) {
+void coo<T>::insert_element(size_t col_id, size_t row_id, real_type value) {
     this->nnz++;
     this->col_ids.push_back(col_id);
     this->row_ids.push_back(row_id);
     this->values.push_back(value);
 }
+
+// explicitly instantiate template class
+template class coo<float>;
+template class coo<double>;
 
 }  // namespace plssvm:openmp
