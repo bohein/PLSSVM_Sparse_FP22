@@ -12,11 +12,16 @@
 
 namespace plssvm::openmp {
 
-void insert_element(coo& matrix, size_t col_id, size_t row_id, real_type data) {
-    matrix.nnz++;
-    matrix.col_ids.insert(col_id);
-    matrix.row_ids.insert(row_id);
-    matrix.data.insert(data);
+template <typename real_type>
+COO<real_type>::COO() 
+    : nnz(0), col_ids(new std::vector<size_t>()), row_ids(new std::vector<size_t>()), data(new std::vector<real_type>()) { }
+
+template <typename real_type>
+void COO<real_type>::insert_element(size_t col_id, size_t row_id, real_type value) {
+    this->nnz++;
+    this->col_ids.push_back(col_id);
+    this->row_ids.push_back(row_id);
+    this->values.push_back(value);
 }
 
 }  // namespace plssvm:openmp

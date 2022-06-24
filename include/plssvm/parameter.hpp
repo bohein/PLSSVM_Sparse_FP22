@@ -17,7 +17,7 @@
 #include "plssvm/backends/SYCL/kernel_invocation_type.hpp"  // plssvm::sycl_generic::kernel_invocation_type
 #include "plssvm/kernel_types.hpp"                          // plssvm::kernel_type
 #include "plssvm/target_platforms.hpp"                      // plssvm::target_platform
-#include "plssvm/include/plssvm/backends/OpenMP/spm_formats.hpp" // ??
+#include "plssvm/backends/OpenMP/spm_formats.hpp"           // plssvm::backends::openmp
 
 #include <iosfwd>       // forward declare std::ostream
 #include <memory>       // std::shared_ptr
@@ -116,7 +116,7 @@ class parameter {
      * @throws plssvm::file_not_found_exception if the @p filename couldn't be found
      * @throws plssvm::invalid_file_format_exception if the @p filename has an invalid format (e.g. an empty file, a file not using the LIBSVM file format, ...)
      */
-    void parse_libsvm_file_sparse(const std::string &filename, std::shared_ptr<const plssvm::openmp::coo> &data_ptr_ref);
+    void parse_libsvm_file_sparse(const std::string &filename, std::shared_ptr<const plssvm::openmp::COO<real_type>> &data_ptr_ref);
     /**
      * @brief Parse a file in the [arff file format](https://www.cs.waikato.ac.nz/ml/weka/arff.html).
      * @details The arff file format saves each data point with its respective class as follows:

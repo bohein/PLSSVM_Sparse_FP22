@@ -116,9 +116,9 @@ void parse_libsvm_content(const file_reader &f, const std::size_t start, std::ve
     }
 }
 
-template <typename real_type>
 // TODO: parallelize (modifications to spm_formats.hpp/spm_formats.cpp likely necessary)
-void parse_libsvm_content_sparse(const file_reader &f, const std::size_t start, plssvm::openmp::coo &data, std::vector<real_type> &values) {
+template <typename real_type>
+void parse_libsvm_content_sparse(const file_reader &f, const std::size_t start, plssvm::openmp::COO<real_type> &data, std::vector<real_type> &values) {
     std::size_t max_size = 0;
     std::exception_ptr parallel_exception;
 
@@ -160,7 +160,7 @@ void parse_libsvm_content_sparse(const file_reader &f, const std::size_t start, 
                     pos = next_pos;
 
                     // write index-index-value tuple to data
-                    plssvm::openmp::insert_element(data, index, i, value);
+                    data.insert_element(index, i, value);
                 }
                 // max_size = std::max(max_size, vline.size());
             } catch (const std::exception &) {
@@ -172,7 +172,7 @@ void parse_libsvm_content_sparse(const file_reader &f, const std::size_t start, 
                     }
                 }
                 // cancel parallel execution, needs env variable OMP_CANCELLATION=true
-                #pragma omp cancel for
+                // #pragma omp cancel for
             }
         }
     }
@@ -185,11 +185,6 @@ void parse_libsvm_content_sparse(const file_reader &f, const std::size_t start, 
     // no features were parsed -> invalid file
     if (max_size == 0) {
         throw invalid_file_format_exception{ fmt::format("Can't parse file: no data points are given!") };
-    }
-
-    #pragma omp parallel for
-    for (typename std::vector<std::vector<real_type>>::size_type i = 0; i < data.size(); ++i) {
-        data[i].resize(max_size);
     }
 }
 
@@ -256,7 +251,7 @@ void parameter<T>::parse_libsvm_file(const std::string &filename, std::shared_pt
 // read and parse a libsvm file sparse
 // TODO: reduce redundancy
 template <typename T>
-void parameter<T>::parse_libsvm_file_sparse(const std::string &filename, std::shared_ptr<const std::vector<std::vector<real_type>>> &data_ptr_ref) {
+void parameter<T>::parse_libsvm_file_sparse(const std::string &filename, std::shared_ptr<const plssvm::openmp::COO<real_type>> &data_ptr_ref) {
     auto start_time = std::chrono::steady_clock::now();
 
     // set new filenames
@@ -268,18 +263,19 @@ void parameter<T>::parse_libsvm_file_sparse(const std::string &filename, std::sh
 
     detail::file_reader f{ filename, '#' };
 
-    plsssvm::openmp::coo data;
+    plssvm::openmp::COO<real_type> data{};
     std::vector<real_type> value(f.num_lines());
 
     detail::parse_libsvm_content_sparse(f, 0, data, value);
 
+    // TODO: figure out what to do with labels (potentially add new methods to spm_formats.cpp)
+    // TODO: fix various format-depending access errors
+    /*
     // update gamma
     if (gamma == real_type{ 0.0 }) {
         gamma = real_type{ 1. } / static_cast<real_type>(data[0].size());
     }
 
-    //TODO: figure out what to do with labels (potentially add new methods to spm_formats.cpp)
-    /*
     // update shared pointer
     data_ptr_ref = std::make_shared<const std::vector<std::vector<real_type>>>(std::move(data));
     if (value[0] == std::numeric_limits<real_type>::max()) {
@@ -293,7 +289,7 @@ void parameter<T>::parse_libsvm_file_sparse(const std::string &filename, std::sh
 
         value_ptr = std::make_shared<const std::vector<real_type>>(std::move(value));
     }
-    */
+    
 
     auto end_time = std::chrono::steady_clock::now();
     if (print_info) {
@@ -303,6 +299,7 @@ void parameter<T>::parse_libsvm_file_sparse(const std::string &filename, std::sh
                    std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time),
                    filename);
     }
+    */
 }
 
 // read and parse an ARFF file

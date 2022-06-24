@@ -14,14 +14,23 @@
 
 namespace plssvm::openmp {
 
-template <typename real_type>
-struct coo {
-    size_t nnz;
-    const std::vector<size_t> col_ids;
-    const std::vector<size_t> row_ids;
-    const std::vector<real_type> data;
-};
+template <typename T>
+class COO {
+        // only float and doubles are allowed
+    static_assert(std::is_same_v<T, float> || std::is_same_v<T, double>, "The template type can only be 'float' or 'double'!");
 
-void insert_element(coo& matrix, size_t col_id, size_t row_id, real_type data) {};
+    public:
+        /// The type of the data. Must be either `float` or `double`.
+        using real_type = T;
+
+        size_t nnz;
+        const std::vector<size_t> col_ids;
+        const std::vector<size_t> row_ids;
+        const std::vector<real_type> values;
+
+        COO();
+
+        void insert_element(size_t col_id, size_t row_id, real_type value);
+};
 
 }  // namespace plssvm::openmp
