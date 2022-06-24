@@ -17,7 +17,7 @@
 #include "plssvm/backends/SYCL/kernel_invocation_type.hpp"  // plssvm::sycl_generic::kernel_invocation_type
 #include "plssvm/kernel_types.hpp"                          // plssvm::kernel_type
 #include "plssvm/target_platforms.hpp"                      // plssvm::target_platform
-#include "plssvm/backends/OpenMP/spm_formats.hpp"           // plssvm::openmp
+#include "plssvm/coo.hpp"                                   // plssvm::openmp::coo
 
 #include <iosfwd>       // forward declare std::ostream
 #include <memory>       // std::shared_ptr

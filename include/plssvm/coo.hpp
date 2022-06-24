@@ -5,7 +5,7 @@
  * @license This file is part of the PLSSVM project which is released under the MIT license.
  *          See the LICENSE.md file in the project root for full license information.
  *
- * @brief Defines data structure(s) for sparse matrices
+ * @brief Defines COO  data structure for sparse matrices
  */
 
 #pragma once
@@ -24,9 +24,9 @@ class coo {
         using real_type = T;
 
         size_t nnz;
-        const std::vector<size_t> col_ids;
-        const std::vector<size_t> row_ids;
-        const std::vector<real_type> values;
+        std::vector<size_t> col_ids;
+        std::vector<size_t> row_ids;
+        std::vector<real_type> values;
 
         coo();
 

@@ -5,23 +5,23 @@
  * @license This file is part of the PLSSVM project which is released under the MIT license.
  *          See the LICENSE.md file in the project root for full license information.
  *
- * @brief Defines data structure(s) for sparse matrices
+ * @brief Defines COO data structure for sparse matrices
  */
 
-#include "plssvm/backends/OpenMP/spm_formats.hpp" 
+#include "plssvm/coo.hpp"
 
 namespace plssvm::openmp {
 
 template <typename T>
 coo<T>::coo() 
-    : nnz(0), col_ids(new std::vector<size_t>()), row_ids(new std::vector<size_t>()), data(new std::vector<real_type>()) { }
+    : nnz(0) { }
 
-template <typename real_type>
+template <typename T>
 void coo<T>::insert_element(size_t col_id, size_t row_id, real_type value) {
-    this->nnz++;
-    this->col_ids.push_back(col_id);
-    this->row_ids.push_back(row_id);
-    this->values.push_back(value);
+    nnz++;
+    col_ids.push_back(col_id);
+    row_ids.push_back(row_id);
+    values.push_back(value);
 }
 
 // explicitly instantiate template class
