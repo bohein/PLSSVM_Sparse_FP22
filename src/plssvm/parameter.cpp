@@ -162,7 +162,6 @@ void parse_libsvm_content_sparse(const file_reader &f, const std::size_t start, 
                     // write index-index-value tuple to data
                     data.insert_element(index, i, value);
                 }
-                // max_size = std::max(max_size, vline.size());
             } catch (const std::exception &) {
                 // catch first exception and store it
                 #pragma omp critical
@@ -249,7 +248,6 @@ void parameter<T>::parse_libsvm_file(const std::string &filename, std::shared_pt
 }
 
 // read and parse a libsvm file sparse
-// TODO: reduce redundancy
 template <typename T>
 void parameter<T>::parse_libsvm_file_sparse(const std::string &filename, std::shared_ptr<const plssvm::openmp::coo<real_type>> &data_ptr_ref) {
     auto start_time = std::chrono::steady_clock::now();
@@ -268,16 +266,13 @@ void parameter<T>::parse_libsvm_file_sparse(const std::string &filename, std::sh
 
     detail::parse_libsvm_content_sparse(f, 0, data, value);
 
-    // TODO: figure out what to do with labels (potentially add new methods to spm_formats.cpp)
-    // TODO: fix various format-depending access errors
-    /*
     // update gamma
     if (gamma == real_type{ 0.0 }) {
-        gamma = real_type{ 1. } / static_cast<real_type>(data[0].size());
+        gamma = real_type{ 1. } / static_cast<real_type>(data.width);
     }
-
+    
     // update shared pointer
-    data_ptr_ref = std::make_shared<const std::vector<std::vector<real_type>>>(std::move(data));
+    data_ptr_ref = std::make_shared<const plssvm::openmp::coo<real_type>>(std::move(data));
     if (value[0] == std::numeric_limits<real_type>::max()) {
         // no labels present
         value_ptr = nullptr;
@@ -290,16 +285,16 @@ void parameter<T>::parse_libsvm_file_sparse(const std::string &filename, std::sh
         value_ptr = std::make_shared<const std::vector<real_type>>(std::move(value));
     }
     
-
     auto end_time = std::chrono::steady_clock::now();
     if (print_info) {
-        fmt::print("Read {} data points with {} features in {} using the libsvm parser from file '{}'.\n",
-                   data_ptr_ref->size(),
-                   (*data_ptr_ref)[0].size(),
+        fmt::print("Read {} data points with {} features in {} using the libsvm parser from file '{}'.\n{}/{} non-zero entries stored.",
+                   data_ptr_ref->height,
+                   data_ptr_ref->width,
                    std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time),
-                   filename);
+                   filename,
+                   data_ptr_ref->nnz,
+                   data_ptr_ref->height * data_ptr_ref->width);
     }
-    */
 }
 
 // read and parse an ARFF file
