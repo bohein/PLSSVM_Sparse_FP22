@@ -34,6 +34,8 @@ class coo {
         coo();
 
         void insert_element(size_t col_id, size_t row_id, real_type value);
+
+        real_type get_element(size_t col_id, size_t row_id); // requires being sorted
 };
 
 }  // namespace plssvm::openmp
