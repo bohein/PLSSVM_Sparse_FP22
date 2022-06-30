@@ -7,6 +7,8 @@
  *
  * @brief Defines data structure for sparse matrices in COO format
  */
+#include <algorithm>
+#include <iterator>
 
 #include "plssvm/coo.hpp"
 
@@ -28,6 +30,39 @@ void coo<T>::insert_element(size_t col_id, size_t row_id, real_type value) {
 
     height = std::max(height, row_id);
     width = std::max(width, col_id);
+}
+
+template <typename T>
+T coo<T>::get_element(size_t col_id, size_t row_id) {
+    // get iterator to index of first occurence of row_id
+    std::vector<size_t>::iterator first_occurance_it_rows = std::find(row_ids.begin(), row_ids.end(), row_id);
+
+    // case: no occurances found, technically "out of bounds" case
+    if (first_occurance_it_rows == row_ids.end()) {
+        return static_cast<real_type>(0);
+    } 
+    // case: first occurence found
+    else {
+        // get iterator to found index, but in col_ids
+        std::vector<size_t>::iterator first_occurance_it_cols = col_ids.begin() + (first_occurance_it_rows - row_ids.begin());
+
+        // check col_ids / row_ids for valid (cold_id, row_id) pair until one is either found or confirmed nonexistent
+        for (; first_occurance_it_rows != row_ids.end() && *first_occurance_it_rows == row_id; first_occurance_it_rows++)
+        {
+            // case: valid (cold_id, row_id) pair found
+            if (*first_occurance_it_cols == col_id) {
+                return values[first_occurance_it_cols - col_ids.begin()];
+            }
+            // case: (cold_id, row_id) pair not found yet
+            else {
+                first_occurance_it_cols++;
+            }
+        }
+
+        // case: (cold_id, row_id) does not exist
+        return static_cast<real_type>(0);
+    }
+
 }
 
 // explicitly instantiate template class
