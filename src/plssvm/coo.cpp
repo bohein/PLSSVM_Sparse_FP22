@@ -37,7 +37,7 @@ T coo<T>::get_element(size_t col_id, size_t row_id) {
     // get iterator to index of first occurence of row_id
     std::vector<size_t>::iterator first_occurance_it_rows = std::find(row_ids.begin(), row_ids.end(), row_id);
 
-    // case: no occurances found, technically "out of bounds" case
+    // case: no occurances found or "out of bounds" case
     if (first_occurance_it_rows == row_ids.end()) {
         return static_cast<real_type>(0);
     } 
@@ -63,6 +63,16 @@ T coo<T>::get_element(size_t col_id, size_t row_id) {
         return static_cast<real_type>(0);
     }
 
+}
+
+template <typename T>
+bool coo<T>::operator==(const coo<T>& other) {
+    return nnz == other.nnz
+        && height == other.height
+        && width == other.width
+        && col_ids == other.col_ids
+        && row_ids == other.row_ids
+        && values == other.values;
 }
 
 // explicitly instantiate template class

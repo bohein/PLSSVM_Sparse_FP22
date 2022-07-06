@@ -16,7 +16,7 @@ namespace plssvm::openmp {
 
 template <typename T>
 class coo {
-        // only float and doubles are allowed
+    // only float and doubles are allowed
     static_assert(std::is_same_v<T, float> || std::is_same_v<T, double>, "The template type can only be 'float' or 'double'!");
 
     public:
@@ -36,6 +36,8 @@ class coo {
         void insert_element(size_t col_id, size_t row_id, real_type value);
 
         real_type get_element(size_t col_id, size_t row_id); // requires being sorted
+
+        bool operator==(const coo<T>& other);
 };
 
 }  // namespace plssvm::openmp

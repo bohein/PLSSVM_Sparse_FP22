@@ -19,6 +19,9 @@
 #include "plssvm/target_platforms.hpp"                      // plssvm::target_platform
 #include "plssvm/coo.hpp"                                   // plssvm::openmp::coo
 
+// only necessary for testing (wrapper_for_parse_libsvm_content_sparse())
+#include "plssvm/detail/file_reader.hpp"           // plssvm::detail::file_reader
+
 #include <iosfwd>       // forward declare std::ostream
 #include <memory>       // std::shared_ptr
 #include <string>       // std::string
@@ -256,6 +259,11 @@ class parameter {
 
     /// The rho value of the calculated/read model.
     real_type rho = real_type{ 0.0 };
+
+  /**
+   * @brief Wrapper for parse_libsvm_content_sparse() for testing purposes
+   */
+  void wrapper_for_parse_libsvm_content_sparse(const detail::file_reader &f, const std::size_t start, plssvm::openmp::coo<real_type> &data, std::vector<real_type> &values);
 
   protected:
     /**
