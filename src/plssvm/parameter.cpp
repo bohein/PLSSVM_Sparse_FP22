@@ -134,7 +134,7 @@ void parse_libsvm_content_sparse(const file_reader &f, const std::size_t start, 
 
                 // check if class labels are present (not necessarily the case for test files)
                 std::string_view::size_type pos = line.find_first_of(" \n");
-                std::string_view::size_type first_colon = line.find_first_of(": \n");
+                std::string_view::size_type first_colon = line.find_first_of(":\n");
                 if (first_colon >= pos) {
                     // get class or alpha
                     values[i] = detail::convert_to<real_type, invalid_file_format_exception>(line.substr(0, pos));
@@ -177,16 +177,17 @@ void parse_libsvm_content_sparse(const file_reader &f, const std::size_t start, 
             
         }
     }
-
+    
     // rethrow if an exception occurred inside the parallel region
     if (parallel_exception) {
         std::rethrow_exception(parallel_exception);
     }
 
+    /*
     // no features were parsed -> invalid file
     if (max_size == 0) {
         throw invalid_file_format_exception{ fmt::format("Can't parse file: no data points are given!") };
-    }
+    }*/
 }
 
 }  // namespace detail

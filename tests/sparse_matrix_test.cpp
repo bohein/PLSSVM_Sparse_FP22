@@ -87,16 +87,14 @@ TYPED_TEST(SparseMatrix, coo_parse_libsvm_content) {
     expected_data.insert_element(2, 4, 0.298499933047586044);
     std::vector<real_type> expected_values{1, 1, -1, -1, -1};
 
-    plssvm::openmp::coo<real_type> actual_data{};
-    std::vector<real_type> actual_values{};
-
     plssvm::detail::file_reader f{PLSSVM_TEST_PATH  "/data/libsvm/5x4.sparse.libsvm", '#' };
+
+    plssvm::openmp::coo<real_type> actual_data{};
+    std::vector<real_type> actual_values(f.num_lines());
+
     params.wrapper_for_parse_libsvm_content_sparse(f, 0, actual_data, actual_values);
 
-    //EXPECT_EQ(actual_data, expected_data);
-    //EXPECT_EQ(actual_values, expected_values);
-
-    //for debugging of debugging
-    //EXPECT_EQ(actual_values.size(), 0);
-    //EXPECT_EQ(actual_values[0], expected_values[0]);
+    bool same = (actual_data == expected_data);
+    EXPECT_TRUE(same);
+    EXPECT_EQ(actual_values, expected_values);
 }
