@@ -22,7 +22,7 @@ coo<T>::coo()
 { }
 
 template <typename T>
-void coo<T>::insert_element(size_t col_id, size_t row_id, real_type value) {
+void coo<T>::insert_element(const size_t col_id, const size_t row_id, const real_type value) {
     nnz++;
     col_ids.push_back(col_id);
     row_ids.push_back(row_id);
@@ -33,9 +33,22 @@ void coo<T>::insert_element(size_t col_id, size_t row_id, real_type value) {
 }
 
 template <typename T>
-T coo<T>::get_element(size_t col_id, size_t row_id) {
+void coo<T>::append(const coo<real_type> &other) {
+    nnz += other.nnz;
+
+    // TODO: potentially parallelize
+    col_ids.insert(col_ids.end(), other.col_ids.begin(), other.col_ids.end());
+    row_ids.insert(row_ids.end(), other.row_ids.begin(), other.row_ids.end());
+    values.insert(values.end(), other.values.begin(), other.values.end());
+
+    height = std::max(height, other.height);
+    width = std::max(width, other.width);
+}
+
+template <typename T>
+T coo<T>::get_element(const size_t col_id, const size_t row_id) {
     // get iterator to index of first occurence of row_id
-    std::vector<size_t>::iterator first_occurance_it_rows = std::find(row_ids.begin(), row_ids.end(), row_id);
+    std::vector<size_t>::iterator first_occurance_it_rows = std::find(row_ids.begin(), row_ids.end(), row_id); // potentially use binary search
 
     // case: no occurances found or "out of bounds" case
     if (first_occurance_it_rows == row_ids.end()) {

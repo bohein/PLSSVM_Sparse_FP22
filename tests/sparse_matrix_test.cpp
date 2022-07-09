@@ -71,6 +71,11 @@ TYPED_TEST(SparseMatrix, coo_get_element) {
     EXPECT_EQ(dense.get_element(42, 420), 0.0);
 }
 
+TYPED_TEST(SparseMatrix, coo_append) {
+    // TODO: implement this test
+    EXPECT_FALSE(true);
+}
+
 TYPED_TEST(SparseMatrix, parameter_parse_libsvm_content) {
     // create parameter object
     plssvm::parameter<TypeParam> params;

@@ -271,7 +271,7 @@ void parameter<T>::parse_libsvm_file_sparse(const std::string &filename, std::sh
 
     // update gamma
     if (gamma == real_type{ 0.0 }) {
-        gamma = real_type{ 1. } / static_cast<real_type>(data.width);
+        gamma = real_type{ 1. } / static_cast<real_type>(data.get_width());
     }
     
     // update shared pointer
@@ -291,12 +291,12 @@ void parameter<T>::parse_libsvm_file_sparse(const std::string &filename, std::sh
     auto end_time = std::chrono::steady_clock::now();
     if (print_info) {
         fmt::print("Read {} data points with {} features in {} using the libsvm parser from file '{}'.\n{}/{} non-zero entries stored.",
-                   data_ptr_ref->height,
-                   data_ptr_ref->width,
+                   data_ptr_ref->get_height(),
+                   data_ptr_ref->get_width(),
                    std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time),
                    filename,
-                   data_ptr_ref->nnz,
-                   data_ptr_ref->height * data_ptr_ref->width);
+                   data_ptr_ref->get_nnz(),
+                   data_ptr_ref->get_height() * data_ptr_ref->get_width());
     }
 }
 
