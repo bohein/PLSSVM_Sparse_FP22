@@ -72,8 +72,30 @@ TYPED_TEST(SparseMatrix, coo_get_element) {
 }
 
 TYPED_TEST(SparseMatrix, coo_append) {
-    // TODO: implement this test
-    EXPECT_FALSE(true);
+    using real_type = TypeParam;
+
+    // matrix 1 of 2
+    plssvm::openmp::coo<real_type> actual_matrix{};
+    actual_matrix.insert_element(0, 0, 1.0);
+    actual_matrix.insert_element(2, 0, 2.0);
+    actual_matrix.insert_element(2, 2, 3.0);
+
+    // matrix 2 of 2
+    plssvm::openmp::coo<real_type> appendix{};
+    appendix.insert_element(1, 1, 4.0);
+    appendix.insert_element(3, 4, 5.0);
+    
+    actual_matrix.append(appendix);
+
+    // expected, resulting matrix
+    plssvm::openmp::coo<real_type> expected_matrix{};
+    expected_matrix.insert_element(0, 0, 1.0);
+    expected_matrix.insert_element(2, 0, 2.0);
+    expected_matrix.insert_element(2, 2, 3.0);
+    expected_matrix.insert_element(1, 1, 4.0);
+    expected_matrix.insert_element(3, 4, 5.0);
+
+    EXPECT_TRUE(actual_matrix == expected_matrix);
 }
 
 TYPED_TEST(SparseMatrix, parameter_parse_libsvm_content) {
