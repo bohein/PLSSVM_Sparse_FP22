@@ -119,16 +119,14 @@ void parse_libsvm_content(const file_reader &f, const std::size_t start, std::ve
 // TODO: parallelize (modifications to spm_formats.hpp/spm_formats.cpp likely necessary)
 template <typename real_type>
 void parse_libsvm_content_sparse(const file_reader &f, const std::size_t start, plssvm::openmp::coo<real_type> &data, std::vector<real_type> &values) {
-    std::size_t max_size = 0;
     std::exception_ptr parallel_exception;
+    std::vector<plssvm::openmp::coo<real_type>> rows(values.size());
+    bool empty = true;
     
-    // #pragma omp parallel
     {
-        // #pragma omp for reduction(max \
-                          : max_size)
+        #pragma omp parallel for
         for (typename std::vector<std::vector<real_type>>::size_type i = 0; i < values.size(); ++i) {
-            // #pragma omp cancellation point for
-            
+            #pragma omp cancellation point for
             try {
                 std::string_view line = f.line(i + start);
 
@@ -142,8 +140,9 @@ void parse_libsvm_content_sparse(const file_reader &f, const std::size_t start, 
                     values[0] = std::numeric_limits<real_type>::max();
                     pos = 0;
                 }
-                
+
                 // get data
+                plssvm::openmp::coo<real_type> vline{};
                 while (true) {
                     std::string_view::size_type next_pos = line.find_first_of(':', pos);
                     // no further data points
@@ -155,14 +154,16 @@ void parse_libsvm_content_sparse(const file_reader &f, const std::size_t start, 
                     const auto index = detail::convert_to<size_t, invalid_file_format_exception>(line.substr(pos, next_pos - pos));
                     pos = next_pos + 1;
 
-                    // get valueclea
+                    // get value
                     next_pos = line.find_first_of(' ', pos);
                     const auto value = detail::convert_to<real_type, invalid_file_format_exception>(line.substr(pos, next_pos - pos));
                     pos = next_pos;
 
-                    // write index-index-value tuple to data
-                    data.insert_element(index, i, value);
+                    // write index-index-value tuple to line data
+                    vline.insert_element(index, i, value);
                 }
+                if (vline.get_nnz() > 0) empty = false;
+                rows[i] = std::move(vline);
             } catch (const std::exception &) {
                 // catch first exception and store it
                 #pragma omp critical
@@ -172,7 +173,7 @@ void parse_libsvm_content_sparse(const file_reader &f, const std::size_t start, 
                     }
                 }
                 // cancel parallel execution, needs env variable OMP_CANCELLATION=true
-                // #pragma omp cancel for
+                #pragma omp cancel for
             }
             
         }
@@ -183,11 +184,13 @@ void parse_libsvm_content_sparse(const file_reader &f, const std::size_t start, 
         std::rethrow_exception(parallel_exception);
     }
 
-    /*
     // no features were parsed -> invalid file
-    if (max_size == 0) {
+    if (empty) {
         throw invalid_file_format_exception{ fmt::format("Can't parse file: no data points are given!") };
-    }*/
+    }
+    
+    // concatenate sparse rows
+    for (auto it = rows.begin(); it != rows.end(); it++) data.append(*it);
 }
 
 }  // namespace detail
