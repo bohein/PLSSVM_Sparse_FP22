@@ -37,7 +37,15 @@ class coo {
          * @param row_id row index of requested value
          * @return real_type data value stored at given indices
          */
-        real_type get_element(const size_t col_id, const size_t row_id); // requires being sorted row-whise
+        real_type get_element(const size_t col_id, const size_t row_id); // requires being sorted row-wise
+
+        /**
+         * @brief Get a coo object containing the specified row. Returns an empty object if row is empty.
+         * 
+         * @param row_id index of requested row
+         * @return coo object containing one row
+         */
+        plssvm::openmp::coo<T> get_row(const size_t row_id); // requires being grouped row-wise
 
         /**
          * @return size_t number of non-zero elements
