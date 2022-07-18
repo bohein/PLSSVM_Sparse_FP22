@@ -113,6 +113,25 @@ TYPED_TEST(SparseMatrix, coo_get_row) {
     EXPECT_EQ(row2.get_element(2, 0), 9.0);
 }
 
+TYPED_TEST(SparseMatrix, coo_get_row_dot_product) {
+    using real_type = TypeParam;
+
+    plssvm::openmp::coo<real_type> matrix{};
+    matrix.insert_element(0, 0, 1.0);
+    matrix.insert_element(1, 0, 2.0);
+    matrix.insert_element(2, 0, 3.0);
+    matrix.insert_element(0, 1, 4.0);
+    matrix.insert_element(1, 1, 5.0);
+    matrix.insert_element(2, 1, 6.0);
+    matrix.insert_element(0, 2, 7.0);
+    matrix.insert_element(1, 2, 8.0);
+    matrix.insert_element(2, 2, 9.0);
+
+    EXPECT_EQ(matrix.get_row_dot_product(0, 2), 50.0);
+    EXPECT_EQ(matrix.get_row_dot_product(0, 1), 32.0);
+    EXPECT_EQ(matrix.get_row_dot_product(1, 2), 122.0);
+}
+
 TYPED_TEST(SparseMatrix, coo_append) {
     using real_type = TypeParam;
 
