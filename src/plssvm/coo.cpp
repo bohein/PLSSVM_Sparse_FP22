@@ -85,7 +85,8 @@ plssvm::openmp::coo<T> coo<T>::get_row(const size_t row_id) {
     size_t last_occurance = 0;
     size_t size = 0;
 
-    while (i < row_ids.size() && row_ids[i] != row_id) i++;
+    while (i < row_ids.size() && row_ids[i] != row_id)
+        i++;
     first_occurance = i;
 
     // row is empty
@@ -94,7 +95,8 @@ plssvm::openmp::coo<T> coo<T>::get_row(const size_t row_id) {
         return row;
     }
 
-    while (i < row_ids.size() && row_ids[i] == row_id) i++;
+    while (i < row_ids.size() && row_ids[i] == row_id)
+        i++;
     last_occurance = i - 1;
 
     size = last_occurance - first_occurance + 1;

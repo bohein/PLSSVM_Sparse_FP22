@@ -90,27 +90,27 @@ TYPED_TEST(SparseMatrix, coo_get_row) {
     EXPECT_EQ(row0.get_width(), 2);
     EXPECT_EQ(row0.get_height(), 0);
 
-    EXPECT_TRUE(row0.get_element(0, 0) == 1.0);
-    EXPECT_TRUE(row0.get_element(1, 0) == 2.0);
-    EXPECT_TRUE(row0.get_element(2, 0) == 3.0);
+    EXPECT_EQ(row0.get_element(0, 0), 1.0);
+    EXPECT_EQ(row0.get_element(1, 0), 2.0);
+    EXPECT_EQ(row0.get_element(2, 0), 3.0);
 
     plssvm::openmp::coo<real_type> row1 = matrix.get_row(1);
     EXPECT_EQ(row1.get_nnz(), 3);
     EXPECT_EQ(row1.get_width(), 2);
     EXPECT_EQ(row1.get_height(), 0);
 
-    EXPECT_TRUE(row1.get_element(0, 0) == 4.0);
-    EXPECT_TRUE(row1.get_element(1, 0) == 5.0);
-    EXPECT_TRUE(row1.get_element(2, 0) == 6.0);
+    EXPECT_EQ(row1.get_element(0, 0), 4.0);
+    EXPECT_EQ(row1.get_element(1, 0), 5.0);
+    EXPECT_EQ(row1.get_element(2, 0), 6.0);
 
     plssvm::openmp::coo<real_type> row2 = matrix.get_row(2);
     EXPECT_EQ(row2.get_nnz(), 3);
     EXPECT_EQ(row2.get_width(), 2);
     EXPECT_EQ(row2.get_height(), 0);
 
-    EXPECT_TRUE(row2.get_element(0, 0) == 7.0);
-    EXPECT_TRUE(row2.get_element(1, 0) == 8.0);
-    EXPECT_TRUE(row2.get_element(2, 0) == 9.0);
+    EXPECT_EQ(row2.get_element(0, 0), 7.0);
+    EXPECT_EQ(row2.get_element(1, 0), 8.0);
+    EXPECT_EQ(row2.get_element(2, 0), 9.0);
 }
 
 TYPED_TEST(SparseMatrix, coo_append) {
