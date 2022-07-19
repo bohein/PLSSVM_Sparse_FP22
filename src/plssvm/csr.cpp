@@ -20,20 +20,15 @@ csr<T>::csr()
     : nnz(0)
     , height(0)
     , width(0)
-    , rowptr(0)
-    , row_offset{0}
 { }
 
-//TODO -------------------------------------------------------------------------------------------------------------------------------------------------- offset correcting!
 template <typename T>
 void csr<T>::insert_element(const size_t col_id, const size_t row_id, const real_type value) {
-    if(rowptr > row_id){
+    if(row_offset.size() > row_id + 1){
         throw std::invalid_argument("row_id was already added before!");
-    }else if(rowptr < row_id){
-        while(rowptr < row_id){
-            row_offset.push_back(col_ids.size());
-            rowptr++;
-        }
+    }
+    while(row_offset.size() < row_id + 1){
+        row_offset.push_back(col_ids.size());
     }
     
     nnz++;
@@ -45,15 +40,8 @@ void csr<T>::insert_element(const size_t col_id, const size_t row_id, const real
 }
 
 template <typename T>
-void csr<T>::insert_element_no_column(){
-    row_offset.push_back(col_ids.size());
-    rowptr++;
-}
-
-template <typename T>
 void csr<T>::append(const csr<real_type> &other) {
     nnz += other.nnz;
-    rowptr += (other.rowptr + 1);
 
     size_t old_max_offset = col_ids.size();
     size_t old_row_offset_end = row_offset.size();
@@ -74,13 +62,13 @@ void csr<T>::append(const csr<real_type> &other) {
 template <typename T>
 T csr<T>::get_element(const size_t col_id, const size_t row_id) {
     // case: out of bounds
-    if (row_id > rowptr) {
+    if (row_id + 1 > row_offset.size()) {
         return static_cast<real_type>(0);
     } 
     // case: first occurence found
     else {
         size_t last_to_check = col_ids.size();
-        if(row_id < rowptr){
+        if(row_id + 1 < row_offset.size()){
             last_to_check = row_offset.at(row_id + 1);
         }
         // check col_ids / row_ids for valid (cold_id, row_id) pair until one is either found or confirmed nonexistent
@@ -102,7 +90,6 @@ bool csr<T>::operator==(const csr<T>& other) {
     return nnz == other.nnz
         && width == other.width
         && height == other.height
-        && rowptr == other.rowptr
         && col_ids == other.col_ids
         && row_offset == other.row_offset
         && values == other.values;

@@ -193,6 +193,83 @@ void parse_libsvm_content_sparse(const file_reader &f, const std::size_t start, 
     for (auto it = rows.begin(); it != rows.end(); it++) data.append(*it);
 }
 
+// TODO: parallelize (modifications to spm_formats.hpp/spm_formats.cpp likely necessary)
+template <typename real_type>
+void parse_libsvm_content_sparse_csr(const file_reader &f, const std::size_t start, plssvm::openmp::csr<real_type> &data, std::vector<real_type> &values) {
+    std::exception_ptr parallel_exception;
+    std::vector<plssvm::openmp::csr<real_type>> rows(values.size());
+    bool empty = true;
+    
+    {
+        //#pragma omp parallel for
+        for (typename std::vector<std::vector<real_type>>::size_type i = 0; i < values.size(); ++i) {
+            //#pragma omp cancellation point for
+            try {
+                std::string_view line = f.line(i + start);
+
+                // check if class labels are present (not necessarily the case for test files)
+                std::string_view::size_type pos = line.find_first_of(" \n");
+                std::string_view::size_type first_colon = line.find_first_of(":\n");
+                if (first_colon >= pos) {
+                    // get class or alpha
+                    values[i] = detail::convert_to<real_type, invalid_file_format_exception>(line.substr(0, pos));
+                } else {
+                    values[0] = std::numeric_limits<real_type>::max();
+                    pos = 0;
+                }
+
+                // get data
+                plssvm::openmp::csr<real_type> vline{};
+                while (true) {
+                    std::string_view::size_type next_pos = line.find_first_of(':', pos);
+                    // no further data points
+                    if (next_pos == std::string_view::npos) {
+                        break;
+                    }
+
+                    // get index
+                    const auto index = detail::convert_to<size_t, invalid_file_format_exception>(line.substr(pos, next_pos - pos));
+                    pos = next_pos + 1;
+
+                    // get value
+                    next_pos = line.find_first_of(' ', pos);
+                    const auto value = detail::convert_to<real_type, invalid_file_format_exception>(line.substr(pos, next_pos - pos));
+                    pos = next_pos;
+
+                    // write index-index-value tuple to line data
+                    vline.insert_element(index, i, value);
+                }
+                if (vline.get_nnz() > 0) empty = false;
+                rows[i] = std::move(vline);
+            } catch (const std::exception &) {
+                // catch first exception and store it
+                //#pragma omp critical
+                {
+                    if (!parallel_exception) {
+                        parallel_exception = std::current_exception();
+                    }
+                }
+                // cancel parallel execution, needs env variable OMP_CANCELLATION=true
+                //#pragma omp cancel for
+            }
+            
+        }
+    }
+    
+    // rethrow if an exception occurred inside the parallel region
+    if (parallel_exception) {
+        std::rethrow_exception(parallel_exception);
+    }
+
+    // no features were parsed -> invalid file
+    if (empty) {
+        throw invalid_file_format_exception{ fmt::format("Can't parse file: no data points are given!") };
+    }
+    
+    // concatenate sparse rows
+    for (auto it = rows.begin(); it != rows.end(); it++) data.append(*it);
+}
+
 }  // namespace detail
 
 // read and parse file
@@ -702,6 +779,11 @@ template std::ostream &operator<<(std::ostream &, const parameter<double> &);
 template <typename T>
 void parameter<T>::wrapper_for_parse_libsvm_content_sparse(const detail::file_reader &f, const std::size_t start, plssvm::openmp::coo<real_type> &data, std::vector<real_type> &values) {
     detail::parse_libsvm_content_sparse(f, start, data, values);
+}
+
+template <typename T>
+void parameter<T>::wrapper_for_parse_libsvm_content_sparse_csr(const detail::file_reader &f, const std::size_t start, plssvm::openmp::csr<real_type> &data, std::vector<real_type> &values) {
+    detail::parse_libsvm_content_sparse_csr(f, start, data, values);
 }
 
 template <typename T>

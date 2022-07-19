@@ -201,7 +201,7 @@ TYPED_TEST(SparseMatrix, csr_get_element) {
     // out of bounds
     plssvm::openmp::csr<real_type> empty{};
     EXPECT_EQ(empty.get_element(0, 0), 0.0);    
-    EXPECT_EQ(dense.get_element(42, 420), 0.0);
+    EXPECT_EQ(empty.get_element(42, 420), 0.0);
 }
 
 TYPED_TEST(SparseMatrix, csr_append) {
@@ -229,4 +229,31 @@ TYPED_TEST(SparseMatrix, csr_append) {
     expected_matrix.insert_element(3, 7, 5.0);
 
     EXPECT_TRUE(actual_matrix == expected_matrix);
+}
+
+TYPED_TEST(SparseMatrix, parameter_parse_libsvm_content_csr) {
+    // create parameter object
+    plssvm::parameter<TypeParam> params;
+
+    using real_type = TypeParam;
+
+    ::testing::StaticAssertTypeEq<real_type, typename decltype(params)::real_type>();
+
+    plssvm::openmp::csr<real_type> expected_data{};
+    expected_data.insert_element(2, 1, 0.51687296029754564);
+    expected_data.insert_element(1, 2, 1.01405596624706053);
+    expected_data.insert_element(1, 3, 0.60276937379453293);
+    expected_data.insert_element(3, 3, -0.13086851759108944);
+    expected_data.insert_element(2, 4, 0.298499933047586044);
+    std::vector<real_type> expected_values{1, 1, -1, -1, -1};
+
+    plssvm::detail::file_reader f{PLSSVM_TEST_PATH  "/data/libsvm/5x4.sparse.libsvm", '#' };
+
+    plssvm::openmp::csr<real_type> actual_data{};
+    std::vector<real_type> actual_values(f.num_lines());
+
+    params.wrapper_for_parse_libsvm_content_sparse_csr(f, 0, actual_data, actual_values);
+
+    EXPECT_TRUE(actual_data == expected_data);
+    EXPECT_EQ(actual_values, expected_values);
 }

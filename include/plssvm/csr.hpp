@@ -67,11 +67,6 @@ class csr {
         void insert_element(const size_t col_id, const size_t row_id, const real_type value);
 
         /**
-         * @brief inserts empty element in CSR matrix
-         */
-        void insert_element_no_column();
-
-        /**
          * @brief Append another matrix stored in CSR format to this matrix
          * 
          * @param other another matrix in CSR format
@@ -92,8 +87,6 @@ class csr {
         size_t height;
         /// width of stored matrix
         size_t width;
-        /// current row
-        size_t rowptr;
         /// column indices of stored data values
         std::vector<size_t> col_ids;
         /// row indices of stored data values
