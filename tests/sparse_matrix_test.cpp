@@ -10,6 +10,7 @@
  */
 
 #include "plssvm/coo.hpp"
+#include "plssvm/csr.hpp"
 #include "plssvm/parameter.hpp"
 #include "plssvm/detail/file_reader.hpp"           // plssvm::detail::file_reader
 
@@ -155,4 +156,77 @@ TYPED_TEST(SparseMatrix, parameter_parse_libsvm_file_sparse) {
     std::vector<real_type> actual_values = *params.value_ptr.get();
 
     EXPECT_EQ(actual_values, expected_values);
+}
+
+TYPED_TEST(SparseMatrix, csr_get_element) {
+    using real_type = TypeParam;
+
+    // dense matrix
+    plssvm::openmp::csr<real_type> dense{};
+    dense.insert_element(0, 0, 1.0);
+    dense.insert_element(1, 0, 2.0);
+    dense.insert_element(2, 0, 3.0);
+    dense.insert_element(0, 1, 4.0);
+    dense.insert_element(1, 1, 5.0);
+    dense.insert_element(2, 1, 6.0);
+    dense.insert_element(0, 2, 7.0);
+    dense.insert_element(1, 2, 8.0);
+    dense.insert_element(2, 2, 9.0);
+    EXPECT_EQ(dense.get_element(0, 0), 1.0);
+    EXPECT_EQ(dense.get_element(1, 0), 2.0);
+    EXPECT_EQ(dense.get_element(2, 0), 3.0);
+    EXPECT_EQ(dense.get_element(0, 1), 4.0);
+    EXPECT_EQ(dense.get_element(1, 1), 5.0);
+    EXPECT_EQ(dense.get_element(2, 1), 6.0);
+    EXPECT_EQ(dense.get_element(0, 2), 7.0);
+    EXPECT_EQ(dense.get_element(1, 2), 8.0);
+    EXPECT_EQ(dense.get_element(2, 2), 9.0);
+
+    // sparse matrix
+    plssvm::openmp::csr<real_type> sparse{};
+    sparse.insert_element(0, 0, 1.0);
+    sparse.insert_element(1, 1, 5.0);
+    sparse.insert_element(1, 2, 8.0);
+    sparse.insert_element(2, 2, 9.0);
+    EXPECT_EQ(sparse.get_element(0, 0), 1.0);
+    EXPECT_EQ(sparse.get_element(1, 0), 0.0);
+    EXPECT_EQ(sparse.get_element(2, 0), 0.0);
+    EXPECT_EQ(sparse.get_element(0, 1), 0.0);
+    EXPECT_EQ(sparse.get_element(1, 1), 5.0);
+    EXPECT_EQ(sparse.get_element(2, 1), 0.0);
+    EXPECT_EQ(sparse.get_element(0, 2), 0.0);
+    EXPECT_EQ(sparse.get_element(1, 2), 8.0);
+    EXPECT_EQ(sparse.get_element(2, 2), 9.0);
+    
+    // out of bounds
+    plssvm::openmp::csr<real_type> empty{};
+    EXPECT_EQ(empty.get_element(0, 0), 0.0);    
+    EXPECT_EQ(dense.get_element(42, 420), 0.0);
+}
+
+TYPED_TEST(SparseMatrix, csr_append) {
+    using real_type = TypeParam;
+
+    // matrix 1 of 2
+    plssvm::openmp::csr<real_type> actual_matrix{};
+    actual_matrix.insert_element(0, 0, 1.0);
+    actual_matrix.insert_element(2, 0, 2.0);
+    actual_matrix.insert_element(2, 2, 3.0);
+
+    // matrix 2 of 2
+    plssvm::openmp::csr<real_type> appendix{};
+    appendix.insert_element(1, 1, 4.0);
+    appendix.insert_element(3, 4, 5.0);
+    
+    actual_matrix.append(appendix);
+
+    // expected, resulting matrix
+    plssvm::openmp::csr<real_type> expected_matrix{};
+    expected_matrix.insert_element(0, 0, 1.0);
+    expected_matrix.insert_element(2, 0, 2.0);
+    expected_matrix.insert_element(2, 2, 3.0);
+    expected_matrix.insert_element(1, 4, 4.0);
+    expected_matrix.insert_element(3, 7, 5.0);
+
+    EXPECT_TRUE(actual_matrix == expected_matrix);
 }
