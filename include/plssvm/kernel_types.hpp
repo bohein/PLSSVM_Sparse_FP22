@@ -2,6 +2,7 @@
  * @file
  * @author Alexander Van Craen
  * @author Marcel Breyer
+ * @author Paul Arlt
  * @copyright 2018-today The PLSSVM project - All Rights Reserved
  * @license This file is part of the PLSSVM project which is released under the MIT license.
  *          See the LICENSE.md file in the project root for full license information.
@@ -14,6 +15,8 @@
 #include "plssvm/detail/assert.hpp"     // PLSSVM_ASSERT
 #include "plssvm/detail/operators.hpp"  // dot product, plssvm::squared_euclidean_dist
 #include "plssvm/detail/utility.hpp"    // plssvm::detail::always_false_v
+
+#include "plssvm/coo.hpp"
 
 #include <cmath>   // std::pow, std::exp, std::fma
 #include <iosfwd>  // forward declare std::ostream and std::istream
@@ -82,6 +85,41 @@ template <kernel_type kernel, typename real_type, typename... Args>
     } else {
         static_assert(detail::always_false_v<real_type>, "Unknown kernel type!");
     }
+}
+
+/**
+ * @brief Computes the value of the two rows @p i and @p j in @p x using the @p kernel function determined at compile-time.
+ * @tparam kernel the type of the kernel
+ * @tparam real_type the type of the values
+ * @tparam Args additional parameters used in the respective kernel function
+ * @param[in] x the coo matrix
+ * @param[in] i the first row index
+ * @param[in] j the second row index
+ * @param[in] args additional parameters
+ * @return the value computed by the @p kernel function (`[[nodiscard]]`)
+ */
+template <kernel_type kernel, typename real_type, typename... Args>
+[[nodiscard]] inline real_type kernel_function_coo(const plssvm::openmp::coo<real_type> &x, const size_t i, const size_t j, Args &&...args) {
+    using namespace plssvm::operators;
+
+    if constexpr (kernel == kernel_type::linear) {
+        static_assert(sizeof...(args) == 0, "Illegal number of additional parameters! Must be 0.");
+        return x.get_row_dot_product(i, j);
+    } else if constexpr (kernel == kernel_type::polynomial) {
+        static_assert(sizeof...(args) == 3, "Illegal number of additional parameters! Must be 3.");
+        const auto degree = static_cast<real_type>(detail::get<0>(args...));
+        const auto gamma = static_cast<real_type>(detail::get<1>(args...));
+        const auto coef0 = static_cast<real_type>(detail::get<2>(args...));
+        return std::pow(std::fma(gamma, (x.get_row_dot_product(i, j)), coef0), degree);
+    } else if constexpr (kernel == kernel_type::rbf) {
+        static_assert(sizeof...(args) == 1, "Illegal number of additional parameters! Must be 1.");
+        const auto gamma = static_cast<real_type>(detail::get<0>(args...));
+        // TODO
+    } else {
+        static_assert(detail::always_false_v<real_type>, "Unknown kernel type!");
+    }
+
+    return static_cast<real_type>(-1);
 }
 
 }  // namespace plssvm

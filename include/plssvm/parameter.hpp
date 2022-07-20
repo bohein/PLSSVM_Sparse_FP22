@@ -2,6 +2,7 @@
  * @file
  * @author Alexander Van Craen
  * @author Marcel Breyer
+ * @author Tim Schmidt
  * @copyright 2018-today The PLSSVM project - All Rights Reserved
  * @license This file is part of the PLSSVM project which is released under the MIT license.
  *          See the LICENSE.md file in the project root for full license information.
@@ -16,6 +17,10 @@
 #include "plssvm/backends/SYCL/kernel_invocation_type.hpp"  // plssvm::sycl_generic::kernel_invocation_type
 #include "plssvm/kernel_types.hpp"                          // plssvm::kernel_type
 #include "plssvm/target_platforms.hpp"                      // plssvm::target_platform
+#include "plssvm/coo.hpp"                                   // plssvm::openmp::coo
+
+// only necessary for testing (wrapper_for_parse_libsvm_content_sparse())
+#include "plssvm/detail/file_reader.hpp"           // plssvm::detail::file_reader
 
 #include <iosfwd>       // forward declare std::ostream
 #include <memory>       // std::shared_ptr
@@ -81,6 +86,40 @@ class parameter {
      * @throws plssvm::invalid_file_format_exception if the @p filename has an invalid format (e.g. an empty file, a file not using the LIBSVM file format, ...)
      */
     void parse_libsvm_file(const std::string &filename, std::shared_ptr<const std::vector<std::vector<real_type>>> &data_ptr_ref);
+        /**
+     * @brief Parse a file in the [LIBSVM sparse file format](https://www.csie.ntu.edu.tw/~cjlin/libsvm/faq.html#f303).
+     * @details The sparse LIBSVM file format saves each data point with its respective class as follows:
+     * @code
+     * <label> <index1>:<value1> <index2>:<value2> ... <indexN>:<valueN>
+     * @endcode
+     * Only non-empty lines that don't start with `#` (= optional comments) are parsed.
+     *
+     * An example LIBSVM file could look as follows:
+     * @code
+     * # this is a comment
+     *  1 1:1.29801019287324655 2:0.51687296029754564
+     * -1 1:1.01405596624706053
+     * -1 1:0.60276937379453293 3:-0.13086851759108944
+     * -1 2:0.298499933047586044 # this is also a comment
+     * @endcode
+     *
+     * Be aware that the parsed output is **always** in a dense format. The above file for example will be parsed to a
+     * @code
+     * std::vector<std::vector<real_type>> data = {
+     *   { 1.29801019287324655, 0.51687296029754564, 0.0 },
+     *   { 1.01405596624706053, 0.0, 0.0 },
+     *   { 0.60276937379453293, 0.0, -0.13086851759108944 },
+     *   { 0.0, 0.298499933047586044, 0.0 }
+     * }
+     * @endcode
+     *
+     * If possible, uses a memory mapped file internally to speed up the file parsing.
+     * @param[in] filename name of the LIBSVM file to parse
+     * @param[in] data_ptr_ref the underlying sparse matrix to save the parsed values to
+     * @throws plssvm::file_not_found_exception if the @p filename couldn't be found
+     * @throws plssvm::invalid_file_format_exception if the @p filename has an invalid format (e.g. an empty file, a file not using the LIBSVM file format, ...)
+     */
+    void parse_libsvm_file_sparse(const std::string &filename, std::shared_ptr<const plssvm::openmp::coo<real_type>> &data_ptr_ref);
     /**
      * @brief Parse a file in the [arff file format](https://www.cs.waikato.ac.nz/ml/weka/arff.html).
      * @details The arff file format saves each data point with its respective class as follows:
@@ -220,6 +259,11 @@ class parameter {
 
     /// The rho value of the calculated/read model.
     real_type rho = real_type{ 0.0 };
+
+  /**
+   * @brief Wrapper for parse_libsvm_content_sparse() for testing purposes
+   */
+  void wrapper_for_parse_libsvm_content_sparse(const detail::file_reader &f, const std::size_t start, plssvm::openmp::coo<real_type> &data, std::vector<real_type> &values);
 
   protected:
     /**
