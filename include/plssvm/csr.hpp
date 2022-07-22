@@ -73,6 +73,15 @@ class csr {
          */
         void append(const csr<real_type> &other);
 
+        /**
+         * @brief Returns the dot-product of the two specified rows in the matrix
+         * 
+         * @param row_id_1 index of the first row
+         * @param row_id_1 index of the second row
+         * @return real_type dot-product of the two rows
+         */
+        real_type get_row_dot_product(const size_t row_id_1, const size_t row_id_2);
+
 
         //////////////////////////
         // non-member functions //

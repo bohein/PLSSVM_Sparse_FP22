@@ -67,7 +67,7 @@ T csr<T>::get_element(const size_t col_id, const size_t row_id) {
     } 
     // case: first occurence found
     else {
-        size_t last_to_check = col_ids.size();
+        size_t last_to_check = nnz;
         if(row_id + 1 < row_offset.size()){
             last_to_check = row_offset.at(row_id + 1);
         }
@@ -84,6 +84,44 @@ T csr<T>::get_element(const size_t col_id, const size_t row_id) {
     }
 
 }
+
+template <typename T>
+T csr<T>::get_row_dot_product(const size_t row_id_1, const size_t row_id_2) {
+    T result = 0;
+
+    // get borders of row 1
+    size_t row_id_1_cur = row_offset[row_id_1];
+
+    size_t last_to_check_row_1 = nnz;
+    if(row_id_1 + 1 < row_offset.size()){
+       last_to_check_row_1 = row_offset.at(row_id_1 + 1);
+    }
+
+    // get borders of row 2
+    size_t row_id_2_cur = row_offset[row_id_2];
+
+    size_t last_to_check_row_2 = nnz;
+    if(row_id_2 + 1 < row_offset.size()){
+        last_to_check_row_2 = row_offset.at(row_id_2 + 1);
+    }
+    
+    // multiply matching col_ids
+    while (row_id_1_cur < last_to_check_row_1 && row_id_2_cur < last_to_check_row_2) {
+
+        // matching col_ids, else increment
+        if (col_ids[row_id_1_cur] == col_ids[row_id_2_cur]) {
+            result += values[row_id_1_cur] * values[row_id_2_cur];
+            row_id_1_cur++;
+            row_id_2_cur++;
+        } else if (col_ids[row_id_1_cur] < col_ids[row_id_2_cur]) {
+            row_id_1_cur++;
+        } else {
+           row_id_2_cur++;
+        }
+    }
+    return result;
+}
+
 
 template <typename T>
 bool csr<T>::operator==(const csr<T>& other) {

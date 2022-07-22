@@ -197,9 +197,6 @@ void parse_libsvm_content_sparse(const file_reader &f, const std::size_t start, 
 template <typename real_type>
 void parse_libsvm_content_sparse_csr(const file_reader &f, const std::size_t start, plssvm::openmp::csr<real_type> &data, std::vector<real_type> &values) {
     std::exception_ptr parallel_exception;
-    std::vector<plssvm::openmp::csr<real_type>> rows(values.size());
-    bool empty = true;
-    
     {
         //#pragma omp parallel for
         for (typename std::vector<std::vector<real_type>>::size_type i = 0; i < values.size(); ++i) {
@@ -219,7 +216,6 @@ void parse_libsvm_content_sparse_csr(const file_reader &f, const std::size_t sta
                 }
 
                 // get data
-                plssvm::openmp::csr<real_type> vline{};
                 while (true) {
                     std::string_view::size_type next_pos = line.find_first_of(':', pos);
                     // no further data points
@@ -237,10 +233,10 @@ void parse_libsvm_content_sparse_csr(const file_reader &f, const std::size_t sta
                     pos = next_pos;
 
                     // write index-index-value tuple to line data
-                    vline.insert_element(index, i, value);
+                    data.insert_element(index, i, value);
                 }
-                if (vline.get_nnz() > 0) empty = false;
-                rows[i] = std::move(vline);
+
+                std::cout << data.get_nnz();
             } catch (const std::exception &) {
                 // catch first exception and store it
                 //#pragma omp critical
@@ -262,12 +258,9 @@ void parse_libsvm_content_sparse_csr(const file_reader &f, const std::size_t sta
     }
 
     // no features were parsed -> invalid file
-    if (empty) {
+    if (data.get_nnz() > 0) {
         throw invalid_file_format_exception{ fmt::format("Can't parse file: no data points are given!") };
     }
-    
-    // concatenate sparse rows
-    for (auto it = rows.begin(); it != rows.end(); it++) data.append(*it);
 }
 
 }  // namespace detail
