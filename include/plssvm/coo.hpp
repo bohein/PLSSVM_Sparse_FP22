@@ -85,6 +85,9 @@ class coo {
 
         /**
          * @brief Append another matrix stored in COO format to this matrix
+         * @details The other matrix is appended by simply appending the col-, row-, and value vertices of the other matrix to the ones of this matrix.
+         * For performance reasons, NEITHER a check for duplicate entries NOR any sorting operations are performed.
+         * The size of the new matrix is adjusted according to the maximum dimensions of both this and the other matrix.
          * 
          * @param other another matrix in COO format
          */
