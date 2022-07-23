@@ -28,8 +28,8 @@ void coo<T>::insert_element(const size_t col_id, const size_t row_id, const real
     row_ids.push_back(row_id);
     values.push_back(value);
 
-    height = std::max(height, row_id);
-    width = std::max(width, col_id);
+    height = std::max(height, row_id + 1);
+    width = std::max(width, col_id + 1);
 }
 
 template <typename T>
