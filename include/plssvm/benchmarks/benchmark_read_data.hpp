@@ -22,11 +22,11 @@ class benchmark_read_data : public benchmark {
         void run() override;
 
     protected:
-        std::string data_to_csv() override;
+        void evaluate_dataset(const std::string sub_benchmark_name, const std::string path_to_dataset) override;
 
     private:
         // TODO: change to relative path
-        std::string DATASET_TINY = "/home/schmidtm/PLSSVM/benchmark_data/iris.libsvm"; // https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass/iris.scale
+        const std::string DATASET_TINY = "/home/schmidtm/PLSSVM/benchmark_data/iris.libsvm"; // https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass/iris.scale
 };
 
 }  // namespace plssvm::benchmarks

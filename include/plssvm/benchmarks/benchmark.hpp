@@ -31,13 +31,18 @@ class benchmark {
         virtual void run() {}
 
     protected:
-        benchmark();
-
         std::string name;
         std::vector<std::string> sub_benchmark_names;
-        std::vector<double> runtimes;
+        std::vector<std::chrono::nanoseconds> runtimes_mean;
+        std::vector<std::chrono::nanoseconds> runtimes_median;
+        std::vector<std::chrono::nanoseconds> runtimes_max;
 
-        virtual std::string data_to_csv() {return "";}
+        uint64_t cycles = 1000;
+
+        benchmark();
+
+        virtual void evaluate_dataset(const std::string sub_benchmark_name, const std::string path_to_dataset) {sub_benchmark_name + path_to_dataset;}
+        virtual std::string data_to_csv();
 
 };
 

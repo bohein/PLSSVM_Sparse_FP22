@@ -10,6 +10,8 @@
 
 #include "plssvm/benchmarks/benchmark_read_data.hpp"
 
+#include <numeric>
+
 namespace plssvm::benchmarks {
 
 benchmark_read_data::benchmark_read_data() : benchmark{"Read Data"} {}
@@ -17,25 +19,36 @@ benchmark_read_data::benchmark_read_data() : benchmark{"Read Data"} {}
 void benchmark_read_data::run() {
     using real_type = double;
 
-    plssvm::parameter<real_type> params;
-    plssvm::openmp::coo<real_type> actual_data{};
-    std::shared_ptr<const plssvm::openmp::coo<real_type>> actual_data_ptr = std::make_shared<const plssvm::openmp::coo<real_type>>(std::move(actual_data));
-
-    // TODO: actual implementation, not this short proof-of-concept
-    std::chrono::time_point start_time = std::chrono::high_resolution_clock::now();
-    params.parse_libsvm_file_sparse(DATASET_TINY, actual_data_ptr);
-    std::chrono::time_point end_time = std::chrono::high_resolution_clock::now();
-    fmt::print("{:%S}\n", end_time - start_time);
+    evaluate_dataset("tiny (~150)", DATASET_TINY);
 }
 
-std::string benchmark_read_data::data_to_csv() {
-    std::string csv = "";
-    if (sub_benchmark_names.size() == runtimes.size()) {
-        for (size_t i = 0; i < sub_benchmark_names.size(); i++) {
-            csv += sub_benchmark_names[i] + ',' + std::to_string(runtimes[i]) + "\n";
-        }
+void benchmark_read_data::evaluate_dataset(const std::string sub_benchmark_name, const std::string path_to_dataset) {
+    using real_type = double;
+
+    plssvm::parameter<real_type> params;
+    plssvm::openmp::coo<real_type> data{};
+    std::shared_ptr<const plssvm::openmp::coo<real_type>> data_ptr = std::make_shared<const plssvm::openmp::coo<real_type>>(std::move(data));
+
+    std::vector<std::chrono::nanoseconds> raw_runtimes;
+    // run benchmark for many iterations
+    for(size_t i = 0; i < cycles; i++) {
+        std::chrono::time_point start_time = std::chrono::high_resolution_clock::now();
+        params.parse_libsvm_file_sparse(path_to_dataset, data_ptr);
+        std::chrono::time_point end_time = std::chrono::high_resolution_clock::now();
+        raw_runtimes.push_back(std::chrono::round<std::chrono::nanoseconds>(end_time - start_time));
     }
-    return csv;
+    
+    sub_benchmark_names.push_back(sub_benchmark_name);
+
+    // mean
+    runtimes_mean.push_back(std::reduce(raw_runtimes.begin(), raw_runtimes.end()) / raw_runtimes.size());
+
+    // median
+    std::nth_element(raw_runtimes.begin(), raw_runtimes.begin() + raw_runtimes.size()/2, raw_runtimes.end());
+    runtimes_median.push_back(raw_runtimes[raw_runtimes.size()/2]);
+
+    // max
+    runtimes_max.push_back(*std::max_element(raw_runtimes.begin(), raw_runtimes.end()));
 }
 
 }  // namespace plssvm::benchmarks

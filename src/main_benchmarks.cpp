@@ -28,4 +28,5 @@ using real_type = double;
 int main(int argc, char *argv[]) {
     plssvm::benchmarks::benchmark_read_data read_data;
     read_data.run();
+    fmt::print(read_data.get_name() + "\n" + read_data.get_data() + "\n");
 }
