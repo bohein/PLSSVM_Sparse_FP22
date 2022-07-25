@@ -12,6 +12,8 @@
 
 #include "plssvm/coo.hpp"
 
+#include <cmath>   // std::fma
+
 namespace plssvm::openmp {
 
 template <typename T>
@@ -117,7 +119,7 @@ plssvm::openmp::coo<T> coo<T>::get_row(const size_t row_id) {
 
 template <typename T>
 T coo<T>::get_row_dot_product(const size_t row_id_1, const size_t row_id_2) {
-    // ensure row_id_1 < row_id_2
+    // ensure row_id_1 <= row_id_2
     if (row_id_1 > row_id_2)
         return get_row_dot_product(row_id_2, row_id_1);
     
@@ -144,6 +146,42 @@ T coo<T>::get_row_dot_product(const size_t row_id_1, const size_t row_id_2) {
         } else if (col_ids[row_id_1_it - row_ids.begin()] < col_ids[row_id_2_it - row_ids.begin()]) {
             row_id_1_it++;
         } else {
+            row_id_2_it++;
+        }
+    }
+
+    return result;
+}
+template <typename T>
+T coo<T>::get_row_squared_euclidean_dist(const size_t row_id_1, const size_t row_id_2) {
+    // ensure row_id_1 <= row_id_2
+    if (row_id_1 > row_id_2)
+        return get_row_squared_euclidean_dist(row_id_2, row_id_1);
+
+    T result = 0;
+
+    // get iterator to row_ids of first row
+    std::vector<size_t>::iterator row_id_1_it = std::find(row_ids.begin(), row_ids.end(), row_id_1);
+
+    // get iterator to row_ids of second row
+    std::vector<size_t>::iterator row_id_2_it = std::find(row_id_1_it, row_ids.end(), row_id_2);
+    
+    // multiply matching col_ids
+    while (*row_id_1_it == row_id_1 && *row_id_2_it == row_id_2) {
+
+        // matching col_ids, else increment
+        if (col_ids[row_id_1_it - row_ids.begin()] == col_ids[row_id_2_it - row_ids.begin()]) {
+            T dist = values[row_id_1_it - row_ids.begin()] - values[row_id_2_it - row_ids.begin()];
+            result += dist * dist;
+            row_id_1_it++;
+            row_id_2_it++;
+        } else if (col_ids[row_id_1_it - row_ids.begin()] < col_ids[row_id_2_it - row_ids.begin()]) {
+            T dist = values[row_id_1_it - row_ids.begin()];
+            result += dist * dist;
+            row_id_1_it++;
+        } else {
+            T dist = values[row_id_2_it - row_ids.begin()];
+            result += dist * dist;
             row_id_2_it++;
         }
     }
