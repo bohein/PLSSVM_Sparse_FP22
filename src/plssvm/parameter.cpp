@@ -293,7 +293,7 @@ void parameter<T>::parse_libsvm_file_sparse(const std::string &filename, std::sh
     
     auto end_time = std::chrono::steady_clock::now();
     if (print_info) {
-        fmt::print("Read {} data points with {} features in {} using the libsvm parser from file '{}'.\n{}/{} non-zero entries stored.",
+        fmt::print("Read {} data points with {} features in {} using the libsvm parser from file '{}'.\n{}/{} non-zero entries stored.\n",
                    data_ptr_ref->get_height(),
                    data_ptr_ref->get_width(),
                    std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time),
