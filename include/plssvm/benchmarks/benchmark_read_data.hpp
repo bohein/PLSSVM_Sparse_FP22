@@ -27,6 +27,7 @@ class benchmark_read_data : public benchmark {
     private:
         // TODO: change to relative path
         const std::string DATASET_TINY = "/home/schmidtm/PLSSVM/benchmark_data/iris.libsvm"; // https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass/iris.scale
+        const std::string DATASET_SMALL = "/home/schmidtm/PLSSVM/benchmark_data/w3a.libsvm"; // https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary/w3a
 };
 
 }  // namespace plssvm::benchmarks
