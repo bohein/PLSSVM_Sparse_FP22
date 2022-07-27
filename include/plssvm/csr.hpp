@@ -52,6 +52,7 @@ class csr {
          */
         size_t get_width() const {return width;}
 
+        void set_height(size_t height);
 
         ///////////////
         // modifiers //
@@ -65,6 +66,8 @@ class csr {
          * @param value data value of element to insert
          */
         void insert_element(const size_t col_id, const size_t row_id, const real_type value);
+
+        void insert_empty_row();
 
         /**
          * @brief Append another matrix stored in CSR format to this matrix

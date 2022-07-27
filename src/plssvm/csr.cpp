@@ -22,21 +22,33 @@ csr<T>::csr()
     , width(0)
 { }
 
+// 0/1 index
 template <typename T>
 void csr<T>::insert_element(const size_t col_id, const size_t row_id, const real_type value) {
     if(row_offset.size() > row_id + 1){
         throw std::invalid_argument("row_id was already added before!");
     }
+
     while(row_offset.size() < row_id + 1){
         row_offset.push_back(col_ids.size());
     }
-    
+
     nnz++;
     col_ids.push_back(col_id);
     values.push_back(value);
-
+    //TODO Groesse
     height = std::max(height, row_id + 1);
     width = std::max(width, col_id + 1);
+}
+
+template <typename T>
+void csr<T>::insert_empty_row() {
+    row_offset.push_back(col_ids.size());
+}
+
+template <typename T>
+void csr<T>::set_height(size_t new_height) {
+   height = new_height;
 }
 
 template <typename T>
@@ -91,7 +103,6 @@ T csr<T>::get_row_dot_product(const size_t row_id_1, const size_t row_id_2) {
 
     // get borders of row 1
     size_t row_id_1_cur = row_offset[row_id_1];
-
     size_t last_to_check_row_1 = nnz;
     if(row_id_1 + 1 < row_offset.size()){
        last_to_check_row_1 = row_offset.at(row_id_1 + 1);
@@ -99,7 +110,6 @@ T csr<T>::get_row_dot_product(const size_t row_id_1, const size_t row_id_2) {
 
     // get borders of row 2
     size_t row_id_2_cur = row_offset[row_id_2];
-
     size_t last_to_check_row_2 = nnz;
     if(row_id_2 + 1 < row_offset.size()){
         last_to_check_row_2 = row_offset.at(row_id_2 + 1);
@@ -107,7 +117,6 @@ T csr<T>::get_row_dot_product(const size_t row_id_1, const size_t row_id_2) {
     
     // multiply matching col_ids
     while (row_id_1_cur < last_to_check_row_1 && row_id_2_cur < last_to_check_row_2) {
-
         // matching col_ids, else increment
         if (col_ids[row_id_1_cur] == col_ids[row_id_2_cur]) {
             result += values[row_id_1_cur] * values[row_id_2_cur];
@@ -129,8 +138,8 @@ bool csr<T>::operator==(const csr<T>& other) {
         && width == other.width
         && height == other.height
         && col_ids == other.col_ids
-        && row_offset == other.row_offset
-        && values == other.values;
+        && row_offset == other.row_offset 
+       && values == other.values;
 }
 
 // explicitly instantiate template class

@@ -121,6 +121,8 @@ class parameter {
      * @throws plssvm::invalid_file_format_exception if the @p filename has an invalid format (e.g. an empty file, a file not using the LIBSVM file format, ...)
      */
     void parse_libsvm_file_sparse(const std::string &filename, std::shared_ptr<const plssvm::openmp::coo<real_type>> &data_ptr_ref);
+
+    void parse_libsvm_file_sparse_csr(const std::string &filename, std::shared_ptr<const plssvm::openmp::csr<real_type>> &data_ptr_ref);
     /**
      * @brief Parse a file in the [arff file format](https://www.cs.waikato.ac.nz/ml/weka/arff.html).
      * @details The arff file format saves each data point with its respective class as follows:

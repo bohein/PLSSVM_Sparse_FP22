@@ -257,3 +257,35 @@ TYPED_TEST(SparseMatrix, parameter_parse_libsvm_content_csr) {
     EXPECT_TRUE(actual_data == expected_data);
     EXPECT_EQ(actual_values, expected_values);
 }
+
+TYPED_TEST(SparseMatrix, parameter_parse_libsvm_file_sparse_csr) {
+    // create parameter object
+    plssvm::parameter<TypeParam> params;
+
+    using real_type = TypeParam;
+
+    ::testing::StaticAssertTypeEq<real_type, typename decltype(params)::real_type>();
+
+    plssvm::openmp::csr<real_type> expected_data{};
+    expected_data.insert_element(2, 1, 0.51687296029754564);
+    expected_data.insert_element(1, 2, 1.01405596624706053);
+    expected_data.insert_element(1, 3, 0.60276937379453293);
+    expected_data.insert_element(3, 3, -0.13086851759108944);
+    expected_data.insert_element(2, 4, 0.298499933047586044);
+    std::shared_ptr<const plssvm::openmp::csr<real_type>> expected_data_ptr = std::make_shared<const plssvm::openmp::csr<real_type>>(std::move(expected_data));
+
+    plssvm::openmp::csr<real_type> actual_data{};
+    std::shared_ptr<const plssvm::openmp::csr<real_type>> actual_data_ptr = std::make_shared<const plssvm::openmp::csr<real_type>>(std::move(actual_data));
+
+    params.parse_libsvm_file_sparse_csr(PLSSVM_TEST_PATH  "/data/libsvm/5x4.sparse.libsvm", actual_data_ptr);
+
+    expected_data = *expected_data_ptr.get();
+    actual_data = *actual_data_ptr.get();
+
+    EXPECT_TRUE(actual_data == expected_data);
+
+    std::vector<real_type> expected_values{1, 1, -1, -1, -1};
+    std::vector<real_type> actual_values = *params.value_ptr.get();
+
+    EXPECT_EQ(actual_values, expected_values);
+}
