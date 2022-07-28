@@ -20,6 +20,7 @@ csr<T>::csr()
     : nnz(0)
     , height(0)
     , width(0)
+    , empty_row_buffer(0)
 { }
 
 // 0/1 index
@@ -42,17 +43,17 @@ void csr<T>::insert_element(const size_t col_id, const size_t row_id, const real
 }
 
 template <typename T>
-void csr<T>::insert_empty_row() {
-    row_offset.push_back(col_ids.size());
-}
-
-template <typename T>
-void csr<T>::set_height(size_t new_height) {
-   height = new_height;
-}
-
-template <typename T>
 void csr<T>::append(const csr<real_type> &other) {
+    //check whether row to append is empty
+    if(other.nnz == 0){
+         empty_row_buffer++;
+         return;
+    }
+    //add row offset for all empty rows
+    for(;empty_row_buffer > 0; empty_row_buffer--){
+        row_offset.push_back(col_ids.size());
+    }
+
     nnz += other.nnz;
 
     size_t old_max_offset = col_ids.size();
@@ -67,20 +68,20 @@ void csr<T>::append(const csr<real_type> &other) {
         row_offset.at(i) = row_offset.at(i) + old_max_offset;
     }
 
-    height = height + other.height;
+    height = old_row_offset_end + other.height;
     width = std::max(width, other.width);
 }
 
 template <typename T>
 T csr<T>::get_element(const size_t col_id, const size_t row_id) {
     // case: out of bounds
-    if (row_id + 1 > row_offset.size()) {
+    if (row_id + 1 > height) {
         return static_cast<real_type>(0);
     } 
     // case: first occurence found
     else {
         size_t last_to_check = nnz;
-        if(row_id + 1 < row_offset.size()){
+        if(row_id + 1 < height){
             last_to_check = row_offset.at(row_id + 1);
         }
         // check col_ids / row_ids for valid (cold_id, row_id) pair until one is either found or confirmed nonexistent
@@ -104,14 +105,14 @@ T csr<T>::get_row_dot_product(const size_t row_id_1, const size_t row_id_2) {
     // get borders of row 1
     size_t row_id_1_cur = row_offset[row_id_1];
     size_t last_to_check_row_1 = nnz;
-    if(row_id_1 + 1 < row_offset.size()){
+    if(row_id_1 + 1 < height){
        last_to_check_row_1 = row_offset.at(row_id_1 + 1);
     }
 
     // get borders of row 2
     size_t row_id_2_cur = row_offset[row_id_2];
     size_t last_to_check_row_2 = nnz;
-    if(row_id_2 + 1 < row_offset.size()){
+    if(row_id_2 + 1 < height){
         last_to_check_row_2 = row_offset.at(row_id_2 + 1);
     }
     
@@ -119,9 +120,7 @@ T csr<T>::get_row_dot_product(const size_t row_id_1, const size_t row_id_2) {
     while (row_id_1_cur < last_to_check_row_1 && row_id_2_cur < last_to_check_row_2) {
         // matching col_ids, else increment
         if (col_ids[row_id_1_cur] == col_ids[row_id_2_cur]) {
-            result += values[row_id_1_cur] * values[row_id_2_cur];
-            row_id_1_cur++;
-            row_id_2_cur++;
+            result += values[++row_id_1_cur] * values[++row_id_2_cur];
         } else if (col_ids[row_id_1_cur] < col_ids[row_id_2_cur]) {
             row_id_1_cur++;
         } else {

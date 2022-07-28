@@ -265,18 +265,9 @@ void parse_libsvm_content_sparse_csr(const file_reader &f, const std::size_t sta
     if (empty) {
         throw invalid_file_format_exception{ fmt::format("Can't parse file: no data points are given!") };
     }
-    
-    size_t height = 0;
-    // concatenate sparse rows
-    for (size_t i = 0; i < rows.size(); i++){
-        if(rows[i].get_nnz() > 0){
-            data.append(rows[i]);
-            height = i + 1;
-        } else{
-            data.insert_empty_row();
-        }
-    }
-    data.set_height(height);
+
+     // concatenate sparse rows
+    for (auto it = rows.begin(); it != rows.end(); it++) data.append(*it);
 }
 
 }  // namespace detail
