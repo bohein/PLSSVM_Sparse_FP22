@@ -9,7 +9,8 @@
 
 #include "plssvm/core.hpp"
 
-#include "plssvm/benchmarks/benchmark_read_data.hpp"
+#include "plssvm/benchmarks/benchmark.hpp"             // plssvm::benchmarks::benchmark
+#include "plssvm/benchmarks/benchmark_read_data.hpp"   // plssvm::benchmarks::benchmark_read_data
 
 #include "fmt/core.h"     // std::format
 #include "fmt/ostream.h"  // use operator<< to output enum class
@@ -17,6 +18,8 @@
 #include <cstdlib>    // EXIT_SUCCESS, EXIT_FAILURE
 #include <exception>  // std::exception
 #include <iostream>   // std::cerr, std::clog, std::endl
+#include <fstream>    // std::ofstream
+#include <filesystem> // fs::create_directory
 
 // perform calculations in single precision if requested
 #ifdef PLSSVM_EXECUTABLES_USE_SINGLE_PRECISION
@@ -25,8 +28,23 @@ using real_type = float;
 using real_type = double;
 #endif
 
+std::string OUTPUT_DIR = "/home/schmidtm/PLSSVM/benchmark_data/results"; // TODO: figure out relative paths somehow
+
 int main(int argc, char *argv[]) {
-    plssvm::benchmarks::benchmark_read_data read_data;
-    read_data.run();
-    fmt::print(read_data.get_name() + "\n" + read_data.get_data() + "\n");
+    using namespace plssvm::benchmarks;
+
+    std::vector<benchmark*> benchmarks;
+
+    // Create Benchmarks
+    benchmarks.push_back(new benchmark_read_data);
+
+    for (benchmark* b : benchmarks) { // DO NOT PARALLELIZE THIS!
+            b->run();
+            if (!std::filesystem::is_directory(OUTPUT_DIR) || !std::filesystem::exists(OUTPUT_DIR)) {
+                std::filesystem::create_directory(OUTPUT_DIR);
+            }
+            std::ofstream results_file(OUTPUT_DIR + "/"+ b->get_name() + ".csv");
+            results_file << b->get_data();
+            results_file.close();
+    }
 }
