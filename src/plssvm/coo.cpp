@@ -122,36 +122,48 @@ T coo<T>::get_row_dot_product(const size_t row_id_1, const size_t row_id_2) {
     // ensure row_id_1 <= row_id_2
     if (row_id_1 > row_id_2)
         return get_row_dot_product(row_id_2, row_id_1);
-    
+
     T result = 0;
+    auto eq_row_id_1 = [&row_id_1](size_t x){return x == row_id_1; };
+    auto eq_row_id_2 = [&row_id_2](size_t x){return x == row_id_2; };
 
-    // get iterator to row_ids of first row
-    std::vector<size_t>::iterator row_id_1_it = std::find(row_ids.begin(), row_ids.end(), row_id_1);
-
-    // get iterator to row_ids of second row
-    std::vector<size_t>::iterator row_id_2_it = std::find(row_id_1_it, row_ids.end(), row_id_2);
-
-    // one row is empty
-    if (row_id_1_it == row_ids.end() || row_id_2_it == row_ids.end())
-        return result;
+    // find start and end of row 1
+    std::vector<size_t>::iterator it = std::find_if(row_ids.begin(), row_ids.end(), eq_row_id_1);
+    size_t row_1_start = std::distance(row_ids.begin(), it);
     
-    // multiply matching col_ids
-    while (*row_id_1_it == row_id_1 && *row_id_2_it == row_id_2) {
+    it = std::find_if_not(it, row_ids.end(), eq_row_id_1);
+    size_t row_1_end = std::distance(row_ids.begin(), it);
 
-        // matching col_ids, else increment
-        if (col_ids[row_id_1_it - row_ids.begin()] == col_ids[row_id_2_it - row_ids.begin()]) {
-            result += values[row_id_1_it - row_ids.begin()] * values[row_id_2_it - row_ids.begin()];
-            row_id_1_it++;
-            row_id_2_it++;
-        } else if (col_ids[row_id_1_it - row_ids.begin()] < col_ids[row_id_2_it - row_ids.begin()]) {
-            row_id_1_it++;
-        } else {
-            row_id_2_it++;
-        }
+    size_t row_2_start;
+    size_t row_2_end;
+    if (row_id_1 == row_id_2) {
+        row_2_start = row_1_start;
+        row_2_end = row_1_end;
+    } else {
+        // find start and end of row 2
+        it = std::find_if(it, row_ids.end(), eq_row_id_2);
+        row_2_start = std::distance(row_ids.begin(), it);
+
+        it = std::find_if_not(it, row_ids.end(), eq_row_id_2);
+        row_2_end = std::distance(row_ids.begin(), it);
     }
 
+    // one row is empty
+    if (row_1_start == row_ids.size() || row_2_start == row_ids.size())
+        return result;
+
+    #pragma omp parallel for collapse(2)
+    for (size_t i = row_1_start; i < row_1_end; ++i) {
+        for (size_t j = row_2_start; j < row_2_end; ++j) {
+            if (col_ids[i] == col_ids[j]) {
+                #pragma omp atomic
+                result += values[i] * values[j];
+            }
+        }
+    }
     return result;
 }
+
 template <typename T>
 T coo<T>::get_row_squared_euclidean_dist(const size_t row_id_1, const size_t row_id_2) {
     // ensure row_id_1 <= row_id_2
