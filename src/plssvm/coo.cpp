@@ -19,6 +19,7 @@ coo<T>::coo()
     : nnz(0)
     , height(0)
     , width(0)
+    , current_empty_rows(0)
 { }
 
 template <typename T>
@@ -28,21 +29,34 @@ void coo<T>::insert_element(const size_t col_id, const size_t row_id, const real
     row_ids.push_back(row_id);
     values.push_back(value);
 
-    height = std::max(height, row_id);
-    width = std::max(width, col_id);
+    height = std::max(height, row_id + 1);
+    width = std::max(width, col_id + 1);
 }
 
 template <typename T>
 void coo<T>::append(const coo<real_type> &other) {
+    if(other.nnz == 0){
+        current_empty_rows++;
+        return;
+    }
+    
     nnz += other.nnz;
+
+    size_t next_row_offset = current_empty_rows + height;
+    size_t next_row_index = row_ids.size();
 
     // TODO: potentially parallelize
     col_ids.insert(col_ids.end(), other.col_ids.begin(), other.col_ids.end());
     row_ids.insert(row_ids.end(), other.row_ids.begin(), other.row_ids.end());
     values.insert(values.end(), other.values.begin(), other.values.end());
 
-    height = std::max(height, other.height);
+    for(size_t i = next_row_index; i < row_ids.size(); i++){
+        row_ids.at(i) += next_row_offset;
+    }
+
+    height += current_empty_rows + other.height;
     width = std::max(width, other.width);
+    current_empty_rows = 0;
 }
 
 template <typename T>
@@ -77,6 +91,119 @@ T coo<T>::get_element(const size_t col_id, const size_t row_id) {
     }
 
 }
+
+
+template <typename T>
+T coo<T>::get_row_dot_product(const size_t row_id_1, const size_t row_id_2) {
+    // ensure row_id_1 <= row_id_2
+    if (row_id_1 > row_id_2)
+        return get_row_dot_product(row_id_2, row_id_1);
+
+    T result = 0;
+    size_t index = 0;
+
+    // find start and end of row 1
+    for (; index < row_ids.size() && row_ids[index] != row_id_1; ++index);
+    size_t row_1_start = index;
+
+    for (; index < row_ids.size() && row_ids[index] == row_id_1; ++index);
+    size_t row_1_end = index;
+
+    // find start and end of row 2
+    size_t row_2_start = row_1_start;
+    size_t row_2_end = row_1_end;
+
+    if (row_id_1 != row_id_2) {
+        for (; index < row_ids.size() && row_ids[index] != row_id_2; ++index);
+        row_2_start = index;
+
+        for (; index < row_ids.size() && row_ids[index] == row_id_2; ++index);
+        row_2_end = index;
+    }
+
+    // one row is empty
+    if (row_1_start == row_ids.size() || row_2_start == row_ids.size())
+        return result;
+
+    #pragma omp parallel for collapse(2)
+    for (size_t i = row_1_start; i < row_1_end; ++i) {
+        for (size_t j = row_2_start; j < row_2_end; ++j) {
+            if (col_ids[i] == col_ids[j]) {
+                #pragma omp atomic
+                result += values[i] * values[j];
+            }
+        }
+    }
+    return result;
+}
+
+template <typename T>
+T coo<T>::get_row_squared_euclidean_dist(const size_t row_id_1, const size_t row_id_2) {
+    // ensure row_id_1 <= row_id_2
+    if (row_id_1 > row_id_2)
+        return get_row_squared_euclidean_dist(row_id_2, row_id_1);
+    
+    if (row_id_1 == row_id_2)
+        return 0;
+
+    T result = 0;
+    size_t index = 0;
+
+    // find start and end of row 1
+    for (; index < row_ids.size() && row_ids[index] != row_id_1; ++index);
+    size_t row_1_start = index;
+
+    for (; index < row_ids.size() && row_ids[index] == row_id_1; ++index);
+    size_t row_1_end = index;
+
+    // find start and end of row 2
+    size_t row_2_start = row_1_start;
+    size_t row_2_end = row_1_end;
+
+    if (row_id_1 != row_id_2) {
+        for (; index < row_ids.size() && row_ids[index] != row_id_2; ++index);
+        row_2_start = index;
+
+        for (; index < row_ids.size() && row_ids[index] == row_id_2; ++index);
+        row_2_end = index;
+    }
+
+    // exploit assumtion that row 1 and row 2 have few non-zero dimensions in common
+    #pragma omp parallel sections
+    {
+        #pragma omp section  // sq.e.d. from row 1 to origin
+        {
+            #pragma omp parallel for
+            for (size_t i = row_1_start; i < row_1_end; ++i) {
+                #pragma omp atomic
+                result += values[i] * values[i];
+            }
+        }
+        #pragma omp section  // sq.e.d. from row 2 to origin
+        {
+            #pragma omp parallel for
+            for (size_t i = row_2_start; i < row_2_end; ++i) {
+                #pragma omp atomic
+                result += values[i] * values[i];
+            }
+        }
+    }
+
+    // adjust if shared non-zero entry; according to 2nd binom formula
+    #pragma omp parallel for collapse(2)
+    for (size_t i = row_1_start; i < row_1_end; ++i) {
+        for (size_t j = row_2_start; j < row_2_end; ++j) {
+            if (col_ids[i] == col_ids[j]) {
+                #pragma omp atomic
+                result -= 2 * values[i] * values[j];
+            }
+        }
+    }
+
+    return result;
+}
+
+
 
 template <typename T>
 bool coo<T>::operator==(const coo<T>& other) {

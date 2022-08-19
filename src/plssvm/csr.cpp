@@ -65,7 +65,7 @@ void csr<T>::append(const csr<real_type> &other) {
     values.insert(values.end(), other.values.begin(), other.values.end());
 
     for(size_t i = old_row_offset_end; i < row_offset.size(); i++){
-        row_offset.at(i) = row_offset.at(i) + old_max_offset;
+        row_offset[i] = row_offset[i] + old_max_offset;
     }
 
     height = old_row_offset_end + other.height;
@@ -82,13 +82,13 @@ T csr<T>::get_element(const size_t col_id, const size_t row_id) {
     else {
         size_t last_to_check = nnz;
         if(row_id + 1 < height){
-            last_to_check = row_offset.at(row_id + 1);
+            last_to_check = row_offset[row_id + 1];
         }
         // check col_ids / row_ids for valid (cold_id, row_id) pair until one is either found or confirmed nonexistent
-        for (size_t i = row_offset.at(row_id); i < last_to_check; i++)
+        for (size_t i = row_offset[row_id]; i < last_to_check; i++)
         {
             // case: valid (cold_id, row_id) pair found
-            if (col_ids.at(i) == col_id) {
+            if (col_ids[i] == col_id) {
                 return values[i];
             }
         }
@@ -103,30 +103,114 @@ T csr<T>::get_row_dot_product(const size_t row_id_1, const size_t row_id_2) {
     T result = 0;
 
     // get borders of row 1
-    size_t row_id_1_cur = row_offset[row_id_1];
-    size_t last_to_check_row_1 = nnz;
+    size_t row_1_start = row_offset[row_id_1];
+    size_t row_1_end = nnz;
     if(row_id_1 + 1 < height){
-       last_to_check_row_1 = row_offset.at(row_id_1 + 1);
+       row_1_end = row_offset[row_id_1 + 1];
     }
 
     // get borders of row 2
-    size_t row_id_2_cur = row_offset[row_id_2];
-    size_t last_to_check_row_2 = nnz;
+    size_t row_2_start = row_offset[row_id_2];
+    size_t row_2_end = nnz;
     if(row_id_2 + 1 < height){
-        last_to_check_row_2 = row_offset.at(row_id_2 + 1);
+        row_2_end = row_offset[row_id_2 + 1];
     }
     
     // multiply matching col_ids
-    while (row_id_1_cur < last_to_check_row_1 && row_id_2_cur < last_to_check_row_2) {
+   // while (row_1_start < row_1_end && row_2_start < row_2_end) {
         // matching col_ids, else increment
-        if (col_ids[row_id_1_cur] == col_ids[row_id_2_cur]) {
-            result += values[++row_id_1_cur] * values[++row_id_2_cur];
-        } else if (col_ids[row_id_1_cur] < col_ids[row_id_2_cur]) {
-            row_id_1_cur++;
-        } else {
-           row_id_2_cur++;
+   //     if (col_ids[row_1_start] == col_ids[row_2_start]) {
+   //         result += values[row_1_start++] * values[row_2_start++];
+   //     } else if (col_ids[row_1_start] < col_ids[row_2_start]) {
+   //         row_1_start++;
+   //     } else {
+   //        row_2_start++;
+   //     }
+    //}
+
+    #pragma omp parallel for collapse(2)
+    for (size_t i = row_1_start; i < row_1_end; ++i) {
+        for (size_t j = row_2_start; j < row_2_end; ++j) {
+            if (col_ids[i] == col_ids[j]) {
+                #pragma omp atomic
+                result += values[i] * values[j];
+            }
         }
     }
+    return result;
+}
+
+template <typename T>
+T csr<T>::get_row_squared_euclidean_dist(const size_t row_id_1, const size_t row_id_2){
+    if (row_id_1 == row_id_2)
+        return 0;
+
+    T result = 0;
+
+    // get borders of row 1
+    size_t row_1_start = row_offset[row_id_1];
+    size_t row_1_end = nnz;
+    if(row_id_1 + 1 < height){
+       row_1_end = row_offset[row_id_1 + 1];
+    }
+
+    // get borders of row 2
+    size_t row_2_start = row_offset[row_id_2];
+    size_t row_2_end = nnz;
+    if(row_id_2 + 1 < height){
+        row_2_end = row_offset[row_id_2 + 1];
+    }
+
+    // multiply matching col_ids
+   // while (row_1_start < row_1_end && row_2_start < row_2_end) {
+        // matching col_ids, else increment
+    //    if (col_ids[row_1_start] == col_ids[row_2_start]) {
+   //         result += (values[row_1_start] - values[row_2_start]) * (values[row_1_start] - values[row_2_start]);
+    //        row_1_start++;
+    //        row_2_start++;
+     //   } else if (col_ids[row_1_start] < col_ids[row_2_start]) {
+     //       result += values[row_1_start] * values[row_1_start];
+      //      row_1_start++;
+     //   } else {
+       //    result += values[row_2_start] * values[row_2_start];
+      //     row_2_start++;
+       // }
+   // }
+
+    // exploit assumtion that row 1 and row 2 have few non-zero dimensions in common
+    #pragma omp parallel sections
+    {
+        #pragma omp section  // sq.e.d. from row 1 to origin
+        {
+            #pragma omp parallel for
+            for (size_t i = row_1_start; i < row_1_end; ++i) {
+                #pragma omp atomic
+                result += values[i] * values[i];
+            }
+        }
+        #pragma omp section  // sq.e.d. from row 2 to origin
+        {
+            #pragma omp parallel for
+            for (size_t i = row_2_start; i < row_2_end; ++i) {
+                #pragma omp atomic
+                result += values[i] * values[i];
+            }
+        }
+        #pragma omp section
+        {
+             // adjust if shared non-zero entry; according to 2nd binom formula
+            #pragma omp parallel for collapse(2)
+            for (size_t i = row_1_start; i < row_1_end; ++i) {
+                for (size_t j = row_2_start; j < row_2_end; ++j) {
+                    if (col_ids[i] == col_ids[j]) {
+                        #pragma omp atomic
+                        result -= 2 * values[i] * values[j];
+                    }
+                }
+            }
+        }
+    }
+
     return result;
 }
 

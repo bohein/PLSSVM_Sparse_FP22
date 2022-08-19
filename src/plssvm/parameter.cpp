@@ -160,7 +160,7 @@ void parse_libsvm_content_sparse(const file_reader &f, const std::size_t start, 
                     pos = next_pos;
 
                     // write index-index-value tuple to line data
-                    vline.insert_element(index, i, value);
+                    vline.insert_element(index, 0, value);
                 }
                 if (vline.get_nnz() > 0) empty = false;
                 rows[i] = std::move(vline);
@@ -195,7 +195,7 @@ void parse_libsvm_content_sparse(const file_reader &f, const std::size_t start, 
 
 // TODO: parallelize (modifications to spm_formats.hpp/spm_formats.cpp likely necessary)
 template <typename real_type>
-void parse_libsvm_content_sparse_csr(const file_reader &f, const std::size_t start, plssvm::openmp::csr<real_type> &data, std::vector<real_type> &values) {
+void parse_libsvm_content_sparse(const file_reader &f, const std::size_t start, plssvm::openmp::csr<real_type> &data, std::vector<real_type> &values) {
     std::exception_ptr parallel_exception;
     std::vector<plssvm::openmp::csr<real_type>> rows(values.size());
     bool empty = true;
@@ -382,7 +382,7 @@ void parameter<T>::parse_libsvm_file_sparse(const std::string &filename, std::sh
 
 // read and parse a libsvm file sparse into csr
 template <typename T>
-void parameter<T>::parse_libsvm_file_sparse_csr(const std::string &filename, std::shared_ptr<const plssvm::openmp::csr<real_type>> &data_ptr_ref) {
+void parameter<T>::parse_libsvm_file_sparse(const std::string &filename, std::shared_ptr<const plssvm::openmp::csr<real_type>> &data_ptr_ref) {
     auto start_time = std::chrono::steady_clock::now();
 
     // set new filenames
@@ -397,7 +397,7 @@ void parameter<T>::parse_libsvm_file_sparse_csr(const std::string &filename, std
     plssvm::openmp::csr<real_type> data{};
     std::vector<real_type> value(f.num_lines());
 
-    detail::parse_libsvm_content_sparse_csr(f, 0, data, value);
+    detail::parse_libsvm_content_sparse(f, 0, data, value);
 
     // update gamma
     if (gamma == real_type{ 0.0 }) {
@@ -832,8 +832,8 @@ void parameter<T>::wrapper_for_parse_libsvm_content_sparse(const detail::file_re
 }
 
 template <typename T>
-void parameter<T>::wrapper_for_parse_libsvm_content_sparse_csr(const detail::file_reader &f, const std::size_t start, plssvm::openmp::csr<real_type> &data, std::vector<real_type> &values) {
-    detail::parse_libsvm_content_sparse_csr(f, start, data, values);
+void parameter<T>::wrapper_for_parse_libsvm_content_sparse(const detail::file_reader &f, const std::size_t start, plssvm::openmp::csr<real_type> &data, std::vector<real_type> &values) {
+    detail::parse_libsvm_content_sparse(f, start, data, values);
 }
 
 template <typename T>

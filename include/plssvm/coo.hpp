@@ -40,6 +40,25 @@ class coo {
         real_type get_element(const size_t col_id, const size_t row_id); // requires being sorted row-whise
 
         /**
+         * @brief Returns the dot-product of the two specified rows in the matrix
+         * 
+         * @param row_id_1 index of the first row
+         * @param row_id_2 index of the second row
+         * @return real_type dot-product of the two rows
+         */
+        real_type get_row_dot_product(const size_t row_id_1, const size_t row_id_2);
+
+        /**
+         * @brief Returns the squared euclidean distance of the two specified rows in the matrix
+         * 
+         * @param row_id_1 index of the first row
+         * @param row_id_2 index of the second row
+         * @return real_type squared euclidean distance of the two rows
+         */
+        real_type get_row_squared_euclidean_dist(const size_t row_id_1, const size_t row_id_2);
+
+
+        /**
          * @return size_t number of non-zero elements
          */
         size_t get_nnz() const {return nnz;}
@@ -87,12 +106,15 @@ class coo {
         size_t height;
         /// width of stored matrix
         size_t width;
+        /// saves number of added empty rows
+        size_t current_empty_rows;
         /// column indices of stored data values
         std::vector<size_t> col_ids;
         /// row indices of stored data values
         std::vector<size_t> row_ids;
         /// stored data values
         std::vector<real_type> values;
+        
 };
 
 }  // namespace plssvm::openmp
