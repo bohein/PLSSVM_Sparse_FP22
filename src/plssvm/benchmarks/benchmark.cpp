@@ -15,15 +15,15 @@ namespace plssvm::benchmarks {
 benchmark::benchmark(const std::string benchmark_name) : name{benchmark_name} {}
 
 std::string benchmark::data_to_csv() {
-    std::string csv = name + "\n" + "sub-benchmarks" + ',' + "mean (ms)" + ',' + "median (ms)" + ',' + "max (ms)" + "\n";
+    std::string csv = name + "\n" + "sub-benchmarks" + ',' + "mean (ms)" + ',' + "median (ms)" + ',' + "min (ms)" + "\n";
     if (sub_benchmark_names.size() == runtimes_mean.size()
         && sub_benchmark_names.size() == runtimes_median.size()
-        && sub_benchmark_names.size() == runtimes_max.size()) {
+        && sub_benchmark_names.size() == runtimes_min.size()) {
         for (size_t i = 0; i < sub_benchmark_names.size(); i++) {
             csv += sub_benchmark_names[i] + ',' 
             + std::to_string(runtimes_mean[i].count() / 1000000.0) + ',' 
             + std::to_string(runtimes_median[i].count() / 1000000.0) + ',' 
-            + std::to_string(runtimes_max[i].count() / 1000000.0)+ "\n";
+            + std::to_string(runtimes_min[i].count() / 1000000.0)+ "\n";
         }
     }
     return csv;

@@ -35,9 +35,9 @@ class benchmark {
         std::vector<std::string> sub_benchmark_names;
         std::vector<std::chrono::nanoseconds> runtimes_mean;
         std::vector<std::chrono::nanoseconds> runtimes_median;
-        std::vector<std::chrono::nanoseconds> runtimes_max;
+        std::vector<std::chrono::nanoseconds> runtimes_min;
 
-        uint64_t cycles = 1000;
+        uint64_t cycles = 100;
 
         benchmark();
 

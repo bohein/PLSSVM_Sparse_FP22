@@ -29,7 +29,8 @@ class benchmark_read_data : public benchmark {
         const std::string DATASET_TINY = "/home/schmidtm/PLSSVM/benchmark_data/iris.libsvm"; // https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass/iris.scale
         const std::string DATASET_SMALL = "/home/schmidtm/PLSSVM/benchmark_data/w3a.libsvm"; // https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary/w3a
         const std::string DATASET_MEDIUM = "/home/schmidtm/PLSSVM/benchmark_data/ijcnn1.libsvm"; // https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary/ijcnn1.bz2
-        const std::string DATASET_LARGE = "/home/schmidtm/PLSSVM/benchmark_data/skin_nonskin.libsvm";// https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary/skin_nonskin
+        const std::string DATASET_LARGE = "/home/schmidtm/PLSSVM/benchmark_data/skin_nonskin.libsvm"; // https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary/skin_nonskin
+        const std::string DATASET_HUGE = "/home/schmidtm/PLSSVM/benchmark_data/SUSY.libsvm"; // https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary/SUSY.xz
 };
 
 }  // namespace plssvm::benchmarks
