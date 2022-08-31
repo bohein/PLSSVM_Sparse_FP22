@@ -114,7 +114,7 @@ template <kernel_type kernel, typename real_type, typename... Args>
     } else if constexpr (kernel == kernel_type::rbf) {
         static_assert(sizeof...(args) == 1, "Illegal number of additional parameters! Must be 1.");
         const auto gamma = static_cast<real_type>(detail::get<0>(args...));
-        // TODO
+        return std::exp(-gamma * x.get_row_squared_euclidean_dist(i, j));
     } else {
         static_assert(detail::always_false_v<real_type>, "Unknown kernel type!");
     }
