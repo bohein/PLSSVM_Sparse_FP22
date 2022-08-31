@@ -21,6 +21,8 @@ namespace plssvm::benchmarks {
 
 class benchmark {
     public:
+        using real_type = double;
+
         benchmark(const std::string benchmark_name);
         virtual ~benchmark() {}
 

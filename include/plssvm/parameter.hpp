@@ -203,6 +203,10 @@ class parameter {
      */
     void parse_file(const std::string &filename, std::shared_ptr<const std::vector<std::vector<real_type>>> &data_ptr_ref);
 
+    void parse_file_coo(const std::string &filename, std::shared_ptr<const plssvm::openmp::coo<real_type>> &data_ptr_ref);
+
+    void parse_file_csr(const std::string &filename, std::shared_ptr<const plssvm::openmp::csr<real_type>> &data_ptr_ref);
+
     /**
      * @brief Parse the given file as training data. If the file is in the arff format (has the `.arff` extension), the arff parser is used, otherwise the LIBSVM parser is used.
      * @details Saves the data to the member variable #data_ptr.
