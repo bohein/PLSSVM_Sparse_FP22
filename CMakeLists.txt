@@ -47,6 +47,7 @@ set(PLSSVM_BASE_SOURCES
     ## Benchmarks
     ${CMAKE_CURRENT_SOURCE_DIR}/src/plssvm/benchmarks/benchmark.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/plssvm/benchmarks/benchmark_read_data.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/plssvm/benchmarks/benchmark_kernel_openmp.cpp
 )
 
 ## create base library: linked against all backend libraries

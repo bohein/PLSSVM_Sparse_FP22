@@ -5,7 +5,7 @@
  * @license This file is part of the PLSSVM project which is released under the MIT license.
  *          See the LICENSE.md file in the project root for full license information.
  *
- * @brief Defines the base class for benchmarks reagrding reading and storing of test data into different (sparse) data structures.
+ * @brief Defines the base class for benchmarks reagrding kernel functions.
  */
 
 #pragma once
@@ -16,9 +16,9 @@
 
 namespace plssvm::benchmarks {
 
-class benchmark_read_data : public benchmark {
+class benchmark_kernel_openmp : public benchmark {
     public:
-        benchmark_read_data();
+        benchmark_kernel_openmp();
         void run() override;
 
     protected:
