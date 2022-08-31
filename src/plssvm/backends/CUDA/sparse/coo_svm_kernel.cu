@@ -67,7 +67,7 @@ __global__ void device_kernel_radial(const real_type *q, real_type *ret, const r
     kernel_index_type row_id_i = static_cast<kernel_index_type>(row_ids[i]);
     kernel_index_type row_id_j = static_cast<kernel_index_type>(row_ids[j]);
 
-    const real_type temp = (pow(-gamma * pow(values[i] - values[j], 2)) + QA_cost - q[row_id_i] - q[row_id_j]) * add;
+    const real_type temp = (exp(-gamma * pow(values[i] - values[j], 2)) + QA_cost - q[row_id_i] - q[row_id_j]) * add;
     if (i == j) {
         ret[row_id_i] += (temp + cost * add) * d[row_id_i];
     } else {
