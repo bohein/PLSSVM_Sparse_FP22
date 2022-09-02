@@ -198,13 +198,13 @@ TYPED_TEST(SparseMatrix, coo_append) {
     expected_matrix.insert_element(0, 0, 1.0);
     expected_matrix.insert_element(2, 0, 2.0);
     expected_matrix.insert_element(2, 2, 3.0);
-    expected_matrix.insert_element(1, 1, 4.0);
-    expected_matrix.insert_element(3, 4, 5.0);
+    expected_matrix.insert_element(1, 4, 4.0);
+    expected_matrix.insert_element(3, 7, 5.0);
 
     EXPECT_TRUE(actual_matrix == expected_matrix);
 }
 
-TYPED_TEST(SparseMatrix, parameter_parse_libsvm_content) {
+TYPED_TEST(SparseMatrix, parameter_parse_libsvm_content_coo) {
     // create parameter object
     plssvm::parameter<TypeParam> params;
 
@@ -231,7 +231,7 @@ TYPED_TEST(SparseMatrix, parameter_parse_libsvm_content) {
     EXPECT_EQ(actual_values, expected_values);
 }
 
-TYPED_TEST(SparseMatrix, parameter_parse_libsvm_file_sparse) {
+TYPED_TEST(SparseMatrix, parameter_parse_libsvm_file_coo) {
     // create parameter object
     plssvm::parameter<TypeParam> params;
 
@@ -357,13 +357,13 @@ TYPED_TEST(SparseMatrix, parameter_parse_libsvm_content_csr) {
     plssvm::openmp::csr<real_type> actual_data{};
     std::vector<real_type> actual_values(f.num_lines());
 
-    params.wrapper_for_parse_libsvm_content_sparse_csr(f, 0, actual_data, actual_values);
+    params.wrapper_for_parse_libsvm_content_sparse(f, 0, actual_data, actual_values);
 
     EXPECT_TRUE(actual_data == expected_data);
     EXPECT_EQ(actual_values, expected_values);
 }
 
-TYPED_TEST(SparseMatrix, parameter_parse_libsvm_file_sparse_csr) {
+TYPED_TEST(SparseMatrix, parameter_parse_libsvm_file_csr) {
     // create parameter object
     plssvm::parameter<TypeParam> params;
 
@@ -382,7 +382,7 @@ TYPED_TEST(SparseMatrix, parameter_parse_libsvm_file_sparse_csr) {
     plssvm::openmp::csr<real_type> actual_data{};
     std::shared_ptr<const plssvm::openmp::csr<real_type>> actual_data_ptr = std::make_shared<const plssvm::openmp::csr<real_type>>(std::move(actual_data));
 
-    params.parse_libsvm_file_sparse_csr(PLSSVM_TEST_PATH  "/data/libsvm/5x4.sparse.libsvm", actual_data_ptr);
+    params.parse_libsvm_file_sparse(PLSSVM_TEST_PATH  "/data/libsvm/5x4.sparse.libsvm", actual_data_ptr);
 
     expected_data = *expected_data_ptr.get();
     actual_data = *actual_data_ptr.get();

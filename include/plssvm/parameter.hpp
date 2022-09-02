@@ -122,7 +122,7 @@ class parameter {
      */
     void parse_libsvm_file_sparse(const std::string &filename, std::shared_ptr<const plssvm::openmp::coo<real_type>> &data_ptr_ref);
 
-    void parse_libsvm_file_sparse_csr(const std::string &filename, std::shared_ptr<const plssvm::openmp::csr<real_type>> &data_ptr_ref);
+    void parse_libsvm_file_sparse(const std::string &filename, std::shared_ptr<const plssvm::openmp::csr<real_type>> &data_ptr_ref);
     /**
      * @brief Parse a file in the [arff file format](https://www.cs.waikato.ac.nz/ml/weka/arff.html).
      * @details The arff file format saves each data point with its respective class as follows:
@@ -275,7 +275,7 @@ class parameter {
   /**
    * @brief Wrapper for parse_libsvm_content_sparse_csr() for testing purposes
    */
-  void wrapper_for_parse_libsvm_content_sparse_csr(const detail::file_reader &f, const std::size_t start, plssvm::openmp::csr<real_type> &data, std::vector<real_type> &values);
+  void wrapper_for_parse_libsvm_content_sparse(const detail::file_reader &f, const std::size_t start, plssvm::openmp::csr<real_type> &data, std::vector<real_type> &values);
 
   protected:
     /**
