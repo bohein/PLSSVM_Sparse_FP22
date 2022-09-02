@@ -15,6 +15,7 @@
 
 namespace plssvm::openmp {
 
+// dense
 template <typename real_type>
 void device_kernel_q_linear(std::vector<real_type> &q, const std::vector<std::vector<real_type>> &data) {
     PLSSVM_ASSERT(q.size() == data.size() - 1, "Sizes mismatch!: {} != {}", q.size(), data.size() - 1);
@@ -27,6 +28,20 @@ void device_kernel_q_linear(std::vector<real_type> &q, const std::vector<std::ve
 template void device_kernel_q_linear(std::vector<float> &, const std::vector<std::vector<float>> &);
 template void device_kernel_q_linear(std::vector<double> &, const std::vector<std::vector<double>> &);
 
+// coo
+template <typename real_type>
+void device_kernel_q_linear(std::vector<real_type> &q, const coo<real_type> &data) {
+    PLSSVM_ASSERT(q.size() == data.get_height() - 1, "Sizes mismatch!: {} != {}", q.size(), data.get_height() - 1);
+
+    #pragma omp parallel for
+    for (size_t i = 0; i < data.get_height() - 1; ++i) {
+        q[i] = data.get_row_dot_product(i, data.get_height() - 1);
+    }
+}
+template void device_kernel_q_linear(std::vector<float> &, const coo<float> &);
+template void device_kernel_q_linear(std::vector<double> &, const coo<double> &);
+
+// dense
 template <typename real_type>
 void device_kernel_q_poly(std::vector<real_type> &q, const std::vector<std::vector<real_type>> &data, const int degree, const real_type gamma, const real_type coef0) {
     PLSSVM_ASSERT(q.size() == data.size() - 1, "Sizes mismatch!: {} != {}", q.size(), data.size() - 1);
@@ -39,6 +54,20 @@ void device_kernel_q_poly(std::vector<real_type> &q, const std::vector<std::vect
 template void device_kernel_q_poly(std::vector<float> &, const std::vector<std::vector<float>> &, const int, const float, const float);
 template void device_kernel_q_poly(std::vector<double> &, const std::vector<std::vector<double>> &, const int, const double, const double);
 
+// coo
+template <typename real_type>
+void device_kernel_q_poly(std::vector<real_type> &q, const coo<real_type> &data, const int degree, const real_type gamma, const real_type coef0) {
+    PLSSVM_ASSERT(q.size() == data.get_height() - 1, "Sizes mismatch!: {} != {}", q.size(), data.get_height() - 1);
+
+    #pragma omp parallel for
+    for (size_t i = 0; i < data.get_height() - 1; ++i) {
+        q[i] = std::pow(std::fma(gamma, (data.get_row_dot_product(i, data.get_height() - 1)), coef0), degree);
+    }
+}
+template void device_kernel_q_poly(std::vector<float> &, const coo<float> &, const int, const float, const float);
+template void device_kernel_q_poly(std::vector<double> &, const coo<double> &, const int, const double, const double);
+
+// dense
 template <typename real_type>
 void device_kernel_q_radial(std::vector<real_type> &q, const std::vector<std::vector<real_type>> &data, const real_type gamma) {
     PLSSVM_ASSERT(q.size() == data.size() - 1, "Sizes mismatch!: {} != {}", q.size(), data.size() - 1);
@@ -50,5 +79,18 @@ void device_kernel_q_radial(std::vector<real_type> &q, const std::vector<std::ve
 }
 template void device_kernel_q_radial(std::vector<float> &, const std::vector<std::vector<float>> &, const float);
 template void device_kernel_q_radial(std::vector<double> &, const std::vector<std::vector<double>> &, const double);
+
+// coo
+template <typename real_type>
+void device_kernel_q_radial(std::vector<real_type> &q, const coo<real_type> &data, const real_type gamma) {
+    PLSSVM_ASSERT(q.size() == data.get_height() - 1, "Sizes mismatch!: {} != {}", q.size(), data.get_height() - 1);
+
+    #pragma omp parallel for
+    for (size_t i = 0; i < data.get_height() - 1; ++i) {
+        q[i] = std::exp(-gamma * data.get_row_squared_euclidean_dist(i, data.get_height() - 1));
+    }
+}
+template void device_kernel_q_radial(std::vector<float> &, const coo<float> &, const float);
+template void device_kernel_q_radial(std::vector<double> &, const coo<double> &, const double);
 
 }  // namespace plssvm::openmp

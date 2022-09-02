@@ -37,7 +37,7 @@ class coo {
          * @param row_id row index of requested value
          * @return real_type data value stored at given indices
          */
-        real_type get_element(const size_t col_id, const size_t row_id); // requires being sorted row-wise
+        real_type get_element(const size_t col_id, const size_t row_id) const; // requires being sorted row-wise
 
         /**
          * @brief Get a coo object containing the specified row. Returns an empty object if row is empty.
@@ -45,7 +45,7 @@ class coo {
          * @param row_id index of requested row
          * @return coo object containing one row
          */
-        plssvm::openmp::coo<T> get_row(const size_t row_id); // requires being grouped row-wise
+        plssvm::openmp::coo<T> get_row(const size_t row_id) const; // requires being grouped row-wise
 
         /**
          * @brief Returns the dot-product of the two specified rows in the matrix
@@ -54,7 +54,7 @@ class coo {
          * @param row_id_2 index of the second row
          * @return real_type dot-product of the two rows
          */
-        real_type get_row_dot_product(const size_t row_id_1, const size_t row_id_2);
+        real_type get_row_dot_product(const size_t row_id_1, const size_t row_id_2) const;
 
         /**
          * @brief Returns the squared euclidean distance of the two specified rows in the matrix
@@ -63,7 +63,7 @@ class coo {
          * @param row_id_2 index of the second row
          * @return real_type squared euclidean distance of the two rows
          */
-        real_type get_row_squared_euclidean_dist(const size_t row_id_1, const size_t row_id_2);
+        real_type get_row_squared_euclidean_dist(const size_t row_id_1, const size_t row_id_2) const;
 
         /**
          * @return size_t number of non-zero elements

@@ -49,37 +49,66 @@ void benchmark_q_kernel_openmp::evaluate_dataset(const std::string sub_benchmark
     std::vector<ns> raw_runtimes_dense_poly;
     std::vector<ns> raw_runtimes_dense_radial;
     params.parse_libsvm_file(path_to_dataset, data_ptr_dense);
-    fmt::print(std::to_string(data_ptr_dense->size()));
     for(size_t i = 0; i < cycles; i++) {
         std::vector<real_type> q(data_ptr_dense->size() - 1); // q-Vector
 
         // linear
-        fmt::print("dense (linear) " + std::to_string(i) + "/" + std::to_string(cycles) + "\n");
+        fmt::print("dense (linear) " + std::to_string(i) + "/" + std::to_string(cycles) + " (");
         start_time = std::chrono::high_resolution_clock::now();
         plssvm::openmp::device_kernel_q_linear<real_type>(q, *data_ptr_dense);
         end_time = std::chrono::high_resolution_clock::now();
         raw_runtimes_dense_linear.push_back(std::chrono::round<ns>(end_time - start_time));
+        fmt::print(std::to_string(std::chrono::round<ns>(end_time - start_time).count()/1000000) + "ms)\n");
 
         // polynomial
-        fmt::print("dense (polynomial) " + std::to_string(i) + "/" + std::to_string(cycles) + "\n");
+        fmt::print("dense (polynomial) " + std::to_string(i) + "/" + std::to_string(cycles) + " (");
         start_time = std::chrono::high_resolution_clock::now();
         plssvm::openmp::device_kernel_q_poly<real_type>(q, *data_ptr_dense, degree, gamma, coef0);
         end_time = std::chrono::high_resolution_clock::now();
         raw_runtimes_dense_poly.push_back(std::chrono::round<ns>(end_time - start_time));
+        fmt::print(std::to_string(std::chrono::round<ns>(end_time - start_time).count()) + "ms)\n");
 
         // radial
-        fmt::print("dense (radial) " + std::to_string(i) + "/" + std::to_string(cycles) + "\n");
+        fmt::print("dense (radial) " + std::to_string(i) + "/" + std::to_string(cycles) + " (");
         start_time = std::chrono::high_resolution_clock::now();
         plssvm::openmp::device_kernel_q_radial<real_type>(q, *data_ptr_dense, gamma);
         end_time = std::chrono::high_resolution_clock::now();
         raw_runtimes_dense_radial.push_back(std::chrono::round<ns>(end_time - start_time));
+        fmt::print(std::to_string(std::chrono::round<ns>(end_time - start_time).count()/1000000) + "ms)\n");
     }
     
     // coo
     std::vector<ns> raw_runtimes_coo_linear;
     std::vector<ns> raw_runtimes_coo_poly;
     std::vector<ns> raw_runtimes_coo_radial;
-    // TODO: implement 
+    params.parse_libsvm_file_sparse(path_to_dataset, data_ptr_coo);
+    for(size_t i = 0; i < cycles; i++) {
+        std::vector<real_type> q(data_ptr_coo->get_height() - 1); // q-Vector
+
+        // linear
+        fmt::print("coo (linear) " + std::to_string(i) + "/" + std::to_string(cycles) + " (");
+        start_time = std::chrono::high_resolution_clock::now();
+        plssvm::openmp::device_kernel_q_linear<real_type>(q, *data_ptr_coo);
+        end_time = std::chrono::high_resolution_clock::now();
+        raw_runtimes_coo_linear.push_back(std::chrono::round<ns>(end_time - start_time));
+        fmt::print(std::to_string(std::chrono::round<ns>(end_time - start_time).count()/1000000) + "ms)\n");
+
+        // polynomial
+        fmt::print("coo (polynomial) " + std::to_string(i) + "/" + std::to_string(cycles) + " (");
+        start_time = std::chrono::high_resolution_clock::now();
+        plssvm::openmp::device_kernel_q_poly<real_type>(q, *data_ptr_coo, degree, gamma, coef0);
+        end_time = std::chrono::high_resolution_clock::now();
+        raw_runtimes_coo_poly.push_back(std::chrono::round<ns>(end_time - start_time));
+        fmt::print(std::to_string(std::chrono::round<ns>(end_time - start_time).count()/1000000) + "ms)\n");
+
+        // radial
+        fmt::print("coo (radial) " + std::to_string(i) + "/" + std::to_string(cycles) + " (");
+        start_time = std::chrono::high_resolution_clock::now();
+        plssvm::openmp::device_kernel_q_radial<real_type>(q, *data_ptr_coo, gamma);
+        end_time = std::chrono::high_resolution_clock::now();
+        raw_runtimes_coo_radial.push_back(std::chrono::round<ns>(end_time - start_time));
+        fmt::print(std::to_string(std::chrono::round<ns>(end_time - start_time).count()/1000000) + "ms)\n");
+    }
 
     // csr
     std::vector<ns> raw_runtimes_csr_linear;
@@ -88,18 +117,21 @@ void benchmark_q_kernel_openmp::evaluate_dataset(const std::string sub_benchmark
     // TODO: implement 
     
     sub_benchmark_names.push_back(sub_benchmark_name + "dense (linear)");
-    //sub_benchmark_names.push_back(sub_benchmark_name + " COO (linear)");
+    sub_benchmark_names.push_back(sub_benchmark_name + " COO (linear)");
     //sub_benchmark_names.push_back(sub_benchmark_name + " CSR (linear)");
     sub_benchmark_names.push_back(sub_benchmark_name + "dense (polynomial)");
-    //sub_benchmark_names.push_back(sub_benchmark_name + " COO (polynomial)");
+    sub_benchmark_names.push_back(sub_benchmark_name + " COO (polynomial)");
     //sub_benchmark_names.push_back(sub_benchmark_name + " CSR (polynomial)");
     sub_benchmark_names.push_back(sub_benchmark_name + "dense (radial)");
-    //sub_benchmark_names.push_back(sub_benchmark_name + " COO (radial)");
+    sub_benchmark_names.push_back(sub_benchmark_name + " COO (radial)");
     //sub_benchmark_names.push_back(sub_benchmark_name + " CSR (radial)");
     auto sub_benchmark_runtimes = std::vector<std::vector<ns>>{
         raw_runtimes_dense_linear,
+        raw_runtimes_coo_linear,
         raw_runtimes_dense_poly,
-        raw_runtimes_dense_radial};
+        raw_runtimes_coo_poly,
+        raw_runtimes_dense_radial,
+        raw_runtimes_coo_radial};
     perform_statistics(sub_benchmark_runtimes);
 }
 

@@ -49,9 +49,9 @@ void coo<T>::append(const coo<real_type> &other) {
 }
 
 template <typename T>
-T coo<T>::get_element(const size_t col_id, const size_t row_id) {
+T coo<T>::get_element(const size_t col_id, const size_t row_id) const {
     // get iterator to index of first occurence of row_id
-    std::vector<size_t>::iterator first_occurance_it_rows = std::find(row_ids.begin(), row_ids.end(), row_id); // potentially use binary search
+    auto first_occurance_it_rows = std::find(row_ids.begin(), row_ids.end(), row_id); // potentially use binary search
 
     // case: no occurances found or "out of bounds" case
     if (first_occurance_it_rows == row_ids.end()) {
@@ -60,7 +60,7 @@ T coo<T>::get_element(const size_t col_id, const size_t row_id) {
     // case: first occurence found
     else {
         // get iterator to found index, but in col_ids
-        std::vector<size_t>::iterator first_occurance_it_cols = col_ids.begin() + (first_occurance_it_rows - row_ids.begin());
+        auto first_occurance_it_cols = col_ids.begin() + (first_occurance_it_rows - row_ids.begin());
 
         // check col_ids / row_ids for valid (col_id, row_id) pair until one is either found or confirmed nonexistent
         for (; first_occurance_it_rows != row_ids.end() && *first_occurance_it_rows == row_id; first_occurance_it_rows++)
@@ -82,7 +82,7 @@ T coo<T>::get_element(const size_t col_id, const size_t row_id) {
 }
 
 template <typename T>
-plssvm::openmp::coo<T> coo<T>::get_row(const size_t row_id) {
+plssvm::openmp::coo<T> coo<T>::get_row(const size_t row_id) const {
     size_t i = 0;
     size_t first_occurance = 0;
     size_t last_occurance = 0;
@@ -119,7 +119,7 @@ plssvm::openmp::coo<T> coo<T>::get_row(const size_t row_id) {
 }
 
 template <typename T>
-T coo<T>::get_row_dot_product(const size_t row_id_1, const size_t row_id_2) {
+T coo<T>::get_row_dot_product(const size_t row_id_1, const size_t row_id_2) const {
     // ensure row_id_1 <= row_id_2
     if (row_id_1 > row_id_2)
         return get_row_dot_product(row_id_2, row_id_1);
@@ -163,7 +163,7 @@ T coo<T>::get_row_dot_product(const size_t row_id_1, const size_t row_id_2) {
 }
 
 template <typename T>
-T coo<T>::get_row_squared_euclidean_dist(const size_t row_id_1, const size_t row_id_2) {
+T coo<T>::get_row_squared_euclidean_dist(const size_t row_id_1, const size_t row_id_2) const {
     // ensure row_id_1 <= row_id_2
     if (row_id_1 > row_id_2)
         return get_row_squared_euclidean_dist(row_id_2, row_id_1);
