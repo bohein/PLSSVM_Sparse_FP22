@@ -77,7 +77,7 @@ void benchmark_read_data::evaluate_dataset(const std::string sub_benchmark_name,
     std::vector<ns> raw_runtimes_csr;
     for(size_t i = 0; i < cycles; i++) {
         std::chrono::time_point start_time = std::chrono::high_resolution_clock::now();
-        params.parse_libsvm_file_sparse_csr(path_to_dataset, data_ptr_csr);
+        params.parse_libsvm_file_sparse(path_to_dataset, data_ptr_csr);
         std::chrono::time_point end_time = std::chrono::high_resolution_clock::now();
         raw_runtimes_csr.push_back(std::chrono::round<ns>(end_time - start_time));
     }

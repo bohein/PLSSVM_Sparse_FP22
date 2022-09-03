@@ -5,7 +5,7 @@
  * @license This file is part of the PLSSVM project which is released under the MIT license.
  *          See the LICENSE.md file in the project root for full license information.
  *
- * @brief Defines data structure for sparse matrices in COO format
+ * @brief Defines data structure for sparse matrices in CSR format
  */
 #include <algorithm>
 #include <iterator>
@@ -73,7 +73,7 @@ void csr<T>::append(const csr<real_type> &other) {
 }
 
 template <typename T>
-T csr<T>::get_element(const size_t col_id, const size_t row_id) {
+T csr<T>::get_element(const size_t col_id, const size_t row_id) const {
     // case: out of bounds
     if (row_id + 1 > height) {
         return static_cast<real_type>(0);
@@ -99,7 +99,7 @@ T csr<T>::get_element(const size_t col_id, const size_t row_id) {
 }
 
 template <typename T>
-T csr<T>::get_row_dot_product(const size_t row_id_1, const size_t row_id_2) {
+T csr<T>::get_row_dot_product(const size_t row_id_1, const size_t row_id_2) const {
     T result = 0;
 
     // get borders of row 1
@@ -141,7 +141,7 @@ T csr<T>::get_row_dot_product(const size_t row_id_1, const size_t row_id_2) {
 }
 
 template <typename T>
-T csr<T>::get_row_squared_euclidean_dist(const size_t row_id_1, const size_t row_id_2){
+T csr<T>::get_row_squared_euclidean_dist(const size_t row_id_1, const size_t row_id_2) const {
     if (row_id_1 == row_id_2)
         return 0;
 

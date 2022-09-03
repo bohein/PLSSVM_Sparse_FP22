@@ -43,7 +43,7 @@ class benchmark {
         std::vector<ns> runtimes_variance;
         std::vector<ns> runtimes_std_deviation;
 
-        uint64_t cycles = 100;
+        uint64_t cycles = 10;
 
         benchmark();
 
