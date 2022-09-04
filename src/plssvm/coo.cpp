@@ -97,39 +97,77 @@ plssvm::openmp::coo<T> coo<T>::get_row(const size_t row_id) const {
 
 template <typename T>
 T coo<T>::get_row_dot_product(const size_t row_id_1, const size_t row_id_2) const {
-    // ensure row_id_1 <= row_id_2
-    if (row_id_1 > row_id_2)
-        return get_row_dot_product(row_id_2, row_id_1);
+    T result = 0.0;
 
-    T result = 0;
-    size_t index = 0;
+    if (row_id_1 >= height || row_id_2 >= height)
+        return result;
 
-    // find start and end of row 1
-    for (; index < row_ids.size() && row_ids[index] != row_id_1; ++index);
-    size_t row_1_start = index;
+    size_t row_1_approx = nnz * row_id_1 / height;
+    size_t row_2_approx = nnz * row_id_2 / height;
+    size_t row_1_first = 0;
+    size_t row_2_first = 0;
+    size_t row_1_last = 0;
+    size_t row_2_last = 0;
 
-    for (; index < row_ids.size() && row_ids[index] == row_id_1; ++index);
-    size_t row_1_end = index;
+    #pragma omp parallel sections
+    {
+        // get borders of row 1
+        #pragma omp section
+        {
+            if (row_ids[row_1_approx] == row_id_1) {
+                // row_1_approx is within desired row
+                for (row_1_first = row_1_approx; row_1_first < nnz && row_ids[row_1_first] == row_id_1; --row_1_first);
+                row_1_first++;
+                
+                for (row_1_last = row_1_approx; row_1_last < nnz && row_ids[row_1_last] == row_id_1; ++row_1_last);
+                row_1_last--;
+            } else if (row_ids[row_1_approx] < row_id_1) {
+                // row_1_approx is left of desired row
+                for (row_1_first = row_1_approx; row_1_first < nnz && row_ids[row_1_first] < row_id_1; ++row_1_first);
 
-    // find start and end of row 2
-    size_t row_2_start = row_1_start;
-    size_t row_2_end = row_1_end;
+                for (row_1_last = row_1_first; row_1_last < nnz && row_ids[row_1_last] == row_id_1; ++row_1_last);
+                row_1_last++;
+            } else {
+                // row_1_approx is right of desired row
+                for (row_1_last = row_1_approx; row_1_last < nnz && row_ids[row_1_last] > row_id_1; --row_1_last);
 
-    if (row_id_1 != row_id_2) {
-        for (; index < row_ids.size() && row_ids[index] != row_id_2; ++index);
-        row_2_start = index;
+                for (row_1_first = row_1_last; row_1_first < nnz && row_ids[row_1_first] > row_id_1; ++row_1_first);
+                row_1_first--;
+            }
+        }
+        // get borders of row 2
+        #pragma omp section
+        {
+            if (row_ids[row_2_approx] == row_id_2) {
+                // row_2_approx is within desired row
+                for (row_2_first = row_2_approx; row_2_first < nnz && row_ids[row_2_first] == row_id_2; --row_2_first);
+                row_2_first++;
+                
+                for (row_2_last = row_2_approx; row_2_last < nnz && row_ids[row_2_last] == row_id_2; ++row_2_last);
+                row_2_last--;
+            } else if (row_ids[row_2_approx] < row_id_2) {
+                // row_2_approx is left of desired row
+                for (row_2_first = row_2_approx; row_2_first < nnz && row_ids[row_2_first] < row_id_2; ++row_2_first);
 
-        for (; index < row_ids.size() && row_ids[index] == row_id_2; ++index);
-        row_2_end = index;
+                for (row_2_last = row_2_first; row_2_last < nnz && row_ids[row_2_last] == row_id_2; ++row_2_last);
+                row_2_last++;
+            } else {
+                // row_2_approx is right of desired row
+                for (row_2_last = row_2_approx; row_2_last < nnz && row_ids[row_2_last] > row_id_2; --row_2_last);
+
+                for (row_2_first = row_2_last; row_2_first < nnz && row_ids[row_2_first] > row_id_2; ++row_2_first);
+                row_2_first--;
+            }
+        }
     }
 
     // one row is empty
-    if (row_1_start == row_ids.size() || row_2_start == row_ids.size())
+    if (row_ids[row_1_first] != row_id_1 || row_ids[row_2_first] != row_id_2)
         return result;
 
-    #pragma omp parallel for collapse(2)
-    for (size_t i = row_1_start; i < row_1_end; ++i) {
-        for (size_t j = row_2_start; j < row_2_end; ++j) {
+    #pragma omp parallel for collapse(2) ordered
+    for (size_t i = row_1_first; i <= row_1_last; ++i) {
+        for (size_t j = row_2_first; j <= row_2_last; ++j) {
             if (col_ids[i] == col_ids[j]) {
                 #pragma omp atomic
                 result += values[i] * values[j];
@@ -141,33 +179,68 @@ T coo<T>::get_row_dot_product(const size_t row_id_1, const size_t row_id_2) cons
 
 template <typename T>
 T coo<T>::get_row_squared_euclidean_dist(const size_t row_id_1, const size_t row_id_2) const {
-    // ensure row_id_1 <= row_id_2
-    if (row_id_1 > row_id_2)
-        return get_row_squared_euclidean_dist(row_id_2, row_id_1);
-    
+    T result = 0.0;
+
     if (row_id_1 == row_id_2)
-        return 0;
+        return result;
 
-    T result = 0;
-    size_t index = 0;
+    size_t row_1_approx = nnz * row_id_1 / height;
+    size_t row_2_approx = nnz * row_id_2 / height;
+    size_t row_1_first = 0;
+    size_t row_2_first = 0;
+    size_t row_1_last = 0;
+    size_t row_2_last = 0;
 
-    // find start and end of row 1
-    for (; index < row_ids.size() && row_ids[index] != row_id_1; ++index);
-    size_t row_1_start = index;
+    #pragma omp parallel sections
+    {
+        // get borders of row 1
+        #pragma omp section
+        {
+            if (row_ids[row_1_approx] == row_id_1) {
+                // row_1_approx is within desired row
+                for (row_1_first = row_1_approx; row_1_first < nnz && row_ids[row_1_first] == row_id_1; --row_1_first);
+                row_1_first++;
+                
+                for (row_1_last = row_1_approx; row_1_last < nnz && row_ids[row_1_last] == row_id_1; ++row_1_last);
+                row_1_last--;
+            } else if (row_ids[row_1_approx] < row_id_1) {
+                // row_1_approx is left of desired row
+                for (row_1_first = row_1_approx; row_1_first < nnz && row_ids[row_1_first] < row_id_1; ++row_1_first);
 
-    for (; index < row_ids.size() && row_ids[index] == row_id_1; ++index);
-    size_t row_1_end = index;
+                for (row_1_last = row_1_first; row_1_last < nnz && row_ids[row_1_last] == row_id_1; ++row_1_last);
+                row_1_last++;
+            } else {
+                // row_1_approx is right of desired row
+                for (row_1_last = row_1_approx; row_1_last < nnz && row_ids[row_1_last] > row_id_1; --row_1_last);
 
-    // find start and end of row 2
-    size_t row_2_start = row_1_start;
-    size_t row_2_end = row_1_end;
+                for (row_1_first = row_1_last; row_1_first < nnz && row_ids[row_1_first] > row_id_1; ++row_1_first);
+                row_1_first--;
+            }
+        }
+        // get borders of row 2
+        #pragma omp section
+        {
+            if (row_ids[row_2_approx] == row_id_2) {
+                // row_2_approx is within desired row
+                for (row_2_first = row_2_approx; row_2_first < nnz && row_ids[row_2_first] == row_id_2; --row_2_first);
+                row_2_first++;
+                
+                for (row_2_last = row_2_approx; row_2_last < nnz && row_ids[row_2_last] == row_id_2; ++row_2_last);
+                row_2_last--;
+            } else if (row_ids[row_2_approx] < row_id_2) {
+                // row_2_approx is left of desired row
+                for (row_2_first = row_2_approx; row_2_first < nnz && row_ids[row_2_first] < row_id_2; ++row_2_first);
 
-    if (row_id_1 != row_id_2) {
-        for (; index < row_ids.size() && row_ids[index] != row_id_2; ++index);
-        row_2_start = index;
+                for (row_2_last = row_2_first; row_2_last < nnz && row_ids[row_2_last] == row_id_2; ++row_2_last);
+                row_2_last++;
+            } else {
+                // row_2_approx is right of desired row
+                for (row_2_last = row_2_approx; row_2_last < nnz && row_ids[row_2_last] > row_id_2; --row_2_last);
 
-        for (; index < row_ids.size() && row_ids[index] == row_id_2; ++index);
-        row_2_end = index;
+                for (row_2_first = row_2_last; row_2_first < nnz && row_ids[row_2_first] > row_id_2; ++row_2_first);
+                row_2_first--;
+            }
+        }
     }
 
     // exploit assumtion that row 1 and row 2 have few non-zero dimensions in common
@@ -176,7 +249,7 @@ T coo<T>::get_row_squared_euclidean_dist(const size_t row_id_1, const size_t row
         #pragma omp section  // sq.e.d. from row 1 to origin
         {
             #pragma omp parallel for
-            for (size_t i = row_1_start; i < row_1_end; ++i) {
+            for (size_t i = row_1_first; i <= row_1_last; ++i) {
                 #pragma omp atomic
                 result += values[i] * values[i];
             }
@@ -184,21 +257,23 @@ T coo<T>::get_row_squared_euclidean_dist(const size_t row_id_1, const size_t row
         #pragma omp section  // sq.e.d. from row 2 to origin
         {
             #pragma omp parallel for
-            for (size_t i = row_2_start; i < row_2_end; ++i) {
+            for (size_t i = row_2_first; i <= row_2_last; ++i) {
                 #pragma omp atomic
                 result += values[i] * values[i];
             }
         }
-    }
-
-    // adjust if shared non-zero entry; according to 2nd binom formula
-    #pragma omp parallel for collapse(2)
-    for (size_t i = row_1_start; i < row_1_end; ++i) {
-        for (size_t j = row_2_start; j < row_2_end; ++j) {
-            if (col_ids[i] == col_ids[j]) {
-                #pragma omp atomic
-                result -= 2 * values[i] * values[j];
+        #pragma omp section  // sq.e.d. from row 2 to origin
+        {
+        // adjust if shared non-zero entry; according to 2nd binom formula
+        #pragma omp parallel for collapse(2)
+        for (size_t i = row_1_first; i <= row_1_last; ++i) {
+            for (size_t j = row_2_first; j <= row_2_last; ++j) {
+                if (col_ids[i] == col_ids[j]) {
+                    #pragma omp atomic
+                    result -= 2 * values[i] * values[j];
+                }
             }
+        }
         }
     }
 

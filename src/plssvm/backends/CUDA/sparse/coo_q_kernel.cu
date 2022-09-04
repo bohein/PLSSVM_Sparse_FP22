@@ -7,8 +7,8 @@
 
 #include "plssvm/backends/CUDA/sparse/coo_q_kernel.cuh"
 
+// UNTESTED
 namespace plssvm::cuda {
-
 template <typename real_type>
 __global__ void device_kernel_q_linear(real_type *q, const kernel_index_type *col_ids, const kernel_index_type *row_ids, const real_type *values, const kernel_index_type last_row_begin) {
     const kernel_index_type row_index = blockIdx.x * blockDim.x + threadIdx.x;
