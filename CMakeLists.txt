@@ -48,8 +48,10 @@ set(PLSSVM_BASE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/plssvm/benchmarks/benchmark.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/plssvm/benchmarks/benchmark_read_data.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/plssvm/benchmarks/benchmark_q_kernel_openmp.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/plssvm/benchmarks/benchmark_svm_kernel_openmp.cpp
     ## Temporary, till we have a better solution
     ${CMAKE_CURRENT_SOURCE_DIR}/src/plssvm/backends/OpenMP/q_kernel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/plssvm/backends/OpenMP/svm_kernel.cpp
 )
 
 ## create base library: linked against all backend libraries

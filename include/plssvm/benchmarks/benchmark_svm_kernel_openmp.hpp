@@ -5,7 +5,7 @@
  * @license This file is part of the PLSSVM project which is released under the MIT license.
  *          See the LICENSE.md file in the project root for full license information.
  *
- * @brief Defines the base class for benchmarks reagrding q-kernel functions.
+ * @brief Defines the base class for benchmarks reagrding svm-kernel functions.
  */
 
 #pragma once
@@ -16,13 +16,17 @@
 
 namespace plssvm::benchmarks {
 
-class benchmark_q_kernel_openmp : public benchmark {
+class benchmark_svm_kernel_openmp : public benchmark {
     public:
-        benchmark_q_kernel_openmp();
+        benchmark_svm_kernel_openmp();
         void run() override;
 
     protected:
         void evaluate_dataset(const std::string sub_benchmark_name, const std::string path_to_dataset) override;
+
+        // csvm params
+        real_type cost = 1;
+        real_type add = 1;
 
         // params for poly/radial kernel functions
         int degree = 3; 

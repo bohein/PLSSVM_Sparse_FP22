@@ -14,7 +14,7 @@
 #include <vector>  // std::vector
 
 #include "plssvm/coo.hpp" // plssvm::openmp::coo
-#include "plssvm/csr.hpp" // plssvm::openmp::coo
+#include "plssvm/csr.hpp" // plssvm::openmp::csr
 
 namespace plssvm::openmp {
 
