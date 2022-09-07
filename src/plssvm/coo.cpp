@@ -126,13 +126,13 @@ T coo<T>::get_row_dot_product(const size_t row_id_1, const size_t row_id_2) cons
                 for (row_1_first = row_1_approx; row_1_first < nnz && row_ids[row_1_first] < row_id_1; ++row_1_first);
 
                 for (row_1_last = row_1_first; row_1_last < nnz && row_ids[row_1_last] == row_id_1; ++row_1_last);
-                row_1_last++;
+                row_1_last--;
             } else {
                 // row_1_approx is right of desired row
                 for (row_1_last = row_1_approx; row_1_last < nnz && row_ids[row_1_last] > row_id_1; --row_1_last);
 
-                for (row_1_first = row_1_last; row_1_first < nnz && row_ids[row_1_first] > row_id_1; ++row_1_first);
-                row_1_first--;
+                for (row_1_first = row_1_last; row_1_first < nnz && row_ids[row_1_first] == row_id_1; --row_1_first);
+                row_1_first++;
             }
         }
         // get borders of row 2
@@ -150,22 +150,22 @@ T coo<T>::get_row_dot_product(const size_t row_id_1, const size_t row_id_2) cons
                 for (row_2_first = row_2_approx; row_2_first < nnz && row_ids[row_2_first] < row_id_2; ++row_2_first);
 
                 for (row_2_last = row_2_first; row_2_last < nnz && row_ids[row_2_last] == row_id_2; ++row_2_last);
-                row_2_last++;
+                row_2_last--;
             } else {
                 // row_2_approx is right of desired row
                 for (row_2_last = row_2_approx; row_2_last < nnz && row_ids[row_2_last] > row_id_2; --row_2_last);
 
-                for (row_2_first = row_2_last; row_2_first < nnz && row_ids[row_2_first] > row_id_2; ++row_2_first);
-                row_2_first--;
+                for (row_2_first = row_2_last; row_2_first < nnz && row_ids[row_2_first] == row_id_2; --row_2_first);
+                row_2_first++;
             }
         }
     }
 
     // one row is empty
-    if (row_ids[row_1_first] != row_id_1 || row_ids[row_2_first] != row_id_2)
+    if (row_1_first >= nnz || row_2_first >= nnz || row_ids[row_1_first] != row_id_1 || row_ids[row_2_first] != row_id_2) 
         return result;
 
-    #pragma omp parallel for collapse(2) ordered
+    #pragma omp parallel for collapse(2)
     for (size_t i = row_1_first; i <= row_1_last; ++i) {
         for (size_t j = row_2_first; j <= row_2_last; ++j) {
             if (col_ids[i] == col_ids[j]) {
@@ -208,13 +208,13 @@ T coo<T>::get_row_squared_euclidean_dist(const size_t row_id_1, const size_t row
                 for (row_1_first = row_1_approx; row_1_first < nnz && row_ids[row_1_first] < row_id_1; ++row_1_first);
 
                 for (row_1_last = row_1_first; row_1_last < nnz && row_ids[row_1_last] == row_id_1; ++row_1_last);
-                row_1_last++;
+                row_1_last--;
             } else {
                 // row_1_approx is right of desired row
                 for (row_1_last = row_1_approx; row_1_last < nnz && row_ids[row_1_last] > row_id_1; --row_1_last);
 
-                for (row_1_first = row_1_last; row_1_first < nnz && row_ids[row_1_first] > row_id_1; ++row_1_first);
-                row_1_first--;
+                for (row_1_first = row_1_last; row_1_first < nnz && row_ids[row_1_first] == row_id_1; --row_1_first);
+                row_1_first++;
             }
         }
         // get borders of row 2
@@ -232,13 +232,13 @@ T coo<T>::get_row_squared_euclidean_dist(const size_t row_id_1, const size_t row
                 for (row_2_first = row_2_approx; row_2_first < nnz && row_ids[row_2_first] < row_id_2; ++row_2_first);
 
                 for (row_2_last = row_2_first; row_2_last < nnz && row_ids[row_2_last] == row_id_2; ++row_2_last);
-                row_2_last++;
+                row_2_last--;
             } else {
                 // row_2_approx is right of desired row
                 for (row_2_last = row_2_approx; row_2_last < nnz && row_ids[row_2_last] > row_id_2; --row_2_last);
 
-                for (row_2_first = row_2_last; row_2_first < nnz && row_ids[row_2_first] > row_id_2; ++row_2_first);
-                row_2_first--;
+                for (row_2_first = row_2_last; row_2_first < nnz && row_ids[row_2_first] == row_id_2; --row_2_first);
+                row_2_first++;
             }
         }
     }
@@ -262,7 +262,7 @@ T coo<T>::get_row_squared_euclidean_dist(const size_t row_id_1, const size_t row
                 result += values[i] * values[i];
             }
         }
-        #pragma omp section  // sq.e.d. from row 2 to origin
+        #pragma omp section
         {
         // adjust if shared non-zero entry; according to 2nd binom formula
         #pragma omp parallel for collapse(2)
