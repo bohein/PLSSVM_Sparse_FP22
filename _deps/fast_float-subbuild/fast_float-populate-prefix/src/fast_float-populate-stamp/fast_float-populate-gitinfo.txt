@@ -1,0 +1,3 @@
+repository='https://github.com/fastfloat/fast_float'
+module=''
+tag='origin'
