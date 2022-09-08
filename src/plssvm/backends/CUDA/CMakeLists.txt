@@ -55,6 +55,9 @@ set(PLSSVM_CUDA_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/svm_kernel.cu
     ${CMAKE_CURRENT_LIST_DIR}/../gpu_csvm.cpp
     ${CMAKE_CURRENT_LIST_DIR}/../gpu_device_ptr.cpp
+    # SPARSE
+    ${CMAKE_CURRENT_LIST_DIR}/coo_q_kernel.cu
+    ${CMAKE_CURRENT_LIST_DIR}/coo_svm_kernel.cu
 )
 
 # set target properties
