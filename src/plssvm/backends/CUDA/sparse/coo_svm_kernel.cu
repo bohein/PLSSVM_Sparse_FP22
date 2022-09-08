@@ -8,6 +8,7 @@
 #include "plssvm/backends/CUDA/sparse/coo_svm_kernel.cuh"
 
 #include "plssvm/backends/CUDA/detail/atomics.cuh"  // atomicAdd
+#include "plssvm/constants.hpp"                     // plssvm::INTERNAL_BLOCK_SIZE
 
 // UNTESTED
 namespace plssvm::cuda {
