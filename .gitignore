@@ -82,3 +82,11 @@ tests/data/*
 !tests/data/libsvm/
 !tests/data/arff/
 !tests/data/predict/
+benchmark_data/cifar10.libsvm
+benchmark_data/gisette.libsvm
+benchmark_data/ijcnn1.libsvm
+benchmark_data/iris.libsvm
+benchmark_data/skin_nonskin.libsvm
+benchmark_data/SUSY.libsvm
+benchmark_data/w3a.libsvm
+benchmark_data/results/Q-Kernels (OpenMP).csv

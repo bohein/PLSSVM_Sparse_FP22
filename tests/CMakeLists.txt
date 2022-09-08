@@ -94,9 +94,9 @@ set(PLSSVM_BASE_TEST_NAME Base_tests)
 
 # list all necessary sources
 set(PLSSVM_BASE_TEST_SOURCES
-    ${CMAKE_CURRENT_LIST_DIR}/base_test.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/csvm_test.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/parameter_test.cpp
+   #${CMAKE_CURRENT_LIST_DIR}/base_test.cpp
+   #${CMAKE_CURRENT_LIST_DIR}/csvm_test.cpp
+   #${CMAKE_CURRENT_LIST_DIR}/parameter_test.cpp
     ${CMAKE_CURRENT_LIST_DIR}/sparse_matrix_test.cpp
 )
 

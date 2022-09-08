@@ -41,8 +41,15 @@ set(PLSSVM_BASE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/plssvm/parameter_train.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/plssvm/target_platforms.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/plssvm/coo.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/plssvm/csr.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/plssvm/backends/SYCL/kernel_invocation_type.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/plssvm/backends/SYCL/implementation_type.cpp
+    ## Benchmarks
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/plssvm/benchmarks/benchmark.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/plssvm/benchmarks/benchmark_read_data.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/plssvm/benchmarks/benchmark_q_kernel_openmp.cpp
+    ## Temporary, till we have a better solution
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/plssvm/backends/OpenMP/q_kernel.cpp
 )
 
 ## create base library: linked against all backend libraries
@@ -198,8 +205,12 @@ add_executable(${PLSSVM_EXECUTABLE_TRAIN_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/src/m
 set(PLSSVM_EXECUTABLE_PREDICT_NAME plssvm-predict)
 add_executable(${PLSSVM_EXECUTABLE_PREDICT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/src/main_predict.cpp)
 
+## create benchmark executable
+set(PLSSVM_EXECUTABLE_BENCHMARK_NAME plssvm-benchmark)
+add_executable(${PLSSVM_EXECUTABLE_BENCHMARK_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/src/main_benchmarks.cpp)
+
 ## append executables to installed targets
-list(APPEND PLSSVM_TARGETS_TO_INSTALL ${PLSSVM_EXECUTABLE_TRAIN_NAME} ${PLSSVM_EXECUTABLE_PREDICT_NAME})
+list(APPEND PLSSVM_TARGETS_TO_INSTALL ${PLSSVM_EXECUTABLE_TRAIN_NAME} ${PLSSVM_EXECUTABLE_PREDICT_NAME} ${PLSSVM_EXECUTABLE_BENCHMARK_NAME})
 
 ########################################################################################################################
 ##                                            setup code coverage analysis                                            ##
@@ -384,6 +395,7 @@ endif()
 ## link backends against executables
 target_link_libraries(${PLSSVM_EXECUTABLE_TRAIN_NAME} ${PLSSVM_ALL_LIBRARY_NAME})
 target_link_libraries(${PLSSVM_EXECUTABLE_PREDICT_NAME} ${PLSSVM_ALL_LIBRARY_NAME})
+target_link_libraries(${PLSSVM_EXECUTABLE_BENCHMARK_NAME} ${PLSSVM_ALL_LIBRARY_NAME})
 
 
 ########################################################################################################################

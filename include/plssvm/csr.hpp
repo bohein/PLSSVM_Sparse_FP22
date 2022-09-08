@@ -1,11 +1,11 @@
 /**
  * @file
- * @author Tim Schmidt
+ * @author Pascal Miliczek
  * @copyright 2018-today The PLSSVM project - All Rights Reserved
  * @license This file is part of the PLSSVM project which is released under the MIT license.
  *          See the LICENSE.md file in the project root for full license information.
  *
- * @brief Defines data structure for sparse matrices in COO format
+ * @brief Defines data structure for sparse matrices in CSR format
  */
 
 #pragma once
@@ -15,7 +15,7 @@
 namespace plssvm::openmp {
 
 template <typename T>
-class coo {
+class csr {
     // only float and doubles are allowed
     static_assert(std::is_same_v<T, float> || std::is_same_v<T, double>, "The template type can only be 'float' or 'double'!");
 
@@ -23,7 +23,7 @@ class coo {
         /// The type of the data. Must be either `float` or `double`.
         using real_type = T;
 
-        coo();
+        csr();
 
 
         ////////////////////
@@ -37,15 +37,7 @@ class coo {
          * @param row_id row index of requested value
          * @return real_type data value stored at given indices
          */
-        real_type get_element(const size_t col_id, const size_t row_id) const; // requires being sorted row-wise
-
-        /**
-         * @brief Get a coo object containing the specified row. Returns an empty object if row is empty.
-         * 
-         * @param row_id index of requested row
-         * @return coo object containing one row
-         */
-        plssvm::openmp::coo<T> get_row(const size_t row_id) const; // requires being grouped row-wise
+        real_type get_element(const size_t col_id, const size_t row_id) const; // requires being sorted row-whise
 
         /**
          * @brief Returns the dot-product of the two specified rows in the matrix
@@ -56,7 +48,7 @@ class coo {
          */
         real_type get_row_dot_product(const size_t row_id_1, const size_t row_id_2) const;
 
-        /**
+         /**
          * @brief Returns the squared euclidean distance of the two specified rows in the matrix
          * 
          * @param row_id_1 index of the first row
@@ -74,7 +66,7 @@ class coo {
          * @return size_t height of stored matrix
          */
         size_t get_height() const {return height;}
-        
+
         /**
          * @return size_t width of stored matrix
          */
@@ -86,7 +78,7 @@ class coo {
         ///////////////
 
         /**
-         * @brief Insert data element into COO matrix data structure
+         * @brief Insert data element into CSR matrix data structure
          * 
          * @param col_id column index of element to insert
          * @param row_id row index of element to insert
@@ -95,21 +87,18 @@ class coo {
         void insert_element(const size_t col_id, const size_t row_id, const real_type value);
 
         /**
-         * @brief Append another matrix stored in COO format to this matrix
-         * @details The other matrix is appended by simply appending the col-, row-, and value vertices of the other matrix to the ones of this matrix.
-         * For performance reasons, NEITHER a check for duplicate entries NOR any sorting operations are performed.
-         * The size of the new matrix is adjusted according to the maximum dimensions of both this and the other matrix.
+         * @brief Append another matrix stored in CSR format to this matrix
          * 
-         * @param other another matrix in COO format
+         * @param other another matrix in CSR format
          */
-        void append(const coo<real_type> &other);
+        void append(const csr<real_type> &other);
 
 
         //////////////////////////
         // non-member functions //
         //////////////////////////
 
-        bool operator==(const coo<real_type> &other);
+        bool operator==(const csr<real_type> &other);
 
     private:
         /// number of non-zero elements
@@ -118,15 +107,14 @@ class coo {
         size_t height;
         /// width of stored matrix
         size_t width;
-        /// saves number of added empty rows
-        size_t current_empty_rows;
+        /// number of empty rows when appending
+        size_t empty_row_buffer;
         /// column indices of stored data values
         std::vector<size_t> col_ids;
         /// row indices of stored data values
-        std::vector<size_t> row_ids;
+        std::vector<size_t> row_offset;
         /// stored data values
         std::vector<real_type> values;
-        
 };
 
 }  // namespace plssvm::openmp

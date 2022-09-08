@@ -10,6 +10,7 @@
  */
 
 #include "plssvm/coo.hpp"
+#include "plssvm/csr.hpp"
 #include "plssvm/parameter.hpp"
 #include "plssvm/detail/file_reader.hpp"           // plssvm::detail::file_reader
 
@@ -116,20 +117,82 @@ TYPED_TEST(SparseMatrix, coo_get_row) {
 TYPED_TEST(SparseMatrix, coo_get_row_dot_product) {
     using real_type = TypeParam;
 
-    plssvm::openmp::coo<real_type> matrix{};
-    matrix.insert_element(0, 0, 1.0);
-    matrix.insert_element(1, 0, 2.0);
-    matrix.insert_element(2, 0, 3.0);
-    matrix.insert_element(0, 1, 4.0);
-    matrix.insert_element(1, 1, 5.0);
-    matrix.insert_element(2, 1, 6.0);
-    matrix.insert_element(0, 2, 7.0);
-    matrix.insert_element(1, 2, 8.0);
-    matrix.insert_element(2, 2, 9.0);
+    plssvm::openmp::coo<real_type> dense{};
+    dense.insert_element(0, 0, 1.0);
+    dense.insert_element(1, 0, 2.0);
+    dense.insert_element(2, 0, 3.0);
+    dense.insert_element(0, 1, 4.0);
+    dense.insert_element(1, 1, 5.0);
+    dense.insert_element(2, 1, 6.0);
+    dense.insert_element(0, 2, 7.0);
+    dense.insert_element(1, 2, 8.0);
+    dense.insert_element(2, 2, 9.0);
 
-    EXPECT_EQ(matrix.get_row_dot_product(0, 2), 50.0);
-    EXPECT_EQ(matrix.get_row_dot_product(0, 1), 32.0);
-    EXPECT_EQ(matrix.get_row_dot_product(1, 2), 122.0);
+    EXPECT_EQ(dense.get_row_dot_product(0, 0), 14.0);
+    EXPECT_EQ(dense.get_row_dot_product(0, 1), 32.0);
+    EXPECT_EQ(dense.get_row_dot_product(0, 2), 50.0);
+    EXPECT_EQ(dense.get_row_dot_product(1, 1), 77.0);
+    EXPECT_EQ(dense.get_row_dot_product(1, 2), 122.0);
+    EXPECT_EQ(dense.get_row_dot_product(2, 2), 194.0);
+    
+    plssvm::openmp::coo<real_type> sparse{};
+    sparse.insert_element(0, 0, 1.23);
+    sparse.insert_element(0, 2, 4.56);
+    sparse.insert_element(2, 2, 7.89);
+
+    EXPECT_NEAR (sparse.get_row_dot_product(0, 0), 1.23 * 1.23, 1e-5);
+    EXPECT_NEAR (sparse.get_row_dot_product(0, 1), 0.0, 1e-5);
+    EXPECT_NEAR (sparse.get_row_dot_product(0, 2), 1.23 * 4.56, 1e-5);
+    EXPECT_NEAR (sparse.get_row_dot_product(1, 1), 0.0, 1e-5);
+    EXPECT_NEAR (sparse.get_row_dot_product(1, 2), 0.0, 1e-5);
+    EXPECT_NEAR (sparse.get_row_dot_product(2, 2), 4.56 * 4.56 + 7.89 * 7.89, 1e-5);
+    
+    plssvm::openmp::coo<real_type> sparse2{};
+    sparse2.insert_element(0, 0, 0.1);
+    sparse2.insert_element(1, 4, 41.0);
+    sparse2.insert_element(4, 5, 54.0);
+    sparse2.insert_element(5, 5, 55.0);
+    sparse2.insert_element(6, 5, 56.0);
+    sparse2.insert_element(1, 6, 61.0);
+    sparse2.insert_element(9, 9, 99.0);
+
+    EXPECT_NEAR (sparse2.get_row_dot_product(4, 4), 41.0 * 41.0, 1e-5);
+    EXPECT_NEAR (sparse2.get_row_dot_product(5, 5), 54.0 * 54.0 + 55.0 * 55.0 + 56.0 * 56.0, 1e-5);
+    EXPECT_NEAR (sparse2.get_row_dot_product(6, 6), 61.0 * 61.0, 1e-5);
+}
+
+TYPED_TEST(SparseMatrix, coo_get_row_squared_euclidean_dist) {
+    using real_type = TypeParam;
+
+    plssvm::openmp::coo<real_type> dense{};
+    dense.insert_element(0, 0, 1.0);
+    dense.insert_element(1, 0, 2.0);
+    dense.insert_element(2, 0, 3.0);
+    dense.insert_element(0, 1, 4.0);
+    dense.insert_element(1, 1, 5.0);
+    dense.insert_element(2, 1, 6.0);
+    dense.insert_element(0, 2, 7.0);
+    dense.insert_element(1, 2, 8.0);
+    dense.insert_element(2, 2, 9.0);
+
+    EXPECT_EQ(dense.get_row_squared_euclidean_dist(0, 0), 0.0);
+    EXPECT_EQ(dense.get_row_squared_euclidean_dist(0, 1), 27.0);
+    EXPECT_EQ(dense.get_row_squared_euclidean_dist(0, 2), 108.0);
+    EXPECT_EQ(dense.get_row_squared_euclidean_dist(1, 1), 0.0);
+    EXPECT_EQ(dense.get_row_squared_euclidean_dist(1, 2), 27.0);
+    EXPECT_EQ(dense.get_row_squared_euclidean_dist(2, 2), 0.0);
+    
+    plssvm::openmp::coo<real_type> sparse{};
+    sparse.insert_element(0, 0, 1.23);
+    sparse.insert_element(0, 2, 4.56);
+    sparse.insert_element(2, 2, 7.89);
+
+    EXPECT_NEAR (sparse.get_row_squared_euclidean_dist(0, 0), 0.0, 1e-5);
+    EXPECT_NEAR (sparse.get_row_squared_euclidean_dist(0, 1), 1.23 * 1.23, 1e-5);
+    EXPECT_NEAR (sparse.get_row_squared_euclidean_dist(0, 2), (4.56 - 1.23) * (4.56 - 1.23) + 7.89 * 7.89, 1e-5);
+    EXPECT_NEAR (sparse.get_row_squared_euclidean_dist(1, 1), 0.0, 1e-5);
+    EXPECT_NEAR (sparse.get_row_squared_euclidean_dist(1, 2), 4.56 * 4.56 + 7.89 * 7.89, 1e-5);
+    EXPECT_NEAR (sparse.get_row_squared_euclidean_dist(2, 2), 0.0, 1e-5);
 }
 
 TYPED_TEST(SparseMatrix, coo_append) {
@@ -153,13 +216,13 @@ TYPED_TEST(SparseMatrix, coo_append) {
     expected_matrix.insert_element(0, 0, 1.0);
     expected_matrix.insert_element(2, 0, 2.0);
     expected_matrix.insert_element(2, 2, 3.0);
-    expected_matrix.insert_element(1, 1, 4.0);
-    expected_matrix.insert_element(3, 4, 5.0);
+    expected_matrix.insert_element(1, 4, 4.0);
+    expected_matrix.insert_element(3, 7, 5.0);
 
     EXPECT_TRUE(actual_matrix == expected_matrix);
 }
 
-TYPED_TEST(SparseMatrix, parameter_parse_libsvm_content) {
+TYPED_TEST(SparseMatrix, parameter_parse_libsvm_content_coo) {
     // create parameter object
     plssvm::parameter<TypeParam> params;
 
@@ -186,7 +249,7 @@ TYPED_TEST(SparseMatrix, parameter_parse_libsvm_content) {
     EXPECT_EQ(actual_values, expected_values);
 }
 
-TYPED_TEST(SparseMatrix, parameter_parse_libsvm_file_sparse) {
+TYPED_TEST(SparseMatrix, parameter_parse_libsvm_file_coo) {
     // create parameter object
     plssvm::parameter<TypeParam> params;
 
@@ -204,6 +267,138 @@ TYPED_TEST(SparseMatrix, parameter_parse_libsvm_file_sparse) {
 
     plssvm::openmp::coo<real_type> actual_data{};
     std::shared_ptr<const plssvm::openmp::coo<real_type>> actual_data_ptr = std::make_shared<const plssvm::openmp::coo<real_type>>(std::move(actual_data));
+
+    params.parse_libsvm_file_sparse(PLSSVM_TEST_PATH  "/data/libsvm/5x4.sparse.libsvm", actual_data_ptr);
+
+    expected_data = *expected_data_ptr.get();
+    actual_data = *actual_data_ptr.get();
+
+    EXPECT_TRUE(actual_data == expected_data);
+
+    std::vector<real_type> expected_values{1, 1, -1, -1, -1};
+    std::vector<real_type> actual_values = *params.value_ptr.get();
+
+    EXPECT_EQ(actual_values, expected_values);
+}
+
+TYPED_TEST(SparseMatrix, csr_get_element) {
+    using real_type = TypeParam;
+
+    // dense matrix
+    plssvm::openmp::csr<real_type> dense{};
+    dense.insert_element(0, 0, 1.0);
+    dense.insert_element(1, 0, 2.0);
+    dense.insert_element(2, 0, 3.0);
+    dense.insert_element(0, 1, 4.0);
+    dense.insert_element(1, 1, 5.0);
+    dense.insert_element(2, 1, 6.0);
+    dense.insert_element(0, 2, 7.0);
+    dense.insert_element(1, 2, 8.0);
+    dense.insert_element(2, 2, 9.0);
+    EXPECT_EQ(dense.get_element(0, 0), 1.0);
+    EXPECT_EQ(dense.get_element(1, 0), 2.0);
+    EXPECT_EQ(dense.get_element(2, 0), 3.0);
+    EXPECT_EQ(dense.get_element(0, 1), 4.0);
+    EXPECT_EQ(dense.get_element(1, 1), 5.0);
+    EXPECT_EQ(dense.get_element(2, 1), 6.0);
+    EXPECT_EQ(dense.get_element(0, 2), 7.0);
+    EXPECT_EQ(dense.get_element(1, 2), 8.0);
+    EXPECT_EQ(dense.get_element(2, 2), 9.0);
+
+    // sparse matrix
+    plssvm::openmp::csr<real_type> sparse{};
+    sparse.insert_element(0, 0, 1.0);
+    sparse.insert_element(1, 1, 5.0);
+    sparse.insert_element(1, 2, 8.0);
+    sparse.insert_element(2, 2, 9.0);
+    EXPECT_EQ(sparse.get_element(0, 0), 1.0);
+    EXPECT_EQ(sparse.get_element(1, 0), 0.0);
+    EXPECT_EQ(sparse.get_element(2, 0), 0.0);
+    EXPECT_EQ(sparse.get_element(0, 1), 0.0);
+    EXPECT_EQ(sparse.get_element(1, 1), 5.0);
+    EXPECT_EQ(sparse.get_element(2, 1), 0.0);
+    EXPECT_EQ(sparse.get_element(0, 2), 0.0);
+    EXPECT_EQ(sparse.get_element(1, 2), 8.0);
+    EXPECT_EQ(sparse.get_element(2, 2), 9.0);
+    
+    // out of bounds
+    plssvm::openmp::csr<real_type> empty{};
+    EXPECT_EQ(empty.get_element(0, 0), 0.0);    
+    EXPECT_EQ(empty.get_element(42, 420), 0.0);
+}
+
+TYPED_TEST(SparseMatrix, csr_append) {
+    using real_type = TypeParam;
+
+    // matrix 1 of 2
+    plssvm::openmp::csr<real_type> actual_matrix{};
+    actual_matrix.insert_element(0, 0, 1.0);
+    actual_matrix.insert_element(2, 0, 2.0);
+    actual_matrix.insert_element(2, 2, 3.0);
+
+    // matrix 2 of 2
+    plssvm::openmp::csr<real_type> appendix{};
+    appendix.insert_element(1, 1, 4.0);
+    appendix.insert_element(3, 4, 5.0);
+    
+    actual_matrix.append(appendix);
+
+    // expected, resulting matrix
+    plssvm::openmp::csr<real_type> expected_matrix{};
+    expected_matrix.insert_element(0, 0, 1.0);
+    expected_matrix.insert_element(2, 0, 2.0);
+    expected_matrix.insert_element(2, 2, 3.0);
+    expected_matrix.insert_element(1, 4, 4.0);
+    expected_matrix.insert_element(3, 7, 5.0);
+
+    EXPECT_TRUE(actual_matrix == expected_matrix);
+}
+
+TYPED_TEST(SparseMatrix, parameter_parse_libsvm_content_csr) {
+    // create parameter object
+    plssvm::parameter<TypeParam> params;
+
+    using real_type = TypeParam;
+
+    ::testing::StaticAssertTypeEq<real_type, typename decltype(params)::real_type>();
+
+    plssvm::openmp::csr<real_type> expected_data{};
+    expected_data.insert_element(2, 1, 0.51687296029754564);
+    expected_data.insert_element(1, 2, 1.01405596624706053);
+    expected_data.insert_element(1, 3, 0.60276937379453293);
+    expected_data.insert_element(3, 3, -0.13086851759108944);
+    expected_data.insert_element(2, 4, 0.298499933047586044);
+    std::vector<real_type> expected_values{1, 1, -1, -1, -1};
+
+    plssvm::detail::file_reader f{PLSSVM_TEST_PATH  "/data/libsvm/5x4.sparse.libsvm", '#' };
+
+    plssvm::openmp::csr<real_type> actual_data{};
+    std::vector<real_type> actual_values(f.num_lines());
+
+    params.wrapper_for_parse_libsvm_content_sparse(f, 0, actual_data, actual_values);
+
+    EXPECT_TRUE(actual_data == expected_data);
+    EXPECT_EQ(actual_values, expected_values);
+}
+
+TYPED_TEST(SparseMatrix, parameter_parse_libsvm_file_csr) {
+    // create parameter object
+    plssvm::parameter<TypeParam> params;
+
+    using real_type = TypeParam;
+
+    ::testing::StaticAssertTypeEq<real_type, typename decltype(params)::real_type>();
+
+    plssvm::openmp::csr<real_type> expected_data{};
+    expected_data.insert_element(2, 1, 0.51687296029754564);
+    expected_data.insert_element(1, 2, 1.01405596624706053);
+    expected_data.insert_element(1, 3, 0.60276937379453293);
+    expected_data.insert_element(3, 3, -0.13086851759108944);
+    expected_data.insert_element(2, 4, 0.298499933047586044);
+    std::shared_ptr<const plssvm::openmp::csr<real_type>> expected_data_ptr = std::make_shared<const plssvm::openmp::csr<real_type>>(std::move(expected_data));
+
+    plssvm::openmp::csr<real_type> actual_data{};
+    std::shared_ptr<const plssvm::openmp::csr<real_type>> actual_data_ptr = std::make_shared<const plssvm::openmp::csr<real_type>>(std::move(actual_data));
 
     params.parse_libsvm_file_sparse(PLSSVM_TEST_PATH  "/data/libsvm/5x4.sparse.libsvm", actual_data_ptr);
 

@@ -160,7 +160,7 @@ void parse_libsvm_content_sparse(const file_reader &f, const std::size_t start, 
                     pos = next_pos;
 
                     // write index-index-value tuple to line data
-                    vline.insert_element(index, i, value);
+                    vline.insert_element(index, 0, value);
                 }
                 if (vline.get_nnz() > 0) empty = false;
                 rows[i] = std::move(vline);
@@ -190,6 +190,83 @@ void parse_libsvm_content_sparse(const file_reader &f, const std::size_t start, 
     }
     
     // concatenate sparse rows
+    for (auto it = rows.begin(); it != rows.end(); it++) data.append(*it);
+}
+
+// TODO: parallelize (modifications to spm_formats.hpp/spm_formats.cpp likely necessary)
+template <typename real_type>
+void parse_libsvm_content_sparse(const file_reader &f, const std::size_t start, plssvm::openmp::csr<real_type> &data, std::vector<real_type> &values) {
+    std::exception_ptr parallel_exception;
+    std::vector<plssvm::openmp::csr<real_type>> rows(values.size());
+    bool empty = true;
+    
+    {
+        #pragma omp parallel for
+        for (typename std::vector<std::vector<real_type>>::size_type i = 0; i < values.size(); ++i) {
+            #pragma omp cancellation point for
+            try {
+                std::string_view line = f.line(i + start);
+
+                // check if class labels are present (not necessarily the case for test files)
+                std::string_view::size_type pos = line.find_first_of(" \n");
+                std::string_view::size_type first_colon = line.find_first_of(":\n");
+                if (first_colon >= pos) {
+                    // get class or alpha
+                    values[i] = detail::convert_to<real_type, invalid_file_format_exception>(line.substr(0, pos));
+                } else {
+                    values[0] = std::numeric_limits<real_type>::max();
+                    pos = 0;
+                }
+
+                // get data
+                plssvm::openmp::csr<real_type> vline{};
+                while (true) {
+                    std::string_view::size_type next_pos = line.find_first_of(':', pos);
+                    // no further data points
+                    if (next_pos == std::string_view::npos) {
+                        break;
+                    }
+
+                    // get index
+                    const auto index = detail::convert_to<size_t, invalid_file_format_exception>(line.substr(pos, next_pos - pos));
+                    pos = next_pos + 1;
+
+                    // get value
+                    next_pos = line.find_first_of(' ', pos);
+                    const auto value = detail::convert_to<real_type, invalid_file_format_exception>(line.substr(pos, next_pos - pos));
+                    pos = next_pos;
+
+                    // write index-index-value tuple to line data
+                    vline.insert_element(index, 0, value);
+                }
+                if (vline.get_nnz() > 0) empty = false;
+                rows[i] = std::move(vline);
+            } catch (const std::exception &) {
+                // catch first exception and store it
+                #pragma omp critical
+                {
+                    if (!parallel_exception) {
+                        parallel_exception = std::current_exception();
+                    }
+                }
+                // cancel parallel execution, needs env variable OMP_CANCELLATION=true
+                #pragma omp cancel for
+            }
+            
+        }
+    }
+    
+    // rethrow if an exception occurred inside the parallel region
+    if (parallel_exception) {
+        std::rethrow_exception(parallel_exception);
+    }
+
+    // no features were parsed -> invalid file
+    if (empty) {
+        throw invalid_file_format_exception{ fmt::format("Can't parse file: no data points are given!") };
+    }
+
+     // concatenate sparse rows
     for (auto it = rows.begin(); it != rows.end(); it++) data.append(*it);
 }
 
@@ -293,7 +370,57 @@ void parameter<T>::parse_libsvm_file_sparse(const std::string &filename, std::sh
     
     auto end_time = std::chrono::steady_clock::now();
     if (print_info) {
-        fmt::print("Read {} data points with {} features in {} using the libsvm parser from file '{}'.\n{}/{} non-zero entries stored.",
+        fmt::print("Read {} data points with {} features in {} using the libsvm parser from file '{}'.\n{}/{} non-zero entries stored.\n",
+                   data_ptr_ref->get_height(),
+                   data_ptr_ref->get_width(),
+                   std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time),
+                   filename,
+                   data_ptr_ref->get_nnz(),
+                   data_ptr_ref->get_height() * data_ptr_ref->get_width());
+    }
+}
+
+// read and parse a libsvm file sparse into csr
+template <typename T>
+void parameter<T>::parse_libsvm_file_sparse(const std::string &filename, std::shared_ptr<const plssvm::openmp::csr<real_type>> &data_ptr_ref) {
+    auto start_time = std::chrono::steady_clock::now();
+
+    // set new filenames
+    if (model_filename == model_name_from_input() || model_filename.empty()) {
+        input_filename = filename;
+        model_filename = model_name_from_input();
+    }
+    input_filename = filename;
+
+    detail::file_reader f{ filename, '#' };
+
+    plssvm::openmp::csr<real_type> data{};
+    std::vector<real_type> value(f.num_lines());
+
+    detail::parse_libsvm_content_sparse(f, 0, data, value);
+
+    // update gamma
+    if (gamma == real_type{ 0.0 }) {
+        gamma = real_type{ 1. } / static_cast<real_type>(data.get_width());
+    }
+    
+    // update shared pointer
+    data_ptr_ref = std::make_shared<const plssvm::openmp::csr<real_type>>(std::move(data));
+    if (value[0] == std::numeric_limits<real_type>::max()) {
+        // no labels present
+        value_ptr = nullptr;
+    } else {
+        #pragma omp parallel for
+        for (typename std::vector<real_type>::size_type i = 0; i < value.size(); ++i) {
+            value[i] = plssvm::operators::sign(value[i]);
+        }
+
+        value_ptr = std::make_shared<const std::vector<real_type>>(std::move(value));
+    }
+    
+    auto end_time = std::chrono::steady_clock::now();
+    if (print_info) {
+        fmt::print("Read {} data points with {} features in {} using the libsvm parser from file '{}'.\n{}/{} non-zero entries stored.\n",
                    data_ptr_ref->get_height(),
                    data_ptr_ref->get_width(),
                    std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time),
@@ -701,6 +828,11 @@ template std::ostream &operator<<(std::ostream &, const parameter<double> &);
 
 template <typename T>
 void parameter<T>::wrapper_for_parse_libsvm_content_sparse(const detail::file_reader &f, const std::size_t start, plssvm::openmp::coo<real_type> &data, std::vector<real_type> &values) {
+    detail::parse_libsvm_content_sparse(f, start, data, values);
+}
+
+template <typename T>
+void parameter<T>::wrapper_for_parse_libsvm_content_sparse(const detail::file_reader &f, const std::size_t start, plssvm::openmp::csr<real_type> &data, std::vector<real_type> &values) {
     detail::parse_libsvm_content_sparse(f, start, data, values);
 }
 

@@ -1,6 +1,7 @@
 /**
  * @file
  * @author Tim Schmidt
+ * @author Paul Arlt
  * @copyright 2018-today The PLSSVM project - All Rights Reserved
  * @license This file is part of the PLSSVM project which is released under the MIT license.
  *          See the LICENSE.md file in the project root for full license information.
@@ -12,6 +13,8 @@
 
 #include "plssvm/coo.hpp"
 
+#include <cmath>   // std::fma
+
 namespace plssvm::openmp {
 
 template <typename T>
@@ -19,36 +22,13 @@ coo<T>::coo()
     : nnz(0)
     , height(0)
     , width(0)
+    , current_empty_rows(0)
 { }
 
 template <typename T>
-void coo<T>::insert_element(const size_t col_id, const size_t row_id, const real_type value) {
-    nnz++;
-    col_ids.push_back(col_id);
-    row_ids.push_back(row_id);
-    values.push_back(value);
-
-    height = std::max(height, row_id);
-    width = std::max(width, col_id);
-}
-
-template <typename T>
-void coo<T>::append(const coo<real_type> &other) {
-    nnz += other.nnz;
-
-    // TODO: potentially parallelize
-    col_ids.insert(col_ids.end(), other.col_ids.begin(), other.col_ids.end());
-    row_ids.insert(row_ids.end(), other.row_ids.begin(), other.row_ids.end());
-    values.insert(values.end(), other.values.begin(), other.values.end());
-
-    height = std::max(height, other.height);
-    width = std::max(width, other.width);
-}
-
-template <typename T>
-T coo<T>::get_element(const size_t col_id, const size_t row_id) {
+T coo<T>::get_element(const size_t col_id, const size_t row_id) const {
     // get iterator to index of first occurence of row_id
-    std::vector<size_t>::iterator first_occurance_it_rows = std::find(row_ids.begin(), row_ids.end(), row_id); // potentially use binary search
+    auto first_occurance_it_rows = std::find(row_ids.begin(), row_ids.end(), row_id); // potentially use binary search
 
     // case: no occurances found or "out of bounds" case
     if (first_occurance_it_rows == row_ids.end()) {
@@ -57,7 +37,7 @@ T coo<T>::get_element(const size_t col_id, const size_t row_id) {
     // case: first occurence found
     else {
         // get iterator to found index, but in col_ids
-        std::vector<size_t>::iterator first_occurance_it_cols = col_ids.begin() + (first_occurance_it_rows - row_ids.begin());
+        auto first_occurance_it_cols = col_ids.begin() + (first_occurance_it_rows - row_ids.begin());
 
         // check col_ids / row_ids for valid (col_id, row_id) pair until one is either found or confirmed nonexistent
         for (; first_occurance_it_rows != row_ids.end() && *first_occurance_it_rows == row_id; first_occurance_it_rows++)
@@ -79,7 +59,7 @@ T coo<T>::get_element(const size_t col_id, const size_t row_id) {
 }
 
 template <typename T>
-plssvm::openmp::coo<T> coo<T>::get_row(const size_t row_id) {
+plssvm::openmp::coo<T> coo<T>::get_row(const size_t row_id) const {
     size_t i = 0;
     size_t first_occurance = 0;
     size_t last_occurance = 0;
@@ -116,39 +96,225 @@ plssvm::openmp::coo<T> coo<T>::get_row(const size_t row_id) {
 }
 
 template <typename T>
-T coo<T>::get_row_dot_product(const size_t row_id_1, const size_t row_id_2) {
-    // ensure row_id_1 < row_id_2
-    if (row_id_1 > row_id_2)
-        return get_row_dot_product(row_id_2, row_id_1);
-    
-    T result = 0;
+T coo<T>::get_row_dot_product(const size_t row_id_1, const size_t row_id_2) const {
+    T result = 0.0;
 
-    // get iterator to row_ids of first row
-    std::vector<size_t>::iterator row_id_1_it = std::find(row_ids.begin(), row_ids.end(), row_id_1);
+    if (row_id_1 >= height || row_id_2 >= height)
+        return result;
 
-    // get iterator to row_ids of second row
-    std::vector<size_t>::iterator row_id_2_it = std::find(row_id_1_it, row_ids.end(), row_id_2);
+    size_t row_1_approx = nnz * row_id_1 / height;
+    size_t row_2_approx = nnz * row_id_2 / height;
+    size_t row_1_first = 0;
+    size_t row_2_first = 0;
+    size_t row_1_last = 0;
+    size_t row_2_last = 0;
+
+    #pragma omp parallel sections
+    {
+        // get borders of row 1
+        #pragma omp section
+        {
+            if (row_ids[row_1_approx] == row_id_1) {
+                // row_1_approx is within desired row
+                for (row_1_first = row_1_approx; row_1_first < nnz && row_ids[row_1_first] == row_id_1; --row_1_first);
+                row_1_first++;
+                
+                for (row_1_last = row_1_approx; row_1_last < nnz && row_ids[row_1_last] == row_id_1; ++row_1_last);
+                row_1_last--;
+            } else if (row_ids[row_1_approx] < row_id_1) {
+                // row_1_approx is left of desired row
+                for (row_1_first = row_1_approx; row_1_first < nnz && row_ids[row_1_first] < row_id_1; ++row_1_first);
+
+                for (row_1_last = row_1_first; row_1_last < nnz && row_ids[row_1_last] == row_id_1; ++row_1_last);
+                row_1_last--;
+            } else {
+                // row_1_approx is right of desired row
+                for (row_1_last = row_1_approx; row_1_last < nnz && row_ids[row_1_last] > row_id_1; --row_1_last);
+
+                for (row_1_first = row_1_last; row_1_first < nnz && row_ids[row_1_first] == row_id_1; --row_1_first);
+                row_1_first++;
+            }
+        }
+        // get borders of row 2
+        #pragma omp section
+        {
+            if (row_ids[row_2_approx] == row_id_2) {
+                // row_2_approx is within desired row
+                for (row_2_first = row_2_approx; row_2_first < nnz && row_ids[row_2_first] == row_id_2; --row_2_first);
+                row_2_first++;
+                
+                for (row_2_last = row_2_approx; row_2_last < nnz && row_ids[row_2_last] == row_id_2; ++row_2_last);
+                row_2_last--;
+            } else if (row_ids[row_2_approx] < row_id_2) {
+                // row_2_approx is left of desired row
+                for (row_2_first = row_2_approx; row_2_first < nnz && row_ids[row_2_first] < row_id_2; ++row_2_first);
+
+                for (row_2_last = row_2_first; row_2_last < nnz && row_ids[row_2_last] == row_id_2; ++row_2_last);
+                row_2_last--;
+            } else {
+                // row_2_approx is right of desired row
+                for (row_2_last = row_2_approx; row_2_last < nnz && row_ids[row_2_last] > row_id_2; --row_2_last);
+
+                for (row_2_first = row_2_last; row_2_first < nnz && row_ids[row_2_first] == row_id_2; --row_2_first);
+                row_2_first++;
+            }
+        }
+    }
 
     // one row is empty
-    if (row_id_1_it == row_ids.end() || row_id_2_it == row_ids.end())
+    if (row_1_first >= nnz || row_2_first >= nnz || row_ids[row_1_first] != row_id_1 || row_ids[row_2_first] != row_id_2) 
         return result;
-    
-    // multiply matching col_ids
-    while (*row_id_1_it == row_id_1 && *row_id_2_it == row_id_2) {
 
-        // matching col_ids, else increment
-        if (col_ids[row_id_1_it - row_ids.begin()] == col_ids[row_id_2_it - row_ids.begin()]) {
-            result += values[row_id_1_it - row_ids.begin()] * values[row_id_2_it - row_ids.begin()];
-            row_id_1_it++;
-            row_id_2_it++;
-        } else if (col_ids[row_id_1_it - row_ids.begin()] < col_ids[row_id_2_it - row_ids.begin()]) {
-            row_id_1_it++;
-        } else {
-            row_id_2_it++;
+    #pragma omp parallel for collapse(2)
+    for (size_t i = row_1_first; i <= row_1_last; ++i) {
+        for (size_t j = row_2_first; j <= row_2_last; ++j) {
+            if (col_ids[i] == col_ids[j]) {
+                #pragma omp atomic
+                result += values[i] * values[j];
+            }
+        }
+    }
+    return result;
+}
+
+template <typename T>
+T coo<T>::get_row_squared_euclidean_dist(const size_t row_id_1, const size_t row_id_2) const {
+    T result = 0.0;
+
+    if (row_id_1 == row_id_2)
+        return result;
+
+    size_t row_1_approx = nnz * row_id_1 / height;
+    size_t row_2_approx = nnz * row_id_2 / height;
+    size_t row_1_first = 0;
+    size_t row_2_first = 0;
+    size_t row_1_last = 0;
+    size_t row_2_last = 0;
+
+    #pragma omp parallel sections
+    {
+        // get borders of row 1
+        #pragma omp section
+        {
+            if (row_ids[row_1_approx] == row_id_1) {
+                // row_1_approx is within desired row
+                for (row_1_first = row_1_approx; row_1_first < nnz && row_ids[row_1_first] == row_id_1; --row_1_first);
+                row_1_first++;
+                
+                for (row_1_last = row_1_approx; row_1_last < nnz && row_ids[row_1_last] == row_id_1; ++row_1_last);
+                row_1_last--;
+            } else if (row_ids[row_1_approx] < row_id_1) {
+                // row_1_approx is left of desired row
+                for (row_1_first = row_1_approx; row_1_first < nnz && row_ids[row_1_first] < row_id_1; ++row_1_first);
+
+                for (row_1_last = row_1_first; row_1_last < nnz && row_ids[row_1_last] == row_id_1; ++row_1_last);
+                row_1_last--;
+            } else {
+                // row_1_approx is right of desired row
+                for (row_1_last = row_1_approx; row_1_last < nnz && row_ids[row_1_last] > row_id_1; --row_1_last);
+
+                for (row_1_first = row_1_last; row_1_first < nnz && row_ids[row_1_first] == row_id_1; --row_1_first);
+                row_1_first++;
+            }
+        }
+        // get borders of row 2
+        #pragma omp section
+        {
+            if (row_ids[row_2_approx] == row_id_2) {
+                // row_2_approx is within desired row
+                for (row_2_first = row_2_approx; row_2_first < nnz && row_ids[row_2_first] == row_id_2; --row_2_first);
+                row_2_first++;
+                
+                for (row_2_last = row_2_approx; row_2_last < nnz && row_ids[row_2_last] == row_id_2; ++row_2_last);
+                row_2_last--;
+            } else if (row_ids[row_2_approx] < row_id_2) {
+                // row_2_approx is left of desired row
+                for (row_2_first = row_2_approx; row_2_first < nnz && row_ids[row_2_first] < row_id_2; ++row_2_first);
+
+                for (row_2_last = row_2_first; row_2_last < nnz && row_ids[row_2_last] == row_id_2; ++row_2_last);
+                row_2_last--;
+            } else {
+                // row_2_approx is right of desired row
+                for (row_2_last = row_2_approx; row_2_last < nnz && row_ids[row_2_last] > row_id_2; --row_2_last);
+
+                for (row_2_first = row_2_last; row_2_first < nnz && row_ids[row_2_first] == row_id_2; --row_2_first);
+                row_2_first++;
+            }
+        }
+    }
+
+    // exploit assumtion that row 1 and row 2 have few non-zero dimensions in common
+    #pragma omp parallel sections
+    {
+        #pragma omp section  // sq.e.d. from row 1 to origin
+        {
+            #pragma omp parallel for
+            for (size_t i = row_1_first; i <= row_1_last; ++i) {
+                #pragma omp atomic
+                result += values[i] * values[i];
+            }
+        }
+        #pragma omp section  // sq.e.d. from row 2 to origin
+        {
+            #pragma omp parallel for
+            for (size_t i = row_2_first; i <= row_2_last; ++i) {
+                #pragma omp atomic
+                result += values[i] * values[i];
+            }
+        }
+        #pragma omp section
+        {
+        // adjust if shared non-zero entry; according to 2nd binom formula
+        #pragma omp parallel for collapse(2)
+        for (size_t i = row_1_first; i <= row_1_last; ++i) {
+            for (size_t j = row_2_first; j <= row_2_last; ++j) {
+                if (col_ids[i] == col_ids[j]) {
+                    #pragma omp atomic
+                    result -= 2 * values[i] * values[j];
+                }
+            }
+        }
         }
     }
 
     return result;
+}
+
+template <typename T>
+void coo<T>::insert_element(const size_t col_id, const size_t row_id, const real_type value) {
+    nnz++;
+    col_ids.push_back(col_id);
+    row_ids.push_back(row_id);
+    values.push_back(value);
+
+    height = std::max(height, row_id + 1);
+    width = std::max(width, col_id + 1);
+}
+
+template <typename T>
+void coo<T>::append(const coo<real_type> &other) {
+    if(other.nnz == 0){
+        current_empty_rows++;
+        return;
+    }
+    
+    nnz += other.nnz;
+
+    size_t next_row_offset = current_empty_rows + height;
+    size_t next_row_index = row_ids.size();
+
+    // TODO: potentially parallelize
+    col_ids.insert(col_ids.end(), other.col_ids.begin(), other.col_ids.end());
+    row_ids.insert(row_ids.end(), other.row_ids.begin(), other.row_ids.end());
+    values.insert(values.end(), other.values.begin(), other.values.end());
+
+    for(size_t i = next_row_index; i < row_ids.size(); i++){
+        row_ids.at(i) += next_row_offset;
+    }
+
+    height += current_empty_rows + other.height;
+    width = std::max(width, other.width);
+    current_empty_rows = 0;
 }
 
 template <typename T>
