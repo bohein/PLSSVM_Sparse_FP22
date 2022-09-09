@@ -22,9 +22,10 @@ namespace plssvm::cuda {
  * @param[in] row_ids row indices of coo data structure
  * @param[in] values data values of coo data structure
  * @param[in] last_row_begin index of first element of last data point
+ * @param[in] num_cols the number of columns in the data matrix
  */
 template <typename real_type>
-__global__ void device_kernel_q_linear(real_type *q, const size_t *col_ids, const size_t *row_ids, const real_type *values, const size_t last_row_begin);
+__global__ void device_kernel_q_linear(real_type *q, const size_t *col_ids, const size_t *row_ids, const real_type *values, const size_t last_row_begin, const size_t num_cols);
 
 /**
  * @brief Calculates the `q` vector using the polynomial C-SVM kernel on data in COO format.
@@ -35,12 +36,13 @@ __global__ void device_kernel_q_linear(real_type *q, const size_t *col_ids, cons
  * @param[in] row_ids row indices of coo data structure
  * @param[in] values data values of coo data structure
  * @param[in] last_row_begin index of first element of last data point
+ * @param[in] num_cols the number of columns in the data matrix
  * @param[in] degree the degree parameter used in the polynomial kernel function
  * @param[in] gamma the gamma parameter used in the polynomial kernel function
  * @param[in] coef0 the coef0 parameter used in the polynomial kernel function
  */
 template <typename real_type>
-__global__ void device_kernel_q_poly(real_type *q, const size_t *col_ids, const size_t *row_ids, const real_type *values, const size_t last_row_begin, const int degree, const real_type gamma, const real_type coef0);
+__global__ void device_kernel_q_poly(real_type *q, const size_t *col_ids, const size_t *row_ids, const real_type *values, const size_t last_row_begin, const size_t num_cols, const int degree, const real_type gamma, const real_type coef0);
 
 /**
  * @brief Calculates the `q` vector using the radial basis functions C-SVM kernel on data in COO format.
@@ -51,9 +53,10 @@ __global__ void device_kernel_q_poly(real_type *q, const size_t *col_ids, const 
  * @param[in] row_ids row indices of coo data structure
  * @param[in] values data values of coo data structure
  * @param[in] last_row_begin index of first element of last data point
+ * @param[in] num_cols the number of columns in the data matrix
  * @param[in] gamma the gamma parameter used in the rbf kernel function
  */
 template <typename real_type>
-__global__ void device_kernel_q_radial(real_type *q, const size_t *col_ids, const size_t *row_ids, const real_type *values, const size_t last_row_begin, const real_type gamma);
+__global__ void device_kernel_q_radial(real_type *q, const size_t *col_ids, const size_t *row_ids, const real_type *values, const size_t last_row_begin, const size_t num_cols, const real_type gamma);
 
 }  // namespace plssvm::cuda

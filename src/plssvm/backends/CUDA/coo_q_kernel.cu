@@ -13,11 +13,11 @@
 namespace plssvm::cuda {
 
 template <typename real_type>
-__global__ void device_kernel_q_linear(real_type *q, const kernel_index_type col_ids, const kernel_index_type *row_ids, const real_type *values, const kernel_index_type last_row_begin) {
+__global__ void device_kernel_q_linear(real_type *q, const kernel_index_type *col_ids, const kernel_index_type *row_ids, const real_type *values, const kernel_index_type last_row_begin, const kernel_index_type num_cols) {
     
     const kernel_index_type row_index = blockIdx.x * blockDim.x + threadIdx.x;
     
-    const kernel_index_type search_index = row_index * last_row_begin / gridDim.x;
+    kernel_index_type search_index = row_index * last_row_begin / gridDim.x;
     real_type temp{ 0.0 };
 
     if (row_ids[search_index] < row_index) {
@@ -27,7 +27,7 @@ __global__ void device_kernel_q_linear(real_type *q, const kernel_index_type col
         search_index++;
     }
 
-    for (kernel_index_type last_row_index = last_row_begin; last_row_index < col_ids.size(); ++last_row_index) {
+    for (kernel_index_type last_row_index = last_row_begin; last_row_index < num_cols; ++last_row_index) {
         for (; search_index < last_row_begin && col_ids[search_index] < col_ids[last_row_index]; ++search_index);
         if (row_ids[search_index] != row_index) {
             break;
@@ -39,11 +39,11 @@ __global__ void device_kernel_q_linear(real_type *q, const kernel_index_type col
     
     q[row_index] = temp;
 }
-template __global__ void device_kernel_q_linear(float *, const kernel_index_type *, const kernel_index_type *, const float *, const kernel_index_type);
-template __global__ void device_kernel_q_linear(double *, const kernel_index_type *, const kernel_index_type *, const double *, const kernel_index_type);
+template __global__ void device_kernel_q_linear(float *, const kernel_index_type *, const kernel_index_type *, const float *, const kernel_index_type, const kernel_index_type);
+template __global__ void device_kernel_q_linear(double *, const kernel_index_type *, const kernel_index_type *, const double *, const kernel_index_type, const kernel_index_type);
 
 template <typename real_type>
-__global__ void device_kernel_q_poly(real_type *q, const kernel_index_type *col_ids, const kernel_index_type *row_ids, const real_type *values, const kernel_index_type last_row_begin, const int degree, const real_type gamma, const real_type coef0) {
+__global__ void device_kernel_q_poly(real_type *q, const kernel_index_type *col_ids, const kernel_index_type *row_ids, const real_type *values, const kernel_index_type last_row_begin, const kernel_index_type num_cols, const int degree, const real_type gamma, const real_type coef0) {
     const kernel_index_type row_index = blockIdx.x * blockDim.x + threadIdx.x;
     kernel_index_type search_index = row_index * last_row_begin / gridDim.x;
     real_type temp{ 0.0 };
@@ -55,7 +55,7 @@ __global__ void device_kernel_q_poly(real_type *q, const kernel_index_type *col_
         search_index++;
     }
 
-    for (kernel_index_type last_row_index = last_row_begin; last_row_index < col_ids.size(); ++last_row_index) {
+    for (kernel_index_type last_row_index = last_row_begin; last_row_index < num_cols; ++last_row_index) {
         for (; search_index < last_row_begin && col_ids[search_index] < col_ids[last_row_index]; ++search_index);
         if (row_ids[search_index] != row_index) {
             break;
@@ -67,11 +67,11 @@ __global__ void device_kernel_q_poly(real_type *q, const kernel_index_type *col_
     
     q[row_index] = pow(gamma * temp + coef0, degree);
 }
-template __global__ void device_kernel_q_poly(float *, const kernel_index_type *, const kernel_index_type *, const float *, const kernel_index_type, const int, const float, const float);
-template __global__ void device_kernel_q_poly(double *, const kernel_index_type *, const kernel_index_type *, const double *, const kernel_index_type, const int, const double, const double);
+template __global__ void device_kernel_q_poly(float *, const kernel_index_type *, const kernel_index_type *, const float *, const kernel_index_type, const kernel_index_type, const int, const float, const float);
+template __global__ void device_kernel_q_poly(double *, const kernel_index_type *, const kernel_index_type *, const double *, const kernel_index_type,const kernel_index_type, const int, const double, const double);
 
 template <typename real_type>
-__global__ void device_kernel_q_radial(real_type *q, const kernel_index_type *col_ids, const kernel_index_type *row_ids, const real_type *values, const kernel_index_type last_row_begin, const real_type gamma) {
+__global__ void device_kernel_q_radial(real_type *q, const kernel_index_type *col_ids, const kernel_index_type *row_ids, const real_type *values, const kernel_index_type last_row_begin,const kernel_index_type num_cols, const real_type gamma) {
     const kernel_index_type row_index = blockIdx.x * blockDim.x + threadIdx.x;
     kernel_index_type search_index = row_index * last_row_begin / gridDim.x;
     real_type temp{ 0.0 };
@@ -83,7 +83,7 @@ __global__ void device_kernel_q_radial(real_type *q, const kernel_index_type *co
         search_index++;
     }
 
-    for (kernel_index_type last_row_index = last_row_begin; last_row_index < col_ids.size(); ++last_row_index) {
+    for (kernel_index_type last_row_index = last_row_begin; last_row_index < num_cols; ++last_row_index) {
         for (; search_index < last_row_begin && col_ids[search_index] < col_ids[last_row_index]; ++search_index);
         if (row_ids[search_index] != row_index) {
             break;
@@ -95,6 +95,6 @@ __global__ void device_kernel_q_radial(real_type *q, const kernel_index_type *co
     
     q[row_index] = exp(-gamma * temp);
 }
-template __global__ void device_kernel_q_radial(float *, const kernel_index_type *, const kernel_index_type *, const float *, const kernel_index_type, const float);
-template __global__ void device_kernel_q_radial(double *, const kernel_index_type *, const kernel_index_type *, const double *, const kernel_index_type, const double);
+template __global__ void device_kernel_q_radial(float *, const kernel_index_type *, const kernel_index_type *, const float *, const kernel_index_type,const kernel_index_type, const float);
+template __global__ void device_kernel_q_radial(double *, const kernel_index_type *, const kernel_index_type *, const double *, const kernel_index_type,const kernel_index_type, const double);
 }  // namespace plssvm::cuda
