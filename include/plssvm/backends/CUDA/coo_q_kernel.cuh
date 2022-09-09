@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include "plssvm/constants.hpp"  // plssvm::kernel_index_type
+
 namespace plssvm::cuda {
 
 /**

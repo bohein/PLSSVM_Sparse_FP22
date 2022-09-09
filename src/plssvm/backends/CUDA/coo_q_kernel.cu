@@ -5,14 +5,19 @@
  *          See the LICENSE.md file in the project root for full license information.
  */
 
-#include "plssvm/backends/CUDA/sparse/coo_q_kernel.cuh"
+#include "plssvm/backends/CUDA/coo_q_kernel.cuh"
+
+#include "plssvm/constants.hpp" 
 
 // UNTESTED
 namespace plssvm::cuda {
+
 template <typename real_type>
-__global__ void device_kernel_q_linear(real_type *q, const kernel_index_type *col_ids, const kernel_index_type *row_ids, const real_type *values, const kernel_index_type last_row_begin) {
+__global__ void device_kernel_q_linear(real_type *q, const kernel_index_type col_ids, const kernel_index_type *row_ids, const real_type *values, const kernel_index_type last_row_begin) {
+    
     const kernel_index_type row_index = blockIdx.x * blockDim.x + threadIdx.x;
-    kernel_index_type search_index = row_index * last_row_begin / gridDim.x;
+    
+    const kernel_index_type search_index = row_index * last_row_begin / gridDim.x;
     real_type temp{ 0.0 };
 
     if (row_ids[search_index] < row_index) {
@@ -22,7 +27,7 @@ __global__ void device_kernel_q_linear(real_type *q, const kernel_index_type *co
         search_index++;
     }
 
-    for (int last_row_index = last_row_begin; last_row_index < col_ids.size(); ++last_row_index) {
+    for (kernel_index_type last_row_index = last_row_begin; last_row_index < col_ids.size(); ++last_row_index) {
         for (; search_index < last_row_begin && col_ids[search_index] < col_ids[last_row_index]; ++search_index);
         if (row_ids[search_index] != row_index) {
             break;
@@ -50,7 +55,7 @@ __global__ void device_kernel_q_poly(real_type *q, const kernel_index_type *col_
         search_index++;
     }
 
-    for (int last_row_index = last_row_begin; last_row_index < col_ids.size(); ++last_row_index) {
+    for (kernel_index_type last_row_index = last_row_begin; last_row_index < col_ids.size(); ++last_row_index) {
         for (; search_index < last_row_begin && col_ids[search_index] < col_ids[last_row_index]; ++search_index);
         if (row_ids[search_index] != row_index) {
             break;
@@ -78,7 +83,7 @@ __global__ void device_kernel_q_radial(real_type *q, const kernel_index_type *co
         search_index++;
     }
 
-    for (int last_row_index = last_row_begin; last_row_index < col_ids.size(); ++last_row_index) {
+    for (kernel_index_type last_row_index = last_row_begin; last_row_index < col_ids.size(); ++last_row_index) {
         for (; search_index < last_row_begin && col_ids[search_index] < col_ids[last_row_index]; ++search_index);
         if (row_ids[search_index] != row_index) {
             break;

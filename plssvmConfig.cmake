@@ -34,7 +34,7 @@ include(CMakeFindDependencyMacro)
 find_dependency(OpenMP QUIET)
 
 # check if the OpenMP backend is required
-set(PLSSVM_HAS_OPENMP_BACKEND plssvm-OpenMP)
+set(PLSSVM_HAS_OPENMP_BACKEND )
 if(PLSSVM_HAS_OPENMP_BACKEND)
     find_dependency(OpenMP REQUIRED)
 endif()
@@ -52,7 +52,7 @@ if(PLSSVM_HAS_CUDA_BACKEND)
 endif()
 
 # check if the OpenCL backend is required
-set(PLSSVM_HAS_OPENCL_BACKEND )
+set(PLSSVM_HAS_OPENCL_BACKEND plssvm-OpenCL)
 if(PLSSVM_HAS_OPENCL_BACKEND)
     find_dependency(OpenCL REQUIRED)
 endif()
@@ -60,7 +60,7 @@ endif()
 # check if the SYCL implementation hipSYCL backend is required
 set(PLSSVM_HAS_SYCL_BACKEND_HIPSYCL )
 if(PLSSVM_HAS_SYCL_BACKEND_HIPSYCL)
-    set(HIPSYCL_TARGETS cpu:avx512;nvidia:sm_86)
+    set(HIPSYCL_TARGETS nvidia:sm_86)
     find_dependency(hipSYCL CONFIG REQUIRED)
     message(STATUS "Found hipSYCL with ${HIPSYCL_TARGETS}")
 endif()

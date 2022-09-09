@@ -15,6 +15,8 @@ project("PLSSVM - Parallel Least Squares Support Vector Machine"
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/add_custom_build_type.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/set_local_and_parent.cmake)
 
+
+
 ## configure version file
 configure_file(
         ${CMAKE_CURRENT_SOURCE_DIR}/include/plssvm/version/version.hpp.in
@@ -359,8 +361,8 @@ if(PLSSVM_ENABLE_OPENMP_BACKEND MATCHES "AUTO" OR PLSSVM_ENABLE_OPENMP_BACKEND)
 endif()
 
 ## check for CUDA backend
-set(PLSSVM_ENABLE_CUDA_BACKEND AUTO CACHE STRING "Enable CUDA Backend")
-set_property(CACHE PLSSVM_ENABLE_CUDA_BACKEND PROPERTY STRINGS AUTO ON OFF)
+set(PLSSVM_ENABLE_CUDA_BACKEND ON CACHE STRING "Enable CUDA Backend")
+set_property(CACHE PLSSVM_ENABLE_CUDA_BACKEND PROPERTY STRINGS ON )
 if(PLSSVM_ENABLE_CUDA_BACKEND MATCHES "AUTO" OR PLSSVM_ENABLE_CUDA_BACKEND)
     add_subdirectory(src/plssvm/backends/CUDA)
 endif()

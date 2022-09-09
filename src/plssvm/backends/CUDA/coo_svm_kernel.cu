@@ -5,7 +5,7 @@
  *          See the LICENSE.md file in the project root for full license information.
  */
 
-#include "plssvm/backends/CUDA/sparse/coo_svm_kernel.cuh"
+#include "plssvm/backends/CUDA/coo_svm_kernel.cuh"
 
 #include "plssvm/backends/CUDA/detail/atomics.cuh"  // atomicAdd
 #include "plssvm/constants.hpp"                     // plssvm::INTERNAL_BLOCK_SIZE
@@ -63,7 +63,7 @@ __global__ void device_kernel_poly(const real_type *q, real_type *ret, const rea
         for (int x = 0; x < INTERNAL_BLOCK_SIZE; ++x) {
             kernel_index_type row_id_ix = static_cast<kernel_index_type>(row_ids[i + x]);
 
-            const real_type temp = (pow(gamma * values[i] * values[j] + coef0, degree) + QA_cost - q[row_id_i] - q[row_id_j]) * add;
+            const real_type temp = (pow(gamma * values[i] * values[j] + coef0, degree) + QA_cost - q[row_id_ix] - q[row_id_jy]) * add;
             if (i + x == j + y) {
                 atomicAdd(&ret[row_id_ix], (temp + cost * add) * d[row_id_jy]);
             } else {
@@ -95,7 +95,7 @@ __global__ void device_kernel_radial(const real_type *q, real_type *ret, const r
         for (int x = 0; x < INTERNAL_BLOCK_SIZE; ++x) {
             kernel_index_type row_id_ix = static_cast<kernel_index_type>(row_ids[i + x]);
 
-            const real_type temp = (exp(-gamma * pow(values[i] - values[j], 2)) + QA_cost - q[row_id_i] - q[row_id_j]) * add;
+            const real_type temp = (exp(-gamma * pow(values[i] - values[j], 2)) + QA_cost - q[row_id_ix] - q[row_id_jy]) * add;
             if (i + x == j + y) {
                 atomicAdd(&ret[row_id_ix], (temp + cost * add) * d[row_id_jy]);
             } else {
