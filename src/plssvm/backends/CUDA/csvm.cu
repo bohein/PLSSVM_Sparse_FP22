@@ -23,8 +23,8 @@
 #include "plssvm/target_platforms.hpp"                 // plssvm::target_platform
 
 //SPARSE
-#include "plssvm/backends/CUDA/coo_q_kernel.cuh"
-#include "plssvm/backends/CUDA/coo_svm_kernel.cuh"
+#include "plssvm/backends/CUDA/sparse/coo_q_kernel.cuh"
+#include "plssvm/backends/CUDA/sparse/coo_svm_kernel.cuh"
 
 
 #include "fmt/core.h"     // fmt::print, fmt::format
@@ -107,6 +107,7 @@ std::pair<dim3, dim3> execution_range_to_native(const ::plssvm::detail::executio
     return std::make_pair(grid, block);
 }
 
+/*
 template <typename T>
 void csvm<T>::run_coo_q_kernel(const std::size_t device, const ::plssvm::detail::execution_range &range, device_ptr_type &q_d, const std::size_t num_features) {
     auto [grid, block] = execution_range_to_native(range);
@@ -127,7 +128,7 @@ void csvm<T>::run_coo_q_kernel(const std::size_t device, const ::plssvm::detail:
     }
     detail::peek_at_last_error();
 }
-
+*/
 
 template <typename T>
 void csvm<T>::run_q_kernel(const std::size_t device, const ::plssvm::detail::execution_range &range, device_ptr_type &q_d, const std::size_t num_features) {
@@ -169,9 +170,10 @@ void csvm<T>::run_svm_kernel(const std::size_t device, const ::plssvm::detail::e
             cuda::device_kernel_radial<<<grid, block>>>(q_d.get(), r_d.get(), x_d.get(), data_d_[device].get(), QA_cost_, 1 / cost_, num_rows_, num_cols_, add, gamma_);
             break;
     }
-    detail::peek_at_last_error()
+    detail::peek_at_last_error();
 }
 
+/*
 template <typename T>
 void csvm<T>::run_coo_svm_kernel(const std::size_t device, const ::plssvm::detail::execution_range &range, const device_ptr_type &q_d, device_ptr_type &r_d, const device_ptr_type &x_d, const real_type add, const std::size_t num_features) {
     auto [grid, block] = execution_range_to_native(range);
@@ -192,7 +194,7 @@ void csvm<T>::run_coo_svm_kernel(const std::size_t device, const ::plssvm::detai
     }
     detail::peek_at_last_error()
 }
-
+*/
 template <typename T>
 void csvm<T>::run_w_kernel(const std::size_t device, const ::plssvm::detail::execution_range &range, device_ptr_type &w_d, const device_ptr_type &alpha_d, const std::size_t num_features) {
     auto [grid, block] = execution_range_to_native(range);
