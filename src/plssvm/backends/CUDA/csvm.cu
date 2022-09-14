@@ -23,6 +23,8 @@
 #include "plssvm/target_platforms.hpp"                 // plssvm::target_platform
 
 //SPARSE
+#include "plssvm/backends/CUDA/coo_q_kernel.cuh"
+#include "plssvm/backends/CUDA/coo_svm_kernel.cuh"
 
 
 #include "fmt/core.h"     // fmt::print, fmt::format
@@ -106,6 +108,28 @@ std::pair<dim3, dim3> execution_range_to_native(const ::plssvm::detail::executio
 }
 
 template <typename T>
+void csvm<T>::run_coo_q_kernel(const std::size_t device, const ::plssvm::detail::execution_range &range, device_ptr_type &q_d, const std::size_t num_features) {
+    auto [grid, block] = execution_range_to_native(range);
+
+    detail::set_device(device);
+    switch (kernel_) {
+        case kernel_type::linear:
+            cuda::device_kernel_coo_q_linear<<<grid, block>>>(q_d.get(), data_d_[device].get(), data_last_d_[device].get(), num_rows_, num_features);
+            break;
+        case kernel_type::polynomial:
+            PLSSVM_ASSERT(device == 0, "The polynomial kernel function currently only supports single GPU execution!");
+            cuda::device_kernel_coo_q_poly<<<grid, block>>>(q_d.get(), data_d_[device].get(), data_last_d_[device].get(), num_rows_, num_cols_, degree_, gamma_, coef0_);
+            break;
+        case kernel_type::rbf:
+            PLSSVM_ASSERT(device == 0, "The radial basis function kernel function currently only supports single GPU execution!");
+            cuda::device_kernel_coo_q_radial<<<grid, block>>>(q_d.get(), data_d_[device].get(), data_last_d_[device].get(), num_rows_, num_cols_, gamma_);
+            break;
+    }
+    detail::peek_at_last_error();
+}
+
+
+template <typename T>
 void csvm<T>::run_q_kernel(const std::size_t device, const ::plssvm::detail::execution_range &range, device_ptr_type &q_d, const std::size_t num_features) {
     auto [grid, block] = execution_range_to_native(range);
 
@@ -126,6 +150,7 @@ void csvm<T>::run_q_kernel(const std::size_t device, const ::plssvm::detail::exe
     detail::peek_at_last_error();
 }
 
+
 template <typename T>
 void csvm<T>::run_svm_kernel(const std::size_t device, const ::plssvm::detail::execution_range &range, const device_ptr_type &q_d, device_ptr_type &r_d, const device_ptr_type &x_d, const real_type add, const std::size_t num_features) {
     auto [grid, block] = execution_range_to_native(range);
@@ -144,7 +169,28 @@ void csvm<T>::run_svm_kernel(const std::size_t device, const ::plssvm::detail::e
             cuda::device_kernel_radial<<<grid, block>>>(q_d.get(), r_d.get(), x_d.get(), data_d_[device].get(), QA_cost_, 1 / cost_, num_rows_, num_cols_, add, gamma_);
             break;
     }
-    detail::peek_at_last_error();
+    detail::peek_at_last_error()
+}
+
+template <typename T>
+void csvm<T>::run_coo_svm_kernel(const std::size_t device, const ::plssvm::detail::execution_range &range, const device_ptr_type &q_d, device_ptr_type &r_d, const device_ptr_type &x_d, const real_type add, const std::size_t num_features) {
+    auto [grid, block] = execution_range_to_native(range);
+
+    detail::set_device(device);
+    switch (kernel_) {
+        case kernel_type::linear:
+            cuda::device_kernel_coo_linear<<<grid, block>>>(q_d.get(), r_d.get(), x_d.get(), data_d_[device].get(), QA_cost_, 1 / cost_, num_rows_, num_features, add, device);
+            break;
+        case kernel_type::polynomial:
+            PLSSVM_ASSERT(device == 0, "The polynomial kernel function currently only supports single GPU execution!");
+            cuda::device_kernel_coo_poly<<<grid, block>>>(q_d.get(), r_d.get(), x_d.get(), data_d_[device].get(), QA_cost_, 1 / cost_, num_rows_, num_cols_, add, degree_, gamma_, coef0_);
+            break;
+        case kernel_type::rbf:
+            PLSSVM_ASSERT(device == 0, "The radial basis function kernel function currently only supports single GPU execution!");
+            cuda::device_kernel_coo_radial<<<grid, block>>>(q_d.get(), r_d.get(), x_d.get(), data_d_[device].get(), QA_cost_, 1 / cost_, num_rows_, num_cols_, add, gamma_);
+            break;
+    }
+    detail::peek_at_last_error()
 }
 
 template <typename T>

@@ -14,7 +14,7 @@
 namespace plssvm::cuda {
 
 template <typename real_type>
-__global__ void device_kernel_linear(const real_type *q, real_type *ret, const real_type *d, const size_t *col_ids, const size_t *row_ids, const real_type *values, const real_type QA_cost, const real_type cost, const real_type add) {
+__global__ void device_kernel_coo_linear(const real_type *q, real_type *ret, const real_type *d, const size_t *col_ids, const size_t *row_ids, const real_type *values, const real_type QA_cost, const real_type cost, const real_type add) {
     kernel_index_type i = (blockIdx.x * blockDim.x + threadIdx.x) * INTERNAL_BLOCK_SIZE;
     kernel_index_type j = (blockIdx.y * blockDim.y + threadIdx.y) * INTERNAL_BLOCK_SIZE;
 
@@ -42,11 +42,11 @@ __global__ void device_kernel_linear(const real_type *q, real_type *ret, const r
         atomicAdd(&ret[row_id_jy], ret_jy);
     }
 }
-template __global__ void device_kernel_linear(const float *, float *, const float *, const size_t *, const size_t *, const float *, const float, const float, const float);
-template __global__ void device_kernel_linear(const double *, double *, const double *, const size_t *, const size_t *, const double *, const double, const double, const double);
+template __global__ void device_kernel_coo_linear(const float *, float *, const float *, const size_t *, const size_t *, const float *, const float, const float, const float);
+template __global__ void device_kernel_coo_linear(const double *, double *, const double *, const size_t *, const size_t *, const double *, const double, const double, const double);
 
 template <typename real_type>
-__global__ void device_kernel_poly(const real_type *q, real_type *ret, const real_type *d, const size_t *col_ids, const size_t *row_ids, const real_type *values, const real_type QA_cost, const real_type cost, const real_type add, const int degree, const real_type gamma, const real_type coef0) {
+__global__ void device_kernel_coo_poly(const real_type *q, real_type *ret, const real_type *d, const size_t *col_ids, const size_t *row_ids, const real_type *values, const real_type QA_cost, const real_type cost, const real_type add, const int degree, const real_type gamma, const real_type coef0) {
     kernel_index_type i = (blockIdx.x * blockDim.x + threadIdx.x) * INTERNAL_BLOCK_SIZE;
     kernel_index_type j = (blockIdx.y * blockDim.y + threadIdx.y) * INTERNAL_BLOCK_SIZE;
 
@@ -74,11 +74,11 @@ __global__ void device_kernel_poly(const real_type *q, real_type *ret, const rea
         atomicAdd(&ret[row_id_jy], ret_jy);
     }
 }
-template __global__ void device_kernel_poly(const float *, float *, const float *, const size_t *, const size_t *, const float *, const float, const float, const float, const int, const float, const float);
-template __global__ void device_kernel_poly(const double *, double *, const double *, const size_t *, const size_t *, const double *, const double, const double, const double, const int, const double, const double);
+template __global__ void device_kernel_coo_poly(const float *, float *, const float *, const size_t *, const size_t *, const float *, const float, const float, const float, const int, const float, const float);
+template __global__ void device_kernel_coo_poly(const double *, double *, const double *, const size_t *, const size_t *, const double *, const double, const double, const double, const int, const double, const double);
 
 template <typename real_type>
-__global__ void device_kernel_radial(const real_type *q, real_type *ret, const real_type *d, const size_t *col_ids, const size_t *row_ids, const real_type *values, const real_type QA_cost, const real_type cost, const real_type add, const real_type gamma) {
+__global__ void device_kernel_coo_radial(const real_type *q, real_type *ret, const real_type *d, const size_t *col_ids, const size_t *row_ids, const real_type *values, const real_type QA_cost, const real_type cost, const real_type add, const real_type gamma) {
     kernel_index_type i = (blockIdx.x * blockDim.x + threadIdx.x) * INTERNAL_BLOCK_SIZE;
     kernel_index_type j = (blockIdx.y * blockDim.y + threadIdx.y) * INTERNAL_BLOCK_SIZE;
 
@@ -106,7 +106,7 @@ __global__ void device_kernel_radial(const real_type *q, real_type *ret, const r
         atomicAdd(&ret[row_id_jy], ret_jy);
     }
 }
-template __global__ void device_kernel_radial(const float *, float *, const float *, const size_t *, const size_t *, const float *, const float, const float, const float, const float);
-template __global__ void device_kernel_radial(const double *, double *, const double *, const size_t *, const size_t *, const double *, const double, const double, const double, const double);
+template __global__ void device_kernel_coo_radial(const float *, float *, const float *, const size_t *, const size_t *, const float *, const float, const float, const float, const float);
+template __global__ void device_kernel_coo_radial(const double *, double *, const double *, const size_t *, const size_t *, const double *, const double, const double, const double, const double);
 
 }  // namespace plssvm::cuda

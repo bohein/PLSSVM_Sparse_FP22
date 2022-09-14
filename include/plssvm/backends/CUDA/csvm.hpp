@@ -97,6 +97,13 @@ class csvm : public ::plssvm::detail::gpu_csvm<T, ::plssvm::cuda::detail::device
      * @copydoc plssvm::detail::gpu_csvm::run_svm_kernel
      */
     void run_svm_kernel(std::size_t device, const ::plssvm::detail::execution_range &range, const device_ptr_type &q_d, device_ptr_type &r_d, const device_ptr_type &x_d, real_type add, std::size_t num_features) final;
+    
+    //Sparse
+    void run_coo_q_kernel(std::size_t device,const ::plssvm::detail::execution_range &range,const device_ptr_type &q_d);
+
+    void run_coo_svm_kernel(std::size_t device, const ::plssvm::detail::execution_range &range,);
+    
+    
     /**
      * @copydoc plssvm::detail::gpu_csvm::run_w_kernel
      */
