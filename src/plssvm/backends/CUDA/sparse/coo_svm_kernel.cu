@@ -32,7 +32,7 @@ __global__ void device_kernel_linear(const real_type *q, real_type *ret, const r
             kernel_index_type row_id_ix = static_cast<kernel_index_type>(row_ids[i + x]);
 
             const real_type temp = (values[i + x] * values[j + y] + QA_cost - q[row_id_ix] - q[row_id_jy]) * add;
-            if (i + x == j + y) {
+            if (row_id_ix == row_id_jy) {
                 atomicAdd(&ret[row_id_ix], (temp + cost * add) * d[row_id_jy]);
             } else {
                 atomicAdd(&ret[row_id_ix], temp * d[row_id_jy]);
@@ -64,7 +64,7 @@ __global__ void device_kernel_poly(const real_type *q, real_type *ret, const rea
             kernel_index_type row_id_ix = static_cast<kernel_index_type>(row_ids[i + x]);
 
             const real_type temp = (pow(gamma * values[i] * values[j] + coef0, degree) + QA_cost - q[row_id_ix] - q[row_id_jy]) * add;
-            if (i + x == j + y) {
+            if (row_id_ix == row_id_jy) {
                 atomicAdd(&ret[row_id_ix], (temp + cost * add) * d[row_id_jy]);
             } else {
                 atomicAdd(&ret[row_id_ix], temp * d[row_id_jy]);
@@ -96,7 +96,7 @@ __global__ void device_kernel_radial(const real_type *q, real_type *ret, const r
             kernel_index_type row_id_ix = static_cast<kernel_index_type>(row_ids[i + x]);
 
             const real_type temp = (exp(-gamma * pow(values[i] - values[j], 2)) + QA_cost - q[row_id_ix] - q[row_id_jy]) * add;
-            if (i + x == j + y) {
+            if (row_id_ix == row_id_jy) {
                 atomicAdd(&ret[row_id_ix], (temp + cost * add) * d[row_id_jy]);
             } else {
                 atomicAdd(&ret[row_id_ix], temp * d[row_id_jy]);
