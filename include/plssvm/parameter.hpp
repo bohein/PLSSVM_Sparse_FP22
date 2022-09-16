@@ -257,6 +257,13 @@ class parameter {
 
     /// The data used the train the SVM.
     std::shared_ptr<const std::vector<std::vector<real_type>>> data_ptr{};
+
+//Sparse
+
+    /// The data used the train the SVM.
+    std::shared_ptr<plssvm::coo> data_coo_ptr{}; ///TODO: namespace
+    //TODO: csr
+
     /// The labels associated with each data point.
     std::shared_ptr<const std::vector<real_type>> value_ptr{};
     /// The weights associated with each data point after training.

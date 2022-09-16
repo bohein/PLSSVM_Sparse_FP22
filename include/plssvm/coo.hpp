@@ -81,6 +81,12 @@ class coo {
         size_t get_width() const {return width;}
 
 
+        
+        std::vector<size_t> get_row_ids() const {return row_ids;}
+        std::vector<size_t> get_col_ids() const {return col_ids;}
+        std::vector<real_type> get_values() const {return values;}
+
+
         ///////////////
         // modifiers //
         ///////////////

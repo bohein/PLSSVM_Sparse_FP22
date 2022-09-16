@@ -56,6 +56,8 @@ csvm<T>::csvm(const parameter<T> &params) :
     num_features_ = (*data_ptr_)[0].size();
 }
 
+//TODO Konsturktur mit Coo
+
 template <typename T>
 void csvm<T>::write_model(const std::string &model_name) {
     auto start_time = std::chrono::steady_clock::now();

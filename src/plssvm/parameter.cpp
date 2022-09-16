@@ -282,6 +282,8 @@ void parameter<T>::parse_file(const std::string &filename, std::shared_ptr<const
     }
 }
 
+//TODO: parse_file methode für coo anpassen, coo befüllen aus dem libvsm file
+
 // read and parse a libsvm file
 template <typename T>
 void parameter<T>::parse_libsvm_file(const std::string &filename, std::shared_ptr<const std::vector<std::vector<real_type>>> &data_ptr_ref) {
@@ -354,8 +356,10 @@ void parameter<T>::parse_libsvm_file_sparse(const std::string &filename, std::sh
         gamma = real_type{ 1. } / static_cast<real_type>(data.get_width());
     }
     
-    // update shared pointer
+    // update shared pointer 
     data_ptr_ref = std::make_shared<const plssvm::openmp::coo<real_type>>(std::move(data));
+
+
     if (value[0] == std::numeric_limits<real_type>::max()) {
         // no labels present
         value_ptr = nullptr;
