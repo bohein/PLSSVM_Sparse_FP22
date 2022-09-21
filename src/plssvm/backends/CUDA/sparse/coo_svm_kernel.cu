@@ -25,18 +25,21 @@ __global__ void device_kernel_linear(const real_type *q, real_type *ret, const r
     #pragma unroll INTERNAL_BLOCK_SIZE
     for (kernel_index_type y = 0; y < INTERNAL_BLOCK_SIZE; ++y) {
         kernel_index_type row_id_jy = static_cast<kernel_index_type>(row_ids[j + y]);
+        kernel_index_type col_id_jy = static_cast<kernel_index_type>(col_ids[j + y]);
         real_type ret_jy{ 0.0 };
 
         #pragma unroll INTERNAL_BLOCK_SIZE
         for (int x = 0; x < INTERNAL_BLOCK_SIZE; ++x) {
             kernel_index_type row_id_ix = static_cast<kernel_index_type>(row_ids[i + x]);
 
-            const real_type temp = (values[i + x] * values[j + y] + QA_cost - q[row_id_ix] - q[row_id_jy]) * add;
-            if (row_id_ix == row_id_jy) {
-                atomicAdd(&ret[row_id_ix], (temp + cost * add) * d[row_id_jy]);
-            } else {
-                atomicAdd(&ret[row_id_ix], temp * d[row_id_jy]);
-                ret_jy += temp * d[row_id_ix];
+            if (col_ids[i + x] == col_id_jy) {
+                const real_type temp = (values[i + x] * values[j + y] + QA_cost - q[row_id_ix] - q[row_id_jy]) * add;
+                if (row_id_ix == row_id_jy) {
+                    atomicAdd(&ret[row_id_ix], (temp + cost * add) * d[row_id_jy]);
+                } else {
+                    atomicAdd(&ret[row_id_ix], temp * d[row_id_jy]);
+                    ret_jy += temp * d[row_id_ix];
+                }
             }
         }
         atomicAdd(&ret[row_id_jy], ret_jy);
@@ -57,18 +60,21 @@ __global__ void device_kernel_poly(const real_type *q, real_type *ret, const rea
     #pragma unroll INTERNAL_BLOCK_SIZE
     for (int y = 0; y < INTERNAL_BLOCK_SIZE; ++y) {
         kernel_index_type row_id_jy = static_cast<kernel_index_type>(row_ids[j + y]);
+        kernel_index_type col_id_jy = static_cast<kernel_index_type>(col_ids[j + y]);
         real_type ret_jy{ 0.0 };
 
         #pragma unroll INTERNAL_BLOCK_SIZE
         for (int x = 0; x < INTERNAL_BLOCK_SIZE; ++x) {
             kernel_index_type row_id_ix = static_cast<kernel_index_type>(row_ids[i + x]);
 
-            const real_type temp = (pow(gamma * values[i] * values[j] + coef0, degree) + QA_cost - q[row_id_ix] - q[row_id_jy]) * add;
-            if (row_id_ix == row_id_jy) {
-                atomicAdd(&ret[row_id_ix], (temp + cost * add) * d[row_id_jy]);
-            } else {
-                atomicAdd(&ret[row_id_ix], temp * d[row_id_jy]);
-                ret_jy += temp * d[row_id_ix];
+            if (col_ids[i + x] == col_id_jy) {
+                const real_type temp = (pow(gamma * values[i] * values[j] + coef0, degree) + QA_cost - q[row_id_ix] - q[row_id_jy]) * add;
+                if (row_id_ix == row_id_jy) {
+                    atomicAdd(&ret[row_id_ix], (temp + cost * add) * d[row_id_jy]);
+                } else {
+                    atomicAdd(&ret[row_id_ix], temp * d[row_id_jy]);
+                    ret_jy += temp * d[row_id_ix];
+                }
             }
         }
         atomicAdd(&ret[row_id_jy], ret_jy);
@@ -85,26 +91,8 @@ __global__ void device_kernel_radial(const real_type *q, real_type *ret, const r
     if (i < j) {
         return;
     }
-
-    #pragma unroll INTERNAL_BLOCK_SIZE
-    for (int y = 0; y < INTERNAL_BLOCK_SIZE; ++y) {
-        kernel_index_type row_id_jy = static_cast<kernel_index_type>(row_ids[j + y]);
-        real_type ret_jy{ 0.0 };
-
-        #pragma unroll INTERNAL_BLOCK_SIZE
-        for (int x = 0; x < INTERNAL_BLOCK_SIZE; ++x) {
-            kernel_index_type row_id_ix = static_cast<kernel_index_type>(row_ids[i + x]);
-
-            const real_type temp = (exp(-gamma * pow(values[i] - values[j], 2)) + QA_cost - q[row_id_ix] - q[row_id_jy]) * add;
-            if (row_id_ix == row_id_jy) {
-                atomicAdd(&ret[row_id_ix], (temp + cost * add) * d[row_id_jy]);
-            } else {
-                atomicAdd(&ret[row_id_ix], temp * d[row_id_jy]);
-                ret_jy += temp * d[row_id_ix];
-            }
-        }
-        atomicAdd(&ret[row_id_jy], ret_jy);
-    }
+    
+    // TODO
 }
 template __global__ void device_kernel_radial(const float *, float *, const float *, const size_t *, const size_t *, const float *, const float, const float, const kernel_index_type, const float, const float);
 template __global__ void device_kernel_radial(const double *, double *, const double *, const size_t *, const size_t *, const double *, const double, const double, const kernel_index_type, const double, const double);
