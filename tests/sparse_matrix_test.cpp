@@ -289,3 +289,84 @@ TYPED_TEST(SparseMatrix, parameter_parse_libsvm_file_csr) {
 
     EXPECT_EQ(actual_values, expected_values);
 }
+
+TYPED_TEST(SparseMatrix, csr_get_row_dot_product) {
+    using real_type = TypeParam;
+
+    plssvm::openmp::csr<real_type> dense{};
+    dense.insert_element(0, 0, 1.0);
+    dense.insert_element(1, 0, 2.0);
+    dense.insert_element(2, 0, 3.0);
+    dense.insert_element(0, 1, 4.0);
+    dense.insert_element(1, 1, 5.0);
+    dense.insert_element(2, 1, 6.0);
+    dense.insert_element(0, 2, 7.0);
+    dense.insert_element(1, 2, 8.0);
+    dense.insert_element(2, 2, 9.0);
+
+    EXPECT_EQ(dense.get_row_dot_product(0, 0), 14.0);
+    EXPECT_EQ(dense.get_row_dot_product(0, 1), 32.0);
+    EXPECT_EQ(dense.get_row_dot_product(0, 2), 50.0);
+    EXPECT_EQ(dense.get_row_dot_product(1, 1), 77.0);
+    EXPECT_EQ(dense.get_row_dot_product(1, 2), 122.0);
+    EXPECT_EQ(dense.get_row_dot_product(2, 2), 194.0);
+    
+    plssvm::openmp::csr<real_type> sparse{};
+    sparse.insert_element(0, 0, 1.23);
+    sparse.insert_element(0, 2, 4.56);
+    sparse.insert_element(2, 2, 7.89);
+
+    EXPECT_NEAR (sparse.get_row_dot_product(0, 0), 1.23 * 1.23, 1e-5);
+    EXPECT_NEAR (sparse.get_row_dot_product(0, 1), 0.0, 1e-5);
+    EXPECT_NEAR (sparse.get_row_dot_product(0, 2), 1.23 * 4.56, 1e-5);
+    EXPECT_NEAR (sparse.get_row_dot_product(1, 1), 0.0, 1e-5);
+    EXPECT_NEAR (sparse.get_row_dot_product(1, 2), 0.0, 1e-5);
+    EXPECT_NEAR (sparse.get_row_dot_product(2, 2), 4.56 * 4.56 + 7.89 * 7.89, 1e-5);
+    
+    plssvm::openmp::csr<real_type> sparse2{};
+    sparse2.insert_element(0, 0, 0.1);
+    sparse2.insert_element(1, 4, 41.0);
+    sparse2.insert_element(4, 5, 54.0);
+    sparse2.insert_element(5, 5, 55.0);
+    sparse2.insert_element(6, 5, 56.0);
+    sparse2.insert_element(1, 6, 61.0);
+    sparse2.insert_element(9, 9, 99.0);
+
+    EXPECT_NEAR (sparse2.get_row_dot_product(4, 4), 41.0 * 41.0, 1e-5);
+    EXPECT_NEAR (sparse2.get_row_dot_product(5, 5), 54.0 * 54.0 + 55.0 * 55.0 + 56.0 * 56.0, 1e-5);
+    EXPECT_NEAR (sparse2.get_row_dot_product(6, 6), 61.0 * 61.0, 1e-5);
+}
+
+TYPED_TEST(SparseMatrix, csr_get_row_squared_euclidean_dist) {
+    using real_type = TypeParam;
+
+    plssvm::openmp::csr<real_type> dense{};
+    dense.insert_element(0, 0, 1.0);
+    dense.insert_element(1, 0, 2.0);
+    dense.insert_element(2, 0, 3.0);
+    dense.insert_element(0, 1, 4.0);
+    dense.insert_element(1, 1, 5.0);
+    dense.insert_element(2, 1, 6.0);
+    dense.insert_element(0, 2, 7.0);
+    dense.insert_element(1, 2, 8.0);
+    dense.insert_element(2, 2, 9.0);
+
+    EXPECT_EQ(dense.get_row_squared_euclidean_dist(0, 0), 0.0);
+    EXPECT_EQ(dense.get_row_squared_euclidean_dist(0, 1), 27.0);
+    EXPECT_EQ(dense.get_row_squared_euclidean_dist(0, 2), 108.0);
+    EXPECT_EQ(dense.get_row_squared_euclidean_dist(1, 1), 0.0);
+    EXPECT_EQ(dense.get_row_squared_euclidean_dist(1, 2), 27.0);
+    EXPECT_EQ(dense.get_row_squared_euclidean_dist(2, 2), 0.0);
+    
+    plssvm::openmp::csr<real_type> sparse{};
+    sparse.insert_element(0, 0, 1.23);
+    sparse.insert_element(0, 2, 4.56);
+    sparse.insert_element(2, 2, 7.89);
+
+    EXPECT_NEAR (sparse.get_row_squared_euclidean_dist(0, 0), 0.0, 1e-5);
+    EXPECT_NEAR (sparse.get_row_squared_euclidean_dist(0, 1), 1.23 * 1.23, 1e-5);
+    EXPECT_NEAR (sparse.get_row_squared_euclidean_dist(0, 2), (4.56 - 1.23) * (4.56 - 1.23) + 7.89 * 7.89, 1e-5);
+    EXPECT_NEAR (sparse.get_row_squared_euclidean_dist(1, 1), 0.0, 1e-5);
+    EXPECT_NEAR (sparse.get_row_squared_euclidean_dist(1, 2), 4.56 * 4.56 + 7.89 * 7.89, 1e-5);
+    EXPECT_NEAR (sparse.get_row_squared_euclidean_dist(2, 2), 0.0, 1e-5);
+}
