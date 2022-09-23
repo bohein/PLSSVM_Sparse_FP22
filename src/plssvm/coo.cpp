@@ -179,6 +179,7 @@ T coo<T>::get_row_dot_product(const size_t row_id_1, const size_t row_id_2) cons
 template <typename T>
 T coo<T>::get_row_squared_euclidean_dist(const size_t row_id_1, const size_t row_id_2) const {
     T result = 0.0;
+    T temp = 0.0;
 
     if (row_id_1 == row_id_2)
         return result;
@@ -252,16 +253,16 @@ T coo<T>::get_row_squared_euclidean_dist(const size_t row_id_1, const size_t row
     }
 
     // adjust if shared non-zero entry; according to 2nd binom formula
-    #pragma omp parallel for collapse(2) reduction(- : result)
+    #pragma omp parallel for collapse(2) reduction(+ : temp)
     for (size_t i = row_1_first; i <= row_1_last; ++i) {
         for (size_t j = row_2_first; j <= row_2_last; ++j) {
             if (col_ids[i] == col_ids[j]) {
-                result -= 2 * values[i] * values[j];
+                temp += 2 * values[i] * values[j];
             }
         }
     }
 
-    return result;
+    return result - temp;
 }
 
 template <typename T>
