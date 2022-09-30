@@ -12,19 +12,21 @@
 // UNTESTED
 namespace plssvm::cuda {
 template <typename real_type>
-__global__ void device_kernel_q_linear(real_type *q, const size_t *col_ids, const size_t *row_offsets, const real_type *values, const kernel_index_type last_row_begin, const kernel_index_type nnz, const size_t row_count) {
+__global__ void device_kernel_q_linear(real_type *q, const size_t *col_ids, const size_t *row_offsets, const real_type *values, const kernel_index_type last_row_begin, const kernel_index_type nnz, const size_t height) {
     const kernel_index_type row_index = blockIdx.x * blockDim.x + threadIdx.x;
     //not necessary (padding)
-    if(row_index + 1 > row_count){
+    if(row_index + 1 > height){
         return;
     }
 
     kernel_index_type last_row_cur_index = last_row_begin;
 
     kernel_index_type row_end_index = nnz;
-    if(row_index < row_count - 1){
+    if(row_index < height - 1){
         row_end_index = row_offsets[row_index + 1];
     }
+
+    real_type temp = {0.0};
 
     for(kernel_index_type cur_index = row_offsets[row_index]; cur_index < row_end_index && last_row_cur_index < nnz;){
         if(col_ids[cur_index] = col_ids[last_row_cur_index]){
@@ -42,18 +44,20 @@ template __global__ void device_kernel_q_linear(float *, const size_t *, const s
 template __global__ void device_kernel_q_linear(double *, const size_t *, const size_t *, const double *, const kernel_index_type, const kernel_index_type, const size_t);
 
 template <typename real_type>
-__global__ void device_kernel_q_poly(real_type *q, const size_t *col_ids, const size_t *row_ids, const real_type *values, const kernel_index_type last_row_begin, const kernel_index_type nnz, const int degree, const real_type gamma, const real_type coef0, const size_t row_count) {
+__global__ void device_kernel_q_poly(real_type *q, const size_t *col_ids, const size_t *row_ids, const real_type *values, const kernel_index_type last_row_begin, const kernel_index_type nnz, const int degree, const real_type gamma, const real_type coef0, const size_t height) {
     const kernel_index_type row_index = blockIdx.x * blockDim.x + threadIdx.x;
-    if(row_index + 1 > row_count){
+    if(row_index + 1 > height){
         return;
     }
 
     kernel_index_type last_row_cur_index = last_row_begin;
 
     kernel_index_type row_end_index = nnz;
-    if(row_index < row_count - 1){
+    if(row_index < height - 1){
         row_end_index = row_offsets[row_index + 1];
     }
+
+    real_type temp = {0.0};
 
     for(kernel_index_type cur_index = row_offsets[row_index]; cur_index < row_end_index && last_row_cur_index < nnz;){
         if(col_ids[cur_index] = col_ids[last_row_cur_index]){
@@ -71,9 +75,9 @@ template __global__ void device_kernel_q_poly(float *, const size_t *, const siz
 template __global__ void device_kernel_q_poly(double *, const size_t *, const size_t *, const double *, const kernel_index_type, const kernel_index_type, const int, const double, const double, const size_t);
 
 template <typename real_type>
-__global__ void device_kernel_q_radial(real_type *q, const size_t *col_ids, const size_t *row_ids, const real_type *values, const kernel_index_type last_row_begin, const kernel_index_type nnz, const real_type gamma, const  size_t row_count) {
+__global__ void device_kernel_q_radial(real_type *q, const size_t *col_ids, const size_t *row_ids, const real_type *values, const kernel_index_type last_row_begin, const kernel_index_type nnz, const real_type gamma, const  size_t height) {
    const kernel_index_type row_index = blockIdx.x * blockDim.x + threadIdx.x;
-    if(row_index + 1 > row_count){
+    if(row_index + 1 > height){
         return;
     }
 
@@ -81,9 +85,11 @@ __global__ void device_kernel_q_radial(real_type *q, const size_t *col_ids, cons
     kernel_index_type cur_index = row_offsets[row_index];
 
     kernel_index_type row_end_index = nnz;
-    if(row_index < row_count - 1){
+    if(row_index < height - 1){
         row_end_index = row_offsets[row_index + 1];
     }
+
+    real_type temp = {0.0};
 
     for(;cur_index < row_end_index && last_row_cur_index < nnz;){
         if(col_ids[cur_index] = col_ids[last_row_cur_index]){
