@@ -114,8 +114,8 @@ __global__ void device_kernel_poly(const real_type *q, real_type *ret, const rea
         real_type ret_jy = 0.0;
         #pragma unroll INTERNAL_BLOCK_SIZE
         for (kernel_index_type x = 0; x < INTERNAL_BLOCK_SIZE; ++x) {
-            kernel_index_type row_1_index = row_1_indices[x];
-            kernel_index_type row_2_index = row_2_indices[y];
+            kernel_index_type row_1_index = row_1_start_indices[x];
+            kernel_index_type row_2_index = row_2_start_indices[y];
             real_type matr_ix_jy = 0.0;
 
             // multiply rows
@@ -178,8 +178,8 @@ __global__ void device_kernel_radial(const real_type *q, real_type *ret, const r
     for (kernel_index_type y = 0; y < INTERNAL_BLOCK_SIZE; ++y) {
         real_type ret_jy = 0.0;
         for (kernel_index_type x = 0; x < INTERNAL_BLOCK_SIZE; ++x) {
-            kernel_index_type row_1_index = row_1_indices[x];
-            kernel_index_type row_2_index = row_2_indices[y];
+            kernel_index_type row_1_index = row_1_start_indices[x];
+            kernel_index_type row_2_index = row_2_start_indices[y];
             real_type matr_ix_jy = 0.0;
 
             // calc sq. e. dist
