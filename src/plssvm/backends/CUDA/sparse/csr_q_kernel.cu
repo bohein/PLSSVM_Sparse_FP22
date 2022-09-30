@@ -1,5 +1,5 @@
 /**
- * @author Paul Arlt, Pascal Miliczek
+ * @author Pascal Miliczek
  * @copyright 2018-today The PLSSVM project - All Rights Reserved
  * @license This file is part of the PLSSVM project which is released under the MIT license.
  *          See the LICENSE.md file in the project root for full license information.
@@ -14,6 +14,7 @@ namespace plssvm::cuda {
 template <typename real_type>
 __global__ void device_kernel_q_linear(real_type *q, const size_t *col_ids, const size_t *row_offsets, const real_type *values, const kernel_index_type last_row_begin, const kernel_index_type nnz, const size_t row_count) {
     const kernel_index_type row_index = blockIdx.x * blockDim.x + threadIdx.x;
+    //not necessary (padding)
     if(row_index + 1 > row_count){
         return;
     }

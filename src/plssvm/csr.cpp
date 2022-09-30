@@ -181,14 +181,17 @@ T csr<T>::get_row_squared_euclidean_dist(const size_t row_id_1, const size_t row
     }
 
     // adjust if shared non-zero entry; according to 2nd binom formula
-#pragma omp parallel for collapse(2) reduction(+:result) // Paul fragen !!!!
+    T tmp{0.0};
+#pragma omp parallel for collapse(2) reduction(+:tmp) // Paul fragen !!!!
     for (size_t i = row_1_start; i < row_1_end; ++i) {
         for (size_t j = row_2_start; j < row_2_end; ++j) {
             if (col_ids[i] == col_ids[j]) {
-                result -= 2 * values[i] * values[j];
+                tmp += 2 * values[i] * values[j];
             }
         }
     }
+
+    result -= tmp;
 
     return result;
 }
