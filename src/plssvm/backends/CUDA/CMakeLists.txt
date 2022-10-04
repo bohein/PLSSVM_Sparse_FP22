@@ -48,6 +48,8 @@ endif()
 set(PLSSVM_CUDA_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/detail/device_ptr.cu
     ${CMAKE_CURRENT_LIST_DIR}/detail/utility.cu
+    ${CMAKE_CURRENT_LIST_DIR}/sparse/csr_q_kernel.cu
+    ${CMAKE_CURRENT_LIST_DIR}/sparse/csr_svm_kernel.cu
     ${CMAKE_CURRENT_LIST_DIR}/csvm.cu
     ${CMAKE_CURRENT_LIST_DIR}/exceptions.cpp
     ${CMAKE_CURRENT_LIST_DIR}/predict_kernel.cu
