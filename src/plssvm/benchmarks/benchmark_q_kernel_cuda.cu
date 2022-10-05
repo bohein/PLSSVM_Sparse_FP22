@@ -60,15 +60,15 @@ void benchmark_q_kernel_openmp::evaluate_dataset(const std::string sub_benchmark
     std::vector<real_type> values_coo_d;
     std::vector<size_t> row_coo_d;
     std::vector<size_t> col_coo_d;
-    size_t nnz_coo_d;
-    size_t last_row_begin_coo_d;
+    int nnz_coo_d;
+    int last_row_begin_coo_d;
     
     plssvm::openmp::csr<real_type> data_csr{};
     std::vector<real_type> values_csr_d;
     std::vector<size_t> row_csr_d;
     std::vector<size_t> col_csr_d;
-    size_t nnz_csr_d;
-    size_t height_csr_d;
+    int nnz_csr_d;
+    int height_csr_d;
 
     auto data_ptr_dense = std::make_shared<const std::vector<std::vector<real_type>>>(std::move(data_dense));
     auto data_ptr_coo = std::make_shared<const plssvm::openmp::coo<real_type>>(std::move(data_coo));
@@ -151,14 +151,14 @@ void benchmark_q_kernel_openmp::evaluate_dataset(const std::string sub_benchmark
     for(size_t i = 0; i < cycles; i++) {
         cudaMalloc((void**)&q_d, sizeof(real_type)*(data_ptr_dense -> size() - 1));
 
-        cudaMalloc((void**)&nnz_coo_d, sizeof(size_t));
-        cudaMalloc((void**)&last_row_begin_coo_d, sizeof(size_t));
+        cudaMalloc((void**)&nnz_coo_d, sizeof(int));
+        cudaMalloc((void**)&last_row_begin_coo_d, sizeof(int));
         cudaMalloc((void**)&values_coo_d, sizeof(real_type)*(data_ptr_coo -> get_nnz()));
         cudaMalloc((void**)&col_coo_d, sizeof(size_t)*(data_ptr_coo -> get_nnz()));
         cudaMalloc((void**)&row_coo_d, sizeof(size_t)*(data_ptr_coo -> get_nnz()));
 
-        cudaMemcpy(nnz_coo_d, data_ptr_coo.get() -> get_nnz(), sizeof(size_t), cudaMemcpyHostToDevice);
-        cudaMemcpy(last_row_begin_coo_d, data_ptr_coo.get() -> get_last_row_begin(), sizeof(size_t), cudaMemcpyHostToDevice);
+        cudaMemcpy(nnz_coo_d, data_ptr_coo.get() -> get_nnz(), sizeof(int), cudaMemcpyHostToDevice);
+        cudaMemcpy(last_row_begin_coo_d, data_ptr_coo.get() -> get_last_row_begin(), sizeof(int), cudaMemcpyHostToDevice);
         cudaMemcpy(values_coo_d, data_ptr_coo.get() -> get_values(), sizeof(real_type)*(data_ptr_coo -> get_nnz()), cudaMemcpyHostToDevice);
         cudaMemcpy(row_coo_d, data_ptr_coo.get() -> get_rows(), sizeof(real_type)*(data_ptr_coo -> get_nnz()), cudaMemcpyHostToDevice);
         cudaMemcpy(column_coo_d, data_ptr_coo.get() -> get_columns(), sizeof(real_type)*(data_ptr_coo -> get_nnz()), cudaMemcpyHostToDevice);
@@ -216,14 +216,14 @@ void benchmark_q_kernel_openmp::evaluate_dataset(const std::string sub_benchmark
     for(size_t i = 0; i < cycles; i++) {
         cudaMalloc((void**)&q_d, sizeof(real_type)*(data_ptr_dense -> size() - 1));
 
-        cudaMalloc((void**)&height_csr_d, sizeof(size_t));
-        cudaMalloc((void**)&nnz_csr_d, sizeof(size_t));
+        cudaMalloc((void**)&height_csr_d, sizeof(int));
+        cudaMalloc((void**)&nnz_csr_d, sizeof(int));
         cudaMalloc((void**)&values_csr_d, sizeof(real_type)*(data_ptr_csr -> get_nnz()));
         cudaMalloc((void**)&col_csr_d, sizeof(size_t)*(data_ptr_csr -> get_nnz()));
         cudaMalloc((void**)&row_csr_d, sizeof(size_t)*(data_ptr_csr -> get_height()));
 
-        cudaMemcpy(height_csr_d, data_ptr_csr.get() -> get_height(), sizeof(size_t), cudaMemcpyHostToDevice);
-        cudaMemcpy(nnz_csr_d, data_ptr_csr.get() -> get_nnz(), sizeof(size_t), cudaMemcpyHostToDevice);
+        cudaMemcpy(height_csr_d, data_ptr_csr.get() -> get_height(), sizeof(int), cudaMemcpyHostToDevice);
+        cudaMemcpy(nnz_csr_d, data_ptr_csr.get() -> get_nnz(), sizeof(int), cudaMemcpyHostToDevice);
         cudaMemcpy(values_csr_d, data_ptr_csr.get() -> get_values(), sizeof(real_type)*(data_ptr_csr -> get_nnz()), cudaMemcpyHostToDevice);
         cudaMemcpy(row_csr_d, data_ptr_csr.get() -> get_rows(), sizeof(size_t)*(data_ptr_csr -> get_nnz()), cudaMemcpyHostToDevice);
         cudaMemcpy(column_csr_d, data_ptr_csr.get() -> get_columns(), sizeof(size_t)*(data_ptr_csr -> get_height()), cudaMemcpyHostToDevice);
