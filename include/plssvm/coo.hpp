@@ -80,6 +80,20 @@ class coo {
          */
         size_t get_width() const {return width;}
 
+        /**
+         * @return std::vector<size_t> col_ids of stored matrix
+         */
+        std::vector<size_t> get_col_ids() const {return col_ids;}
+
+        /**
+         * @return std::vector<size_t> row_ids of stored matrix
+         */
+        std::vector<size_t> get_row_ids() const {return row_ids;}
+
+        /**
+         * @return std::vector<real_type> values of stored matrix
+         */
+        std::vector<real_type> get_values() const {return values;}
 
         ///////////////
         // modifiers //
