@@ -125,7 +125,7 @@ void benchmark_svm_kernel_openmp::evaluate_dataset(const std::string sub_benchma
         cudaMemcpy(data_dense_d, data_ptr_dense_1D.get(), sizeof(real_type)*(data_ptr_dense_1D.get() -> size()));
         cudaMemcpy(num_rows_d, data_ptr_dense_1D.get() -> size(), sizeof(int));
         cudaMemcpy(num_cols_d, (*data_ptr_dense_1D.get())[0].size(), sizeof(int));
-        cudaMemcpy(data_dense_last_d, data_dense_last, sizeof(real_type) * (*data_ptr_dense_1D.get())[0].size());
+        cudaMemcpy(data_dense_last_d, data_dense_last, sizeof(real_type) * (*data_ptr_dense.get())[0].size());
         cudaMemcpy(id_d, id, sizeof(int));
 
         q = std::vector<real_type>(data_ptr_dense->size() - 1); // q-Vector
@@ -137,7 +137,7 @@ void benchmark_svm_kernel_openmp::evaluate_dataset(const std::string sub_benchma
         ret = std::vector<real_type>(data_ptr_dense->size(), 0.);
         cudaMemcpy(ret_d, ret, sizeof(real_type)*ret.size(), cudaMemcpyHostToDevice);
         d = std::vector<real_type>(data_ptr_dense->size(), 1.); 
-        cudaMemcpy(d_d, f, sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
+        cudaMemcpy(d_d, d, sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
 
         plssvm::cuda::device_kernel_q_linear<<<grid, block>>>(q_d, data_dense_d, data_dense_last_d, num_rows_d, num_cols_d);
         cudaDeviceSynchronize();
@@ -157,7 +157,7 @@ void benchmark_svm_kernel_openmp::evaluate_dataset(const std::string sub_benchma
         ret = std::vector<real_type>(data_ptr_dense->size(), 0.);
         cudaMemcpy(ret_d, ret, sizeof(real_type)*ret.size(), cudaMemcpyHostToDevice);
         d = std::vector<real_type>(data_ptr_dense->size(), 1.);
-        cudaMemcpy(d_d, f, sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
+        cudaMemcpy(d_d, d, sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
 
         plssvm::cuda::device_kernel_q_poly<<<grid, block>>>(q_d, data_dense_d, data_dense_last_d, num_rows_d, num_cols_d, degree_d, gamma_d, coef0_d);
         cudaDeviceSynchronize();
@@ -177,7 +177,7 @@ void benchmark_svm_kernel_openmp::evaluate_dataset(const std::string sub_benchma
         ret = std::vector<real_type>(data_ptr_dense->size(), 0.);
         cudaMemcpy(ret_d, ret, sizeof(real_type)*ret.size(), cudaMemcpyHostToDevice);
         d = std::vector<real_type>(data_ptr_dense->size(), 1.); 
-        cudaMemcpy(d_d, f, sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
+        cudaMemcpy(d_d, d, sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
 
         plssvm::cuda::device_kernel_q_radial<<<grid, block>>>(q_d, data_dense_d, data_dense_last_d, num_rows_d, num_cols_d, gamma_d);
         cudaDeviceSynchronize();
@@ -235,7 +235,7 @@ void benchmark_svm_kernel_openmp::evaluate_dataset(const std::string sub_benchma
         ret = std::vector<real_type>(data_ptr_coo->get_height(), 0.);
         cudaMemcpy(ret_d, ret, sizeof(real_type)*ret.size(), cudaMemcpyHostToDevice);
         d = std::vector<real_type>(data_ptr_coo->get_height(), 1.); 
-        cudaMemcpy(d_d, f, sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
+        cudaMemcpy(d_d, d, sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
 
         plssvm::cuda::device_kernel_q_linear<<<grid, block>>>(q_d, col_coo_d, row_coo_d, values_coo_d, last_row_begin_coo_d, nnz_coo_d);
         cudaDeviceSynchronize();
@@ -255,7 +255,7 @@ void benchmark_svm_kernel_openmp::evaluate_dataset(const std::string sub_benchma
         ret = std::vector<real_type>(data_ptr_coo->get_height(), 0.);
         cudaMemcpy(ret_d, ret, sizeof(real_type)*ret.size(), cudaMemcpyHostToDevice);
         d = std::vector<real_type>(data_ptr_coo->get_height(), 1.);
-        cudaMemcpy(d_d, f, sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
+        cudaMemcpy(d_d, d, sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
 
         plssvm::cuda::device_kernel_q_poly<<<grid, block>>>(q_d, col_coo_d, row_coo_d, values_coo_d, last_row_begin_coo_d, nnz_coo_d, degree_d, gamma_d, coef0_d);
         cudaDeviceSynchronize();
@@ -275,7 +275,7 @@ void benchmark_svm_kernel_openmp::evaluate_dataset(const std::string sub_benchma
         ret = std::vector<real_type>(data_ptr_coo->get_height(), 0.);
         cudaMemcpy(ret_d, ret, sizeof(real_type)*ret.size(), cudaMemcpyHostToDevice);
         d = std::vector<real_type>(data_ptr_coo->get_height(), 1.); 
-        cudaMemcpy(d_d, f, sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
+        cudaMemcpy(d_d, d, sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
 
         plssvm::cuda::device_kernel_q_radial<<<grid, block>>>(q_d, col_coo_d, row_coo_d, values_coo_d, last_row_begin_coo_d, nnz_coo_d, gamma_d);
         cudaDeviceSynchronize();
@@ -332,7 +332,7 @@ void benchmark_svm_kernel_openmp::evaluate_dataset(const std::string sub_benchma
         ret = std::vector<real_type>(data_ptr_csr->get_height(), 0.);
         cudaMemcpy(ret_d, ret, sizeof(real_type)*ret.size(), cudaMemcpyHostToDevice);
         d = std::vector<real_type>(data_ptr_csr->get_height(), 1.); 
-        cudaMemcpy(d_d, f, sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
+        cudaMemcpy(d_d, d, sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
 
         plssvm::cuda::device_kernel_q_linear<<<grid, block>>>(q_d, col_csr_d, row_csr_d, values_csr_d, nnz_csr_d, height_csr_d);
         cudaDeviceSynchronize();
@@ -352,7 +352,7 @@ void benchmark_svm_kernel_openmp::evaluate_dataset(const std::string sub_benchma
         ret = std::vector<real_type>(data_ptr_csr->get_height(), 0.);
         cudaMemcpy(ret_d, ret, sizeof(real_type)*ret.size(), cudaMemcpyHostToDevice);
         d = std::vector<real_type>(data_ptr_csr->get_height(), 1.); 
-        cudaMemcpy(d_d, f, sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
+        cudaMemcpy(d_d, d, sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
 
         plssvm::cuda::device_kernel_q_poly<<<grid, block>>>(q_d, col_csr_d, row_csr_d, values_csr_d, nnz_csr_d, height_csr_d, degree_d, gamma_d, coef0_d);
         cudaDeviceSynchronize();
@@ -372,7 +372,7 @@ void benchmark_svm_kernel_openmp::evaluate_dataset(const std::string sub_benchma
         ret = std::vector<real_type>(data_ptr_csr->get_height(), 0.);
         cudaMemcpy(ret_d, ret, sizeof(real_type)*ret.size(), cudaMemcpyHostToDevice);
         d = std::vector<real_type>(data_ptr_csr->get_height(), 1.); 
-        cudaMemcpy(d_d, f, sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
+        cudaMemcpy(d_d, d, sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
 
         plssvm::cuda::device_kernel_q_radial<<<grid, block>>>(q_d, col_csr_d, row_csr_d, values_csr_d, nnz_csr_d, height_csr_d, gamma_d);
         cudaDeviceSynchronize();

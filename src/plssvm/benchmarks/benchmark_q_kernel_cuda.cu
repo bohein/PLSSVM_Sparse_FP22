@@ -227,6 +227,7 @@ void benchmark_q_kernel_openmp::evaluate_dataset(const std::string sub_benchmark
         cudaMemcpy(values_csr_d, data_ptr_csr.get() -> get_values(), sizeof(real_type)*(data_ptr_csr -> get_nnz()), cudaMemcpyHostToDevice);
         cudaMemcpy(row_csr_d, data_ptr_csr.get() -> get_rows(), sizeof(size_t)*(data_ptr_csr -> get_nnz()), cudaMemcpyHostToDevice);
         cudaMemcpy(column_csr_d, data_ptr_csr.get() -> get_columns(), sizeof(size_t)*(data_ptr_csr -> get_height()), cudaMemcpyHostToDevice);
+        
         std::vector<real_type> q(data_ptr_csr->get_height() - 1); // q-Vector
         cudaMemcpy(q_d, q, sizeof(real_type)*q.size(), cudaMemcpyHostToDevice);
 
