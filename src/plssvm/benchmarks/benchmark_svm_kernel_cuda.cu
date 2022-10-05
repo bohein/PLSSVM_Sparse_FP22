@@ -56,6 +56,7 @@ void benchmark_svm_kernel_openmp::evaluate_dataset(const std::string sub_benchma
     int degree_d;
     real_type gamma_d;
     real_type coef0_d;
+    
 
     cudaMalloc((void**)&cost_d, sizeof(real_type));
     cudaMemcpy(cost_d, cost, sizeof(real_type), cudaMemcpyToDevice);
@@ -99,19 +100,21 @@ void benchmark_svm_kernel_openmp::evaluate_dataset(const std::string sub_benchma
     std::vector<ns> raw_runtimes_dense_poly;
     std::vector<ns> raw_runtimes_dense_radial;
     params.parse_libsvm_file(path_to_dataset, data_ptr_dense);
-    auto data_ptr_dense_1D = std::make_shared<const std::vector<real_type>>(base_type::transform_data(data_ptr_dense.get(), 0, ((*data_ptr_dense.get())[0].size()) * (data_ptr_dense.get() -> size())));
+    auto data_ptr_dense_1D = std::make_shared<const std::vector<real_type>>(base_type::transform_data(data_ptr_dense.get(), 0, ((*data_ptr_dense.get())[0].size()) * (data_ptr_dense.get() -> size()))); //padding----------------------
 
     auto data_dense_last = std::make_shared<const std::vector<real_type>>((*data_ptr_dense.get())[data_ptr_dense.get() -> size() - 1]);
     std::vector<real_type> data_dense_d;
     std::vector<real_type> data_dense_last_d;
     int num_rows_d;
     int num_cols_d;
+    int id_d;
 
     for(size_t i = 0; i < cycles; i++) {
         cudaMalloc((void**)&q_d, sizeof(real_type)*(data_ptr_dense -> size()));
         cudaMalloc((void**)&ret_d, sizeof(real_type)*(data_ptr_dense -> size()));
         cudaMalloc((void**)&d_d, sizeof(real_type)*(data_ptr_dense -> size()));
         cudaMalloc((void**)&QA_cost_d, sizeof(real_type));
+        cudaMalloc((void**)&id_d, sizeof(int));
 
         cudaMalloc((void**)&data_dense_d, sizeof(real_type)*(data_ptr_dense_1D.get() -> size()));
         cudaMalloc((void**)&num_rows_d, sizeof(int));
@@ -123,6 +126,7 @@ void benchmark_svm_kernel_openmp::evaluate_dataset(const std::string sub_benchma
         cudaMemcpy(num_rows_d, data_ptr_dense_1D.get() -> size(), sizeof(int));
         cudaMemcpy(num_cols_d, (*data_ptr_dense_1D.get())[0].size(), sizeof(int));
         cudaMemcpy(data_dense_last_d, data_dense_last, sizeof(real_type) * (*data_ptr_dense_1D.get())[0].size());
+        cudaMemcpy(id_d, id, sizeof(int));
 
         q = std::vector<real_type>(data_ptr_dense->size() - 1); // q-Vector
         cudaMemcpy(q_d, q, sizeof(real_type)*q.size(), cudaMemcpyHostToDevice);
@@ -139,7 +143,7 @@ void benchmark_svm_kernel_openmp::evaluate_dataset(const std::string sub_benchma
         cudaDeviceSynchronize();
        
         start_time = std::chrono::high_resolution_clock::now();
-        plssvm::cuda::device_kernel_linear<<<grid, block>>>(q_d, ret_d, d_d, data_dense_d, QA_cost_d, cost_d, num_rows_d, num_cols_d, add_d, const kernel_index_type id);
+        plssvm::cuda::device_kernel_linear<<<grid, block>>>(q_d, ret_d, d_d, data_dense_d, QA_cost_d, cost_d, num_rows_d, num_cols_d, add_d, id_d); //id = 0;
         cudaDeviceSynchronize();
         end_time = std::chrono::high_resolution_clock::now();
        
@@ -194,6 +198,7 @@ void benchmark_svm_kernel_openmp::evaluate_dataset(const std::string sub_benchma
         cudaFree(num_rows_d);
         cudaFree(num_cols_d);
         cudaFree(data_dense_last_d);
+        cudaFree(id_d);
     }
     
     

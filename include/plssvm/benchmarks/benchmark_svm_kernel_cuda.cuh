@@ -33,6 +33,7 @@ class benchmark_svm_kernel_cuda : public benchmark {
         int degree = 3; 
         real_type gamma = 3;
         real_type coef0 = 3;
+        int id = 0;
 };
 
 }  // namespace plssvm::benchmarks
