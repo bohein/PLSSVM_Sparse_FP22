@@ -23,6 +23,7 @@ coo<T>::coo()
     , height(0)
     , width(0)
     , current_empty_rows(0)
+    , last_row_begin(0)
 { }
 
 template <typename T>
@@ -267,6 +268,10 @@ T coo<T>::get_row_squared_euclidean_dist(const size_t row_id_1, const size_t row
 
 template <typename T>
 void coo<T>::insert_element(const size_t col_id, const size_t row_id, const real_type value) {
+    if(row_id >= height){
+        last_row_begin = nnz;
+    }
+
     nnz++;
     col_ids.push_back(col_id);
     row_ids.push_back(row_id);
@@ -283,6 +288,8 @@ void coo<T>::append(const coo<real_type> &other) {
         return;
     }
     
+    last_row_begin = nnz + other.last_row_begin;
+
     nnz += other.nnz;
 
     size_t next_row_offset = current_empty_rows + height;
@@ -309,7 +316,8 @@ bool coo<T>::operator==(const coo<T>& other) {
         && width == other.width
         && col_ids == other.col_ids
         && row_ids == other.row_ids
-        && values == other.values;
+        && values == other.values
+        && last_row_begin == other.last_row_begin;
 }
 
 // explicitly instantiate template class

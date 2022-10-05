@@ -87,6 +87,11 @@ class csr {
          */
         std::vector<real_type> get_values() const {return values;}
 
+        /**
+         * @return size_t first index of last row
+         */
+        size_t get_last_row_begin() const {return row_offset.back();}
+
 
         ///////////////
         // modifiers //

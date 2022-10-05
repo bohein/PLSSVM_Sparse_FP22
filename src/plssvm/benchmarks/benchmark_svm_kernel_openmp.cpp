@@ -55,7 +55,6 @@ void benchmark_svm_kernel_openmp::evaluate_dataset(const std::string sub_benchma
     std::vector<ns> raw_runtimes_dense_radial;
     params.parse_libsvm_file(path_to_dataset, data_ptr_dense);
     for(size_t i = 0; i < cycles; i++) {
-        cudaMalloc((void**)&q_d, sizeof(real_type)*(data_ptr_dense -> size() - 1));
         q = std::vector<real_type>(data_ptr_dense->size() - 1); // q-Vector
         
         // linear
