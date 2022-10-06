@@ -10,7 +10,7 @@
 #pragma once
 
 #include "plssvm/constants.hpp"  // plssvm::kernel_index_type
-#include <cstddef>      // std::size_t
+
 namespace plssvm::cuda::csr {
 
 /**
@@ -25,7 +25,7 @@ namespace plssvm::cuda::csr {
  * @param[in] nnz the number of non-zero elements in the data matrix
  */
 template <typename real_type>
-__global__ void device_kernel_q_linear(real_type *q, const size_t *col_ids, const size_t *row_offsets, const real_type *values, const kernel_index_type last_row_begin, const kernel_index_type nnz, const kernel_index_type height);
+__global__ void device_kernel_q_linear(real_type *q, const size_t *col_ids, const size_t *row_offsets, const real_type *values, const kernel_index_type nnz, const kernel_index_type height);
 
 /**
  * @brief Calculates the `q` vector using the polynomial C-SVM kernel on data in CSR format.
@@ -42,7 +42,7 @@ __global__ void device_kernel_q_linear(real_type *q, const size_t *col_ids, cons
  * @param[in] coef0 the coef0 parameter used in the polynomial kernel function
  */
 template <typename real_type>
-__global__ void device_kernel_q_poly(real_type *q, const size_t *col_ids, const size_t *row_offsets, const real_type *values, const kernel_index_type last_row_begin, const kernel_index_type nnz, const int degree, const real_type gamma, const real_type coef0, const kernel_index_type height);
+__global__ void device_kernel_q_poly(real_type *q, const size_t *col_ids, const size_t *row_offsets, const real_type *values, const kernel_index_type nnz, const kernel_index_type height, const int degree, const real_type gamma, const real_type coef0);
 
 /**
  * @brief Calculates the `q` vector using the radial basis functions C-SVM kernel on data in CSR format.
@@ -57,6 +57,6 @@ __global__ void device_kernel_q_poly(real_type *q, const size_t *col_ids, const 
  * @param[in] gamma the gamma parameter used in the rbf kernel function
  */
 template <typename real_type>
-__global__ void device_kernel_q_radial(real_type *q, const size_t *col_ids, const size_t *row_offsets, const real_type *values, const kernel_index_type last_row_begin, const kernel_index_type nnz, const real_type gamma, const kernel_index_type height);
+__global__ void device_kernel_q_radial(real_type *q, const size_t *col_ids, const size_t *row_offsets, const real_type *values, const kernel_index_type nnz, const  kernel_index_type height, const real_type gamma);
 
 }  // namespace plssvm::cuda
