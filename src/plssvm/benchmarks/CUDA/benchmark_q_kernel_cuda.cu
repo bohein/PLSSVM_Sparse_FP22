@@ -8,7 +8,7 @@
  * @brief Defines the base class for benchmarks reagrding q-kernel functions.
  */
 
-#include "plssvm/benchmarks/benchmark_q_kernel_cuda.cuh"
+#include "plssvm/benchmarks/CUDA/benchmark_q_kernel_cuda.cuh"
 
 #include "plssvm/backends/CUDA/q_kernel.cuh"
 #include "plssvm/backends/CUDA/sparse/coo_q_kernel.cuh"
@@ -182,7 +182,7 @@ void benchmark_q_kernel_cuda::evaluate_dataset(const dataset &ds) {
     block = dim3(range_q.block[0], range_q.block[1], range_q.block[2]); 
 
     for(size_t i = 0; i < cycles; i++) {
-        cudaMalloc((void**)&q_d, sizeof(real_type)*(data_ptr_dense -> size() - 1));
+        cudaMalloc((void**)&q_d, sizeof(real_type)*(data_ptr_coo -> get_height() - 1));
 
         cudaMalloc((void**)&nnz_coo_d, sizeof(int));
         cudaMalloc((void**)&last_row_begin_coo_d, sizeof(int));
@@ -205,7 +205,7 @@ void benchmark_q_kernel_cuda::evaluate_dataset(const dataset &ds) {
         fmt::print("coo (linear) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
        
         start_time = std::chrono::high_resolution_clock::now();
-        plssvm::cuda::device_kernel_q_linear<<<grid, block>>>(q_d.data(), col_coo_d.data(), row_coo_d.data(), values_coo_d.data(), last_row_begin_coo_d, nnz_coo_d);
+        plssvm::cuda::coo::device_kernel_q_linear<<<grid, block>>>(q_d.data(), col_coo_d.data(), row_coo_d.data(), values_coo_d.data(), nnz_coo_d, last_row_begin_coo_d);
         cudaDeviceSynchronize();
         end_time = std::chrono::high_resolution_clock::now();
        
@@ -216,7 +216,7 @@ void benchmark_q_kernel_cuda::evaluate_dataset(const dataset &ds) {
         fmt::print("coo (polynomial) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
        
         start_time = std::chrono::high_resolution_clock::now();
-        plssvm::cuda::device_kernel_q_poly<<<grid, block>>>(q_d.data(), col_coo_d.data(), row_coo_d.data(), values_coo_d.data(), last_row_begin_coo_d, nnz_coo_d, degree_d, gamma_d, coef0_d);
+        plssvm::cuda::coo::device_kernel_q_poly<<<grid, block>>>(q_d.data(), col_coo_d.data(), row_coo_d.data(), values_coo_d.data(), nnz_coo_d, last_row_begin_coo_d, degree_d, gamma_d, coef0_d);
         cudaDeviceSynchronize();
         end_time = std::chrono::high_resolution_clock::now();
        
@@ -227,7 +227,7 @@ void benchmark_q_kernel_cuda::evaluate_dataset(const dataset &ds) {
         fmt::print("coo (radial) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
         
         start_time = std::chrono::high_resolution_clock::now();
-        plssvm::cuda::device_kernel_q_radial<<<grid, block>>>(q_d.data(), col_coo_d.data(), row_coo_d.data(), values_coo_d.data(), last_row_begin_coo_d, nnz_coo_d, gamma_d);
+        plssvm::cuda::coo::device_kernel_q_radial<<<grid, block>>>(q_d.data(), col_coo_d.data(), row_coo_d.data(), values_coo_d.data(), nnz_coo_d, last_row_begin_coo_d, gamma_d);
         cudaDeviceSynchronize();
         end_time = std::chrono::high_resolution_clock::now();
        
@@ -258,7 +258,7 @@ void benchmark_q_kernel_cuda::evaluate_dataset(const dataset &ds) {
     block= dim3(range_q.block[0], range_q.block[1], range_q.block[2]);
 
     for(size_t i = 0; i < cycles; i++) {
-        cudaMalloc((void**)&q_d, sizeof(real_type)*(data_ptr_dense -> size() - 1));
+        cudaMalloc((void**)&q_d, sizeof(real_type)*(data_ptr_csr -> get_height() - 1));
 
         cudaMalloc((void**)&height_csr_d, sizeof(int));
         cudaMalloc((void**)&nnz_csr_d, sizeof(int));
@@ -284,7 +284,7 @@ void benchmark_q_kernel_cuda::evaluate_dataset(const dataset &ds) {
         fmt::print("csr (linear) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
         
         start_time = std::chrono::high_resolution_clock::now();
-        plssvm::cuda::device_kernel_q_linear<<<grid, block>>>(q_d.data(), col_csr_d.data(), row_csr_d.data(), values_csr_d.data(), nnz_csr_d, height_csr_d);
+        plssvm::cuda::csr::device_kernel_q_linear<<<grid, block>>>(q_d.data(), col_csr_d.data(), row_csr_d.data(), values_csr_d.data(), nnz_csr_d, height_csr_d);
         cudaDeviceSynchronize();
         end_time = std::chrono::high_resolution_clock::now();
        
@@ -295,7 +295,7 @@ void benchmark_q_kernel_cuda::evaluate_dataset(const dataset &ds) {
         fmt::print("csr (polynomial) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
         
         start_time = std::chrono::high_resolution_clock::now();
-        plssvm::cuda::device_kernel_q_poly<<<grid, block>>>(q_d.data(), col_csr_d.data(), row_csr_d.data(), values_csr_d.data(), nnz_csr_d, height_csr_d, degree_d, gamma_d, coef0_d);
+        plssvm::cuda::csr::device_kernel_q_poly<<<grid, block>>>(q_d.data(), col_csr_d.data(), row_csr_d.data(), values_csr_d.data(), nnz_csr_d, height_csr_d, degree_d, gamma_d, coef0_d);
         cudaDeviceSynchronize();
         end_time = std::chrono::high_resolution_clock::now();
         
@@ -306,7 +306,7 @@ void benchmark_q_kernel_cuda::evaluate_dataset(const dataset &ds) {
         fmt::print("csr (radial) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
         
         start_time = std::chrono::high_resolution_clock::now();
-        plssvm::cuda::device_kernel_q_radial<<<grid, block>>>(q_d.data(), col_csr_d.data(), row_csr_d.data(), values_csr_d.data(), nnz_csr_d, height_csr_d, gamma_d);
+        plssvm::cuda::csr::device_kernel_q_radial<<<grid, block>>>(q_d.data(), col_csr_d.data(), row_csr_d.data(), values_csr_d.data(), nnz_csr_d, height_csr_d, gamma_d);
         cudaDeviceSynchronize();
         end_time = std::chrono::high_resolution_clock::now();
         
@@ -315,7 +315,7 @@ void benchmark_q_kernel_cuda::evaluate_dataset(const dataset &ds) {
 
         cudaFree((void*)&q_d);
 
-        cudaFree((void*)&csr_height_d);
+        cudaFree((void*)&height_csr_d);
         cudaFree((void*)&nnz_csr_d);
         cudaFree((void*)&values_csr_d);
         cudaFree((void*)&col_csr_d);

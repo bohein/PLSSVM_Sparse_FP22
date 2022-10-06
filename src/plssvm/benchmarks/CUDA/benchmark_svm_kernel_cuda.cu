@@ -9,7 +9,7 @@
  * @brief Defines the base class for benchmarks reagrding svm-kernel functions.
  */
 
-#include "plssvm/benchmarks/benchmark_svm_kernel_cuda.cuh"
+#include "plssvm/benchmarks/CUDA/benchmark_svm_kernel_cuda.cuh"
 
 #include "plssvm/backends/CUDA/q_kernel.cuh"
 #include "plssvm/backends/CUDA/sparse/coo_q_kernel.cuh"
