@@ -13,6 +13,7 @@
 #include "plssvm/backends/CUDA/q_kernel.cuh"
 #include "plssvm/backends/CUDA/sparse/coo_q_kernel.cuh"
 #include "plssvm/backends/CUDA/sparse/csr_q_kernel.cuh"
+#include "plssvm/detail/execution_range.hpp"
 
 
 #include <numeric>
@@ -44,13 +45,13 @@ void benchmark_q_kernel_cuda::evaluate_dataset(const dataset &ds) {
     real_type coef0_d;
 
     cudaMalloc((void**)&degree_d, sizeof(int)); //cudaMalloc(reinterpret_cast<void **>(&data_), size_ * sizeof(value_type))
-    cudaMemcpy(degree_d, degree, sizeof(real_type), cudaMemcpyHostToDevice);
+    cudaMemcpy((void*)&degree_d, (void*)&degree, sizeof(real_type), cudaMemcpyHostToDevice);
     
     cudaMalloc((void**)&gamma_d, sizeof(real_type));
-    cudaMemcpy(gamma_d, gamma, sizeof(real_type), cudaMemcpyHostToDevice);
+    cudaMemcpy((void*)&gamma_d, (void*)&gamma, sizeof(real_type), cudaMemcpyHostToDevice);
     
     cudaMalloc((void**)&coef0_d, sizeof(real_type));
-    cudaMemcpy(coef0_d, coef0, sizeof(real_type), cudaMemcpyHostToDevice);
+    cudaMemcpy((void*)&coef0_d, (void*)&coef0, sizeof(real_type), cudaMemcpyHostToDevice);
 
     std::vector<real_type> q_d;
 
@@ -84,7 +85,16 @@ void benchmark_q_kernel_cuda::evaluate_dataset(const dataset &ds) {
     size_t boundary_size = static_cast<std::size_t>(THREAD_BLOCK_SIZE * INTERNAL_BLOCK_SIZE);
     size_t num_rows_exc_last = data_ptr_dense.get() -> size() - 1;
 
-    auto data_ptr_dense_1D = std::make_shared<const std::vector<real_type>>(plssvm::csvm<real_type>::transform_data(data_ptr_dense.get(), boundary_size, num_rows_exc_last));
+ //auto data_ptr_dense_1D = std::make_shared<const std::vector<real_type>>(transform_data(data_ptr_dense.get(), boundary_size, num_rows_exc_last));
+    std::vector<real_type> vec_1D(data_ptr_dense.get()[0].size() * (num_rows_exc_last + boundary_size));
+    
+    for (typename std::vector<real_type>::size_type col = 0; col < data_ptr_dense.get()[0].size(); ++col) {
+        for (std::size_t row = 0; row < num_rows_exc_last; ++row) {
+            vec_1D[col * (num_rows_exc_last + boundary_size) + row] = data_ptr_dense->at(row)[col];
+        }
+    }
+
+    auto data_ptr_dense_1D = std::make_shared<const std::vector<real_type>>(vec_1D);
 
     auto data_dense_last = std::make_shared<const std::vector<real_type>>((*data_ptr_dense.get())[data_ptr_dense.get() -> size() - 1]);
     std::vector<real_type> data_dense_d;
@@ -92,7 +102,6 @@ void benchmark_q_kernel_cuda::evaluate_dataset(const dataset &ds) {
     int num_rows_d;
     int num_cols_d;
 
-    
 
     plssvm::detail::execution_range range_q({ static_cast<std::size_t>(std::ceil(static_cast<real_type>(num_rows_exc_last) / static_cast<real_type>(THREAD_BLOCK_SIZE))) },
                                             { std::min<std::size_t>(THREAD_BLOCK_SIZE, num_rows_exc_last) });
@@ -105,22 +114,24 @@ void benchmark_q_kernel_cuda::evaluate_dataset(const dataset &ds) {
         cudaMalloc((void**)&data_dense_d, sizeof(real_type)*(data_ptr_dense_1D.get() -> size()));
         cudaMalloc((void**)&num_rows_d, sizeof(int));
         cudaMalloc((void**)&num_cols_d, sizeof(int));
-        cudaMalloc((void**)&data_dense_last_d, sizeof(real_type)*(*data_ptr_dense_1D.get())[0].size());
+        cudaMalloc((void**)&data_dense_last_d, sizeof(real_type)*(data_ptr_dense.get()->at(0).size()));
 
-
-        cudaMemcpy(data_dense_d, data_ptr_dense_1D.get(), sizeof(real_type)*(data_ptr_dense_1D.get() -> size()));
-        cudaMemcpy(num_rows_d, num_rows_exc_last + boundary_size, sizeof(int));
-        cudaMemcpy(num_cols_d, (*data_ptr_dense_1D.get())[0].size(), sizeof(int));
-        cudaMemcpy(data_dense_last_d, data_dense_last, sizeof(real_type) * (*data_ptr_dense_1D.get())[0].size());
+        size_t num_rows = num_rows_exc_last + boundary_size;
+        size_t num_cols = data_ptr_dense.get()->at(0).size();
+        cudaMemcpy((void*)&data_dense_d[0], (void*)&data_ptr_dense_1D->at(0), sizeof(real_type)*(data_ptr_dense_1D.get() -> size()), cudaMemcpyHostToDevice);
+        cudaMemcpy((void*)&num_rows_d, (void*)&num_rows, sizeof(int),cudaMemcpyHostToDevice);
+        cudaMemcpy((void*)&num_cols_d, (void*)&num_cols, sizeof(int) ,cudaMemcpyHostToDevice);
+        cudaMemcpy((void*)&data_dense_last_d[0], (void*)&data_dense_last, sizeof(real_type)*(data_ptr_dense.get()->at(0).size()),cudaMemcpyHostToDevice);
 
         std::vector<real_type> q(data_ptr_dense->size() - 1); // q-Vector
-        cudaMemcpy(q_d, q, sizeof(real_type)*q.size(), cudaMemcpyHostToDevice);
+        cudaMemcpy((void*)&q_d[0], (void*)&q, sizeof(real_type)*q.size(), cudaMemcpyHostToDevice);
 
         // linear
         fmt::print("dense (linear) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
        
         start_time = std::chrono::high_resolution_clock::now();
-        plssvm::cuda::device_kernel_q_linear<<<grid, block>>>(q_d, data_dense_d, data_dense_last_d, num_rows_d, num_cols_d);
+        //Ist .data() hier richtig?
+        plssvm::cuda::device_kernel_q_linear<<<grid, block>>>(q_d.data(), data_dense_d.data(), data_dense_last_d.data(), num_rows_d, num_cols_d);
         cudaDeviceSynchronize();
         end_time = std::chrono::high_resolution_clock::now();
        
@@ -131,7 +142,7 @@ void benchmark_q_kernel_cuda::evaluate_dataset(const dataset &ds) {
         fmt::print("dense (polynomial) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
        
         start_time = std::chrono::high_resolution_clock::now();
-        plssvm::cuda::device_kernel_q_poly<<<grid_q, block>>>(q_d, data_dense_d, data_dense_last_d, num_rows_d, num_cols_d, degree_d, gamma_d, coef0_d);
+        plssvm::cuda::device_kernel_q_poly<<<grid, block>>>(q_d.data(), data_dense_d.data(), data_dense_last_d.data(), num_rows_d, num_cols_d, degree_d, gamma_d, coef0_d);
         cudaDeviceSynchronize();
         end_time = std::chrono::high_resolution_clock::now();
        
@@ -142,18 +153,18 @@ void benchmark_q_kernel_cuda::evaluate_dataset(const dataset &ds) {
         fmt::print("dense (radial) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
        
         start_time = std::chrono::high_resolution_clock::now();
-        plssvm::cuda::device_kernel_q_radial<<<grid, block>>>(q_d, data_dense_d, data_dense_last_d, num_rows_d, num_cols_d, gamma_d);
+        plssvm::cuda::device_kernel_q_radial<<<grid, block>>>(q_d.data(), data_dense_d.data(), data_dense_last_d.data(), num_rows_d, num_cols_d, gamma_d);
         cudaDeviceSynchronize();
         end_time = std::chrono::high_resolution_clock::now();
       
         raw_runtimes_dense_radial.push_back(std::chrono::round<ns>(end_time - start_time));
         fmt::print(std::to_string(std::chrono::round<ns>(end_time - start_time).count()/1000000) + "ms)\n");
 
-        cudaFree(q_d);
-        cudaFree(data_dense_d);
-        cudaFree(num_rows_d);
-        cudaFree(num_cols_d);
-        cudaFree(data_dense_last_d);
+        cudaFree((void*)&q_d);
+        cudaFree((void*)&data_dense_d);
+        cudaFree((void*)&num_rows_d);
+        cudaFree((void*)&num_cols_d);
+        cudaFree((void*)&data_dense_last_d);
     }
     
     // coo

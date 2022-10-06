@@ -19,6 +19,8 @@
 #include "plssvm/backends/CUDA/sparse/coo_svm_kernel.cuh"
 #include "plssvm/backends/CUDA/sparse/csr_svm_kernel.cuh"
 
+#include "plssvm/detail/execution_range.hpp"
+
 #include <numeric>
 #include <iostream>
 
@@ -58,20 +60,20 @@ void benchmark_svm_kernel_cuda::evaluate_dataset(const dataset& ds) {
     real_type coef0_d;
     
 
-    cudaMalloc((void*)&cost_d, sizeof(real_type));
-    cudaMemcpy(cost_d, cost, sizeof(real_type), cudaMemcpyHostToDevice);
+    cudaMalloc((void**)&cost_d, sizeof(real_type));
+    cudaMemcpy((void*)&cost_d, (void*)&cost, sizeof(real_type), cudaMemcpyHostToDevice);
     
-    cudaMalloc((void*)&add_d, sizeof(real_type));
-    cudaMemcpy(add_d, add, sizeof(real_type), cudaMemcpyHostToDevice);
+    cudaMalloc((void**)&add_d, sizeof(real_type));
+    cudaMemcpy((void*)&add_d, (void*)&add, sizeof(real_type), cudaMemcpyHostToDevice);
     
-    cudaMalloc((void*)&degree_d, sizeof(int));
-    cudaMemcpy(degree_d, degree, sizeof(real_type), cudaMemcpyHostToDevice);
+    cudaMalloc((void**)&degree_d, sizeof(int));
+    cudaMemcpy((void*)&degree_d, (void*)&degree, sizeof(real_type), cudaMemcpyHostToDevice);
     
-    cudaMalloc((void*)&gamma_d, sizeof(real_type));
-    cudaMemcpy(gamma_d, gamma, sizeof(real_type), cudaMemcpyHostToDevice);
+    cudaMalloc((void**)&gamma_d, sizeof(real_type));
+    cudaMemcpy((void*)&gamma_d, (void*)&gamma, sizeof(real_type), cudaMemcpyHostToDevice);
     
-    cudaMalloc((void*)&coef0_d, sizeof(real_type));
-    cudaMemcpy(coef0_d, coef0, sizeof(real_type), cudaMemcpyHostToDevice);
+    cudaMalloc((void**)&coef0_d, sizeof(real_type));
+    cudaMemcpy((void*)&coef0_d, (void*)&coef0, sizeof(real_type), cudaMemcpyHostToDevice);
 
     std::vector<std::vector<real_type>> data_dense;
     std::vector<real_type> data_dense_d;
@@ -100,18 +102,26 @@ void benchmark_svm_kernel_cuda::evaluate_dataset(const dataset& ds) {
     std::vector<ns> raw_runtimes_dense_poly;
     std::vector<ns> raw_runtimes_dense_radial;
     params.parse_libsvm_file(ds.path, data_ptr_dense);
-    auto data_ptr_dense_1D = std::make_shared<const std::vector<real_type>>(plssvm::csvm<real_type>::transform_data(data_ptr_dense.get(), 0, ((*data_ptr_dense.get())[0].size()) * (data_ptr_dense.get() -> size()))); //padding----------------------
+    //auto data_ptr_dense_1D = std::make_shared<const std::vector<real_type>>(plssvm::csvm<real_type>::transform_data(data_ptr_dense.get(), 0, 
+    // ((*data_ptr_dense.get())[0].size()) * (data_ptr_dense.get() -> size()))); //padding----------------------
+
+    const size_t num = ((*data_ptr_dense.get())[0].size()) * (data_ptr_dense.get()->size());
+    std::vector<real_type> vec_1D(num);
+    
+    for (typename std::vector<real_type>::size_type col = 0; col < data_ptr_dense.get()[0].size(); ++col) {
+        for (std::size_t row = 0; row < data_ptr_dense.get()->size(); ++row) {
+            vec_1D[col * data_ptr_dense.get()->size() + row] = data_ptr_dense->at(row)[col];
+        }
+    }
+
+    auto data_ptr_dense_1D = std::make_shared<const std::vector<real_type>>(vec_1D);
 
     auto data_dense_last = std::make_shared<const std::vector<real_type>>((*data_ptr_dense.get())[data_ptr_dense.get() -> size() - 1]);
-    std::vector<real_type> data_dense_d;
     std::vector<real_type> data_dense_last_d;
     int num_rows_d;
     int num_cols_d;
     int id_d;
     
-    size_t boundary_size = static_cast<std::size_t>(THREAD_BLOCK_SIZE * INTERNAL_BLOCK_SIZE);
-    size_t num_rows_exc_last;
-
     size_t boundary_size = static_cast<std::size_t>(THREAD_BLOCK_SIZE * INTERNAL_BLOCK_SIZE);
     size_t num_rows_exc_last = data_ptr_dense.get() -> size() - 1;
 
