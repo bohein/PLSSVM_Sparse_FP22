@@ -315,7 +315,7 @@ void benchmark_q_kernel_cuda::evaluate_dataset(const dataset &ds) {
 
         cudaFree((void*)&q_d);
 
-        cudaFree((void*)&csr_height_d);
+        cudaFree((void*)&height_csr_d);
         cudaFree((void*)&nnz_csr_d);
         cudaFree((void*)&values_csr_d);
         cudaFree((void*)&col_csr_d);
