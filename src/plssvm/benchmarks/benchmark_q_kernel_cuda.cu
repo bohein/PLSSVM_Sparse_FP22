@@ -78,14 +78,27 @@ void benchmark_q_kernel_openmp::evaluate_dataset(const std::string sub_benchmark
     std::vector<ns> raw_runtimes_dense_linear;
     std::vector<ns> raw_runtimes_dense_poly;
     std::vector<ns> raw_runtimes_dense_radial;
+   
     params.parse_libsvm_file(path_to_dataset, data_ptr_dense);
-    auto data_ptr_dense_1D = std::make_shared<const std::vector<real_type>>(base_type::transform_data(data_ptr_dense.get(), 0, ((*data_ptr_dense.get())[0].size()) * (data_ptr_dense.get() -> size())));
+
+    size_t boundary_size = static_cast<std::size_t>(THREAD_BLOCK_SIZE * INTERNAL_BLOCK_SIZE);
+    size_t num_rows_exc_last = data_ptr_dense.get() -> size() - 1;
+
+    auto data_ptr_dense_1D = std::make_shared<const std::vector<real_type>>(plssvm::csvm<real_type>::transform_data(data_ptr_dense.get(), boundary_size, num_rows_exc_last));
 
     auto data_dense_last = std::make_shared<const std::vector<real_type>>((*data_ptr_dense.get())[data_ptr_dense.get() -> size() - 1]);
     std::vector<real_type> data_dense_d;
     std::vector<real_type> data_dense_last_d;
     int num_rows_d;
     int num_cols_d;
+
+    
+
+    plssvm::detail::execution_range range_q({ static_cast<std::size_t>(std::ceil(static_cast<real_type>(num_rows_exc_last) / static_cast<real_type>(THREAD_BLOCK_SIZE))) },
+                                            { std::min<std::size_t>(THREAD_BLOCK_SIZE, num_rows_exc_last) });
+
+    dim3 grid(range_q.grid[0], range_q.grid[1], range_q.grid[2]);
+    dim3 block(range_q.block[0], range_q.block[1], range_q.block[2]); 
 
     for(size_t i = 0; i < cycles; i++) {
         cudaMalloc((void**)&q_d, sizeof(real_type)*(data_ptr_dense -> size() - 1));
@@ -96,7 +109,7 @@ void benchmark_q_kernel_openmp::evaluate_dataset(const std::string sub_benchmark
 
 
         cudaMemcpy(data_dense_d, data_ptr_dense_1D.get(), sizeof(real_type)*(data_ptr_dense_1D.get() -> size()));
-        cudaMemcpy(num_rows_d, data_ptr_dense_1D.get() -> size(), sizeof(int));
+        cudaMemcpy(num_rows_d, num_rows_exc_last + boundary_size, sizeof(int));
         cudaMemcpy(num_cols_d, (*data_ptr_dense_1D.get())[0].size(), sizeof(int));
         cudaMemcpy(data_dense_last_d, data_dense_last, sizeof(real_type) * (*data_ptr_dense_1D.get())[0].size());
 
@@ -118,7 +131,7 @@ void benchmark_q_kernel_openmp::evaluate_dataset(const std::string sub_benchmark
         fmt::print("dense (polynomial) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
        
         start_time = std::chrono::high_resolution_clock::now();
-        plssvm::cuda::device_kernel_q_poly<<<grid, block>>>(q_d, data_dense_d, data_dense_last_d, num_rows_d, num_cols_d, degree_d, gamma_d, coef0_d);
+        plssvm::cuda::device_kernel_q_poly<<<grid_q, block>>>(q_d, data_dense_d, data_dense_last_d, num_rows_d, num_cols_d, degree_d, gamma_d, coef0_d);
         cudaDeviceSynchronize();
         end_time = std::chrono::high_resolution_clock::now();
        
@@ -148,6 +161,15 @@ void benchmark_q_kernel_openmp::evaluate_dataset(const std::string sub_benchmark
     std::vector<ns> raw_runtimes_coo_poly;
     std::vector<ns> raw_runtimes_coo_radial;
     params.parse_libsvm_file_sparse(path_to_dataset, data_ptr_coo);
+
+    num_rows_exc_last = data_ptr_coo.get() -> get_height() - 1;
+
+    range_q = plssvm::detail::execution_range({ static_cast<std::size_t>(std::ceil(static_cast<real_type>(num_rows_exc_last) / static_cast<real_type>(THREAD_BLOCK_SIZE))) },
+                                            { std::min<std::size_t>(THREAD_BLOCK_SIZE, num_rows_exc_last) });
+    
+    grid = dim3(range_q.grid[0], range_q.grid[1], range_q.grid[2]);
+    block = dim3(range_q.block[0], range_q.block[1], range_q.block[2]); 
+
     for(size_t i = 0; i < cycles; i++) {
         cudaMalloc((void**)&q_d, sizeof(real_type)*(data_ptr_dense -> size() - 1));
 
@@ -213,6 +235,15 @@ void benchmark_q_kernel_openmp::evaluate_dataset(const std::string sub_benchmark
     std::vector<ns> raw_runtimes_csr_poly;
     std::vector<ns> raw_runtimes_csr_radial;
     params.parse_libsvm_file_sparse(path_to_dataset, data_ptr_csr);
+
+    num_rows_exc_last = data_ptr_csr.get() -> get_height() - 1;
+
+    range_q = plssvm::detail::execution_range({ static_cast<std::size_t>(std::ceil(static_cast<real_type>(num_rows_exc_last) / static_cast<real_type>(THREAD_BLOCK_SIZE))) },
+                                            { std::min<std::size_t>(THREAD_BLOCK_SIZE, num_rows_exc_last) });
+
+    grid = dim3(range_q.grid[0], range_q.grid[1], range_q.grid[2]);
+    block= dim3(range_q.block[0], range_q.block[1], range_q.block[2]);
+
     for(size_t i = 0; i < cycles; i++) {
         cudaMalloc((void**)&q_d, sizeof(real_type)*(data_ptr_dense -> size() - 1));
 
