@@ -19,13 +19,15 @@ benchmark_read_data::benchmark_read_data() : benchmark{"Read Data"} {}
 void benchmark_read_data::run() {
     using real_type = double;
 
-    evaluate_dataset("tiny (~150)", DATASET_TINY);
-    evaluate_dataset("small (~5000)", DATASET_SMALL);
-    evaluate_dataset("medium (~50000)", DATASET_MEDIUM);
-    evaluate_dataset("large (~250000)", DATASET_LARGE);
+    datasets.insert(datasets.end(), DATAPOINT.begin(), DATAPOINT.end());
+    datasets.insert(datasets.end(), FEATURE.begin(), FEATURE.end());
+    datasets.insert(datasets.end(), DENSITY.begin(), DENSITY.end());
+    //datasets.insert(datasets.end(), REAL_WORLD.begin(), REAL_WORLD.end());
+
+    for (auto& ds : datasets) evaluate_dataset(ds);
 }
 
-void benchmark_read_data::evaluate_dataset(const std::string sub_benchmark_name, const std::string path_to_dataset) {
+void benchmark_read_data::evaluate_dataset(const dataset &ds) {
     using real_type = double;
 
     plssvm::parameter<real_type> params;
@@ -45,7 +47,7 @@ void benchmark_read_data::evaluate_dataset(const std::string sub_benchmark_name,
     size_t num_points;
     for(size_t i = 0; i < cycles; i++) {
         std::chrono::time_point start_time = std::chrono::high_resolution_clock::now();
-        params.parse_libsvm_file(path_to_dataset, data_ptr_dense);
+        params.parse_libsvm_file(ds.path, data_ptr_dense);
         std::chrono::time_point end_time = std::chrono::high_resolution_clock::now();
         raw_runtimes_dense.push_back(std::chrono::round<ns>(end_time - start_time));
         
@@ -68,7 +70,7 @@ void benchmark_read_data::evaluate_dataset(const std::string sub_benchmark_name,
     std::vector<ns> raw_runtimes_coo;
     for(size_t i = 0; i < cycles; i++) {
         std::chrono::time_point start_time = std::chrono::high_resolution_clock::now();
-        params.parse_libsvm_file_sparse(path_to_dataset, data_ptr_coo);
+        params.parse_libsvm_file_sparse(ds.path, data_ptr_coo);
         std::chrono::time_point end_time = std::chrono::high_resolution_clock::now();
         raw_runtimes_coo.push_back(std::chrono::round<ns>(end_time - start_time));
     }
@@ -77,15 +79,15 @@ void benchmark_read_data::evaluate_dataset(const std::string sub_benchmark_name,
     std::vector<ns> raw_runtimes_csr;
     for(size_t i = 0; i < cycles; i++) {
         std::chrono::time_point start_time = std::chrono::high_resolution_clock::now();
-        params.parse_libsvm_file_sparse(path_to_dataset, data_ptr_csr);
+        params.parse_libsvm_file_sparse(ds.path, data_ptr_csr);
         std::chrono::time_point end_time = std::chrono::high_resolution_clock::now();
         raw_runtimes_csr.push_back(std::chrono::round<ns>(end_time - start_time));
     }
     
-    sub_benchmark_names.push_back(sub_benchmark_name + " dense");
-    sub_benchmark_names.push_back(sub_benchmark_name + " dense (+ vectorization)");
-    sub_benchmark_names.push_back(sub_benchmark_name + " COO");
-    sub_benchmark_names.push_back(sub_benchmark_name + " CSR");
+    sub_benchmark_names.push_back(" dense");
+    sub_benchmark_names.push_back(" dense (+ vectorization)");
+    sub_benchmark_names.push_back(" COO");
+    sub_benchmark_names.push_back(" CSR");
     auto sub_benchmark_runtimes = std::vector<std::vector<ns>>{
         raw_runtimes_dense, 
         raw_runtimes_dense_vectorized, 

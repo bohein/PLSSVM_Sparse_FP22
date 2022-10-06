@@ -22,7 +22,7 @@ class benchmark_svm_kernel_openmp : public benchmark {
         void run() override;
 
     protected:
-        void evaluate_dataset(const std::string sub_benchmark_name, const std::string path_to_dataset) override;
+        void evaluate_dataset(const dataset &ds) override;
 
         // csvm params
         real_type cost = 1;

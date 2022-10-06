@@ -22,7 +22,10 @@ class benchmark_read_data : public benchmark {
         void run() override;
 
     protected:
-        void evaluate_dataset(const std::string sub_benchmark_name, const std::string path_to_dataset) override;
+        void evaluate_dataset(const dataset &ds) override;
+
+        uint16_t num_data_structures = 4;
+        uint16_t num_kernel_types = 1;
 };
 
 }  // namespace plssvm::benchmarks

@@ -15,28 +15,40 @@ namespace plssvm::benchmarks {
 benchmark::benchmark(const std::string benchmark_name) : name{benchmark_name} {}
 
 std::string benchmark::data_to_csv() {
+
     std::string csv = name + "\n" 
-        + "sub-benchmarks" + ',' 
+        + "dataset" + ',' 
+        + "num. datapoints" + ',' 
+        + "num. features" + ',' 
+        + "approx. density" + ',' 
+        + "sub-benchmark" + ',' 
         + "mean (ms)" + ',' 
         + "median (ms)" + ',' 
         + "min (ms)" + ',' 
         + "max (ms)" + ',' 
         + "variance (ms²)" + ','
         + "std. deviation (ms)" + "\n";
-    if (sub_benchmark_names.size() == runtimes_mean.size()
-        && sub_benchmark_names.size() == runtimes_median.size()
-        && sub_benchmark_names.size() == runtimes_min.size()
-        && sub_benchmark_names.size() == runtimes_max.size()
-        && sub_benchmark_names.size() == runtimes_variance.size()
-        && sub_benchmark_names.size() == runtimes_std_deviation.size()) {
-        for (size_t i = 0; i < sub_benchmark_names.size(); i++) {
-            csv += sub_benchmark_names[i] + ',' 
-            + std::to_string(runtimes_mean[i].count() / 1000000.0) + ',' 
-            + std::to_string(runtimes_median[i].count() / 1000000.0) + ','
-            + std::to_string(runtimes_min[i].count() / 1000000.0) + ','  
-            + std::to_string(runtimes_max[i].count() / 1000000.0) + ',' 
-            + std::to_string(runtimes_variance[i].count() / 1000000000000.0) + ',' // 10^6 * 10^6
-            + std::to_string(runtimes_std_deviation[i].count() / 1000000.0) + "\n";
+    if (datasets.size() * num_data_structures * num_kernel_types == sub_benchmark_names.size()
+        && datasets.size() * num_data_structures * num_kernel_types == runtimes_mean.size()
+        && datasets.size() * num_data_structures * num_kernel_types == runtimes_median.size()
+        && datasets.size() * num_data_structures * num_kernel_types == runtimes_min.size()
+        && datasets.size() * num_data_structures * num_kernel_types == runtimes_max.size()
+        && datasets.size() * num_data_structures * num_kernel_types == runtimes_variance.size()
+        && datasets.size() * num_data_structures * num_kernel_types == runtimes_std_deviation.size()) {
+        for (size_t i = 0; i < datasets.size(); i++) {
+            for (size_t j = 0; j < num_data_structures * num_kernel_types; j++) {
+                csv += datasets[i].name + ',' 
+                + std::to_string(datasets[i].numDatapoints) + ',' 
+                + std::to_string(datasets[i].numFeatures) + ',' 
+                + std::to_string(datasets[i].approxDensity) + ',' 
+                + sub_benchmark_names[i+j] + ',' 
+                + std::to_string(runtimes_mean[i+j].count() / 1000000.0) + ',' 
+                + std::to_string(runtimes_median[i+j].count() / 1000000.0) + ','
+                + std::to_string(runtimes_min[i+j].count() / 1000000.0) + ','  
+                + std::to_string(runtimes_max[i+j].count() / 1000000.0) + ',' 
+                + std::to_string(runtimes_variance[i+j].count() / 1000000000000.0) + ',' // 10^6 * 10^6
+                + std::to_string(runtimes_std_deviation[i+j].count() / 1000000.0) + "\n";
+            }
         }
     }
     else {

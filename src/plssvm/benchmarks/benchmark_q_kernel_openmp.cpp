@@ -22,13 +22,15 @@ benchmark_q_kernel_openmp::benchmark_q_kernel_openmp() : benchmark{"Q-Kernels (O
 void benchmark_q_kernel_openmp::run() {
     using real_type = double;
 
-    evaluate_dataset("tiny (~150)", DATASET_TINY);
-    evaluate_dataset("small (~5000)", DATASET_SMALL);
-    evaluate_dataset("medium (~50000)", DATASET_MEDIUM);
-    evaluate_dataset("large (~250000)", DATASET_LARGE);
+    datasets.insert(datasets.end(), DATAPOINT.begin(), DATAPOINT.end());
+    datasets.insert(datasets.end(), FEATURE.begin(), FEATURE.end());
+    datasets.insert(datasets.end(), DENSITY.begin(), DENSITY.end());
+    //datasets.insert(datasets.end(), REAL_WORLD.begin(), REAL_WORLD.end());
+
+    for (auto& ds : datasets) evaluate_dataset(ds);
 }
 
-void benchmark_q_kernel_openmp::evaluate_dataset(const std::string sub_benchmark_name, const std::string path_to_dataset) {
+void benchmark_q_kernel_openmp::evaluate_dataset(const dataset &ds) {
     using real_type = double;
 
     std::chrono::time_point start_time = std::chrono::high_resolution_clock::now();
@@ -48,7 +50,7 @@ void benchmark_q_kernel_openmp::evaluate_dataset(const std::string sub_benchmark
     std::vector<ns> raw_runtimes_dense_linear;
     std::vector<ns> raw_runtimes_dense_poly;
     std::vector<ns> raw_runtimes_dense_radial;
-    params.parse_libsvm_file(path_to_dataset, data_ptr_dense);
+    params.parse_libsvm_file(ds.path, data_ptr_dense);
     for(size_t i = 0; i < cycles; i++) {
         std::vector<real_type> q(data_ptr_dense->size() - 1); // q-Vector
 
@@ -81,7 +83,7 @@ void benchmark_q_kernel_openmp::evaluate_dataset(const std::string sub_benchmark
     std::vector<ns> raw_runtimes_coo_linear;
     std::vector<ns> raw_runtimes_coo_poly;
     std::vector<ns> raw_runtimes_coo_radial;
-    params.parse_libsvm_file_sparse(path_to_dataset, data_ptr_coo);
+    params.parse_libsvm_file_sparse(ds.path, data_ptr_coo);
     for(size_t i = 0; i < cycles; i++) {
         std::vector<real_type> q(data_ptr_coo->get_height() - 1); // q-Vector
 
@@ -114,7 +116,7 @@ void benchmark_q_kernel_openmp::evaluate_dataset(const std::string sub_benchmark
     std::vector<ns> raw_runtimes_csr_linear;
     std::vector<ns> raw_runtimes_csr_poly;
     std::vector<ns> raw_runtimes_csr_radial;
-    params.parse_libsvm_file_sparse(path_to_dataset, data_ptr_csr);
+    params.parse_libsvm_file_sparse(ds.path, data_ptr_csr);
     for(size_t i = 0; i < cycles; i++) {
         std::vector<real_type> q(data_ptr_csr->get_height() - 1); // q-Vector
 
@@ -144,15 +146,15 @@ void benchmark_q_kernel_openmp::evaluate_dataset(const std::string sub_benchmark
     }
 
     
-    sub_benchmark_names.push_back(sub_benchmark_name + "dense (linear)");
-    sub_benchmark_names.push_back(sub_benchmark_name + "COO (linear)");
-    sub_benchmark_names.push_back(sub_benchmark_name + "CSR (linear)");
-    sub_benchmark_names.push_back(sub_benchmark_name + "dense (polynomial)");
-    sub_benchmark_names.push_back(sub_benchmark_name + "COO (polynomial)");
-    sub_benchmark_names.push_back(sub_benchmark_name + "CSR (polynomial)");
-    sub_benchmark_names.push_back(sub_benchmark_name + "dense (radial)");
-    sub_benchmark_names.push_back(sub_benchmark_name + "COO (radial)");
-    sub_benchmark_names.push_back(sub_benchmark_name + "CSR (radial)");
+    sub_benchmark_names.push_back("dense (linear)");
+    sub_benchmark_names.push_back("COO (linear)");
+    sub_benchmark_names.push_back("CSR (linear)");
+    sub_benchmark_names.push_back("dense (polynomial)");
+    sub_benchmark_names.push_back("COO (polynomial)");
+    sub_benchmark_names.push_back("CSR (polynomial)");
+    sub_benchmark_names.push_back("dense (radial)");
+    sub_benchmark_names.push_back("COO (radial)");
+    sub_benchmark_names.push_back("CSR (radial)");
     auto sub_benchmark_runtimes = std::vector<std::vector<ns>>{
         raw_runtimes_dense_linear,
         raw_runtimes_coo_linear,
