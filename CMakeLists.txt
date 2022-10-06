@@ -365,6 +365,7 @@ set(PLSSVM_ENABLE_CUDA_BACKEND AUTO CACHE STRING "Enable CUDA Backend")
 set_property(CACHE PLSSVM_ENABLE_CUDA_BACKEND PROPERTY STRINGS AUTO ON OFF)
 if(PLSSVM_ENABLE_CUDA_BACKEND MATCHES "AUTO" OR PLSSVM_ENABLE_CUDA_BACKEND)
     add_subdirectory(src/plssvm/backends/CUDA)
+    add_subdirectory(src/plssvm/benchmarks/CUDA)
 endif()
 
 ## check for HIP backend

@@ -11,7 +11,7 @@
 
 #pragma once
 
-#include "CL/cl.h"  // cl_kernel
+#include <CL/cl.h>  // cl_kernel
 
 namespace plssvm::opencl::detail {
 

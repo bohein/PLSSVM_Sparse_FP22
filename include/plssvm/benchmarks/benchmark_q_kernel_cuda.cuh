@@ -23,7 +23,8 @@ class benchmark_q_kernel_cuda : public benchmark {
         void run() override;
 
     protected:
-        void evaluate_dataset(const std::string sub_benchmark_name, const std::string path_to_dataset) override;
+        void evaluate_dataset(const dataset &ds) override;
+
 
         // params for poly/radial kernel functions
         int degree = 3; 

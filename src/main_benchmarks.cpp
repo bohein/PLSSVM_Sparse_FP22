@@ -30,7 +30,7 @@ using real_type = float;
 using real_type = double;
 #endif
 
-std::string OUTPUT_DIR = "/home/schmidtm/PLSSVM/benchmark_data/results"; // TODO: figure out relative paths somehow
+std::string OUTPUT_DIR = "./benchmark_data/results"; // TODO: figure out relative paths somehow
 
 int main(int argc, char *argv[]) {
     using namespace plssvm::benchmarks;
