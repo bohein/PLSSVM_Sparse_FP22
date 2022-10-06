@@ -125,18 +125,16 @@ void benchmark_svm_kernel_cuda::evaluate_dataset(const dataset& ds) {
     size_t boundary_size = static_cast<std::size_t>(THREAD_BLOCK_SIZE * INTERNAL_BLOCK_SIZE);
     size_t num_rows_exc_last = data_ptr_dense.get() -> size() - 1;
 
-    const plssvm::detail::execution_range range_q({ static_cast<std::size_t>(std::ceil(static_cast<real_type>(num_rows_exc_last) / static_cast<real_type>(THREAD_BLOCK_SIZE))) },
+    plssvm::detail::execution_range range_q({ static_cast<std::size_t>(std::ceil(static_cast<real_type>(num_rows_exc_last) / static_cast<real_type>(THREAD_BLOCK_SIZE))) },
                                             { std::min<std::size_t>(THREAD_BLOCK_SIZE, num_rows_exc_last) });
     dim3 grid_q(range_q.grid[0], range_q.grid[1], range_q.grid[2]);
     dim3 block_q(range_q.block[0], range_q.block[1], range_q.block[2]); 
 
-    const auto grid = static_cast<std::size_t>(std::ceil(static_cast<real_type>(num_rows_exc_last) / static_cast<real_type>(boundary_size)));
-    const plssvm::detail::execution_range range_svm({ grid, grid }, { THREAD_BLOCK_SIZE, THREAD_BLOCK_SIZE });
+    auto grid = static_cast<std::size_t>(std::ceil(static_cast<real_type>(num_rows_exc_last) / static_cast<real_type>(boundary_size)));
+    plssvm::detail::execution_range range_svm({ grid, grid }, { THREAD_BLOCK_SIZE, THREAD_BLOCK_SIZE });
 
     dim3 grid_svm(range_svm.grid[0], range_svm.grid[1], range_svm.grid[2]);
     dim3 block_svm(range_svm.block[0], range_svm.block[1], range_svm.block[2]); 
-
-    
 
     for(size_t i = 0; i < cycles; i++) {
         cudaMalloc((void**)&q_d, sizeof(real_type)*(data_ptr_dense -> size()));
@@ -148,31 +146,36 @@ void benchmark_svm_kernel_cuda::evaluate_dataset(const dataset& ds) {
         cudaMalloc((void**)&data_dense_d, sizeof(real_type)*(data_ptr_dense_1D.get() -> size()));
         cudaMalloc((void**)&num_rows_d, sizeof(int));
         cudaMalloc((void**)&num_cols_d, sizeof(int));
-        cudaMalloc((void**)&data_dense_last_d, sizeof(real_type)*(*data_ptr_dense_1D.get())[0].size());
+        //cudaMalloc((void**)&data_dense_last_d, sizeof(real_type)*(*data_ptr_dense_1D.get())[0].size());
+        cudaMalloc((void**)&data_dense_last_d, sizeof(real_type)*(data_ptr_dense.get()->at(0).size()));
 
+        
+        cudaMemcpy((void*)&data_dense_d, (void*)&data_ptr_dense_1D.get()->at(0), sizeof(real_type)*(data_ptr_dense_1D.get() -> size()),cudaMemcpyHostToDevice);
+        auto num_rows = data_ptr_dense.get() -> size();
+        cudaMemcpy((void*)&num_rows_d, (void*)&num_rows, sizeof(int),cudaMemcpyHostToDevice);
+        auto num_cols = data_ptr_dense.get()->at(0).size();
+        cudaMemcpy((void*)&num_cols_d, (void*)&num_cols, sizeof(int),cudaMemcpyHostToDevice);
+        cudaMemcpy((void*)&data_dense_last_d, (void*)&data_dense_last, sizeof(real_type) * (data_ptr_dense.get()->at(0).size()),cudaMemcpyHostToDevice);
 
-        cudaMemcpy(data_dense_d, data_ptr_dense_1D.get(), sizeof(real_type)*(data_ptr_dense_1D.get() -> size()));
-        cudaMemcpy(num_rows_d, data_ptr_dense.get() -> size(), sizeof(int));
-        cudaMemcpy(num_cols_d, (*data_ptr_dense.get())[0].size(), sizeof(int));
-        cudaMemcpy(data_dense_last_d, data_dense_last, sizeof(real_type) * (*data_ptr_dense.get())[0].size());
-        cudaMemcpy(id_d, id, sizeof(int));
+        
+        cudaMemcpy((void*)&id_d, (void*)&id, sizeof(int),cudaMemcpyHostToDevice);
 
         q = std::vector<real_type>(data_ptr_dense->size() - 1); // q-Vector
-        cudaMemcpy(q_d, q, sizeof(real_type)*q.size(), cudaMemcpyHostToDevice);
+        cudaMemcpy((void*)&q_d, (void*)&q, sizeof(real_type)*q.size(), cudaMemcpyHostToDevice);
         // linear
         fmt::print("dense (linear) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
         QA_cost = (*data_ptr_dense)[data_ptr_dense->size() - 1][(*data_ptr_dense)[0].size() - 1] * cost;
-        cudaMemcpy(QA_cost_d, QA_cost, sizeof(real_type), cudaMemcpyHostToDevice);
+        cudaMemcpy((void*)&QA_cost_d, (void*)&QA_cost, sizeof(real_type), cudaMemcpyHostToDevice);
         ret = std::vector<real_type>(data_ptr_dense->size(), 0.);
-        cudaMemcpy(ret_d, ret, sizeof(real_type)*ret.size(), cudaMemcpyHostToDevice);
+        cudaMemcpy((void*)&ret_d, (void*)&ret, sizeof(real_type)*ret.size(), cudaMemcpyHostToDevice);
         d = std::vector<real_type>(data_ptr_dense->size(), 1.); 
-        cudaMemcpy(d_d, d, sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
+        cudaMemcpy((void*)&d_d, (void*)&d, sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
 
-        plssvm::cuda::device_kernel_q_linear<<<grid_q, block_q>>>(q_d, data_dense_d, data_dense_last_d, num_rows_d, num_cols_d);
+        plssvm::cuda::device_kernel_q_linear<<<grid_q, block_q>>>(q_d.data(), data_dense_d.data(), data_dense_last_d.data(), num_rows_d, num_cols_d);
         cudaDeviceSynchronize();
        
         start_time = std::chrono::high_resolution_clock::now();
-        plssvm::cuda::device_kernel_linear<<<grid_svm, block_svm>>>(q_d, ret_d, d_d, data_dense_d, QA_cost_d, cost_d, num_rows_d, num_cols_d, add_d, id_d); //id = 0;
+        plssvm::cuda::device_kernel_linear<<<grid_svm, block_svm>>>(q_d.data(), ret_d.data(), d_d, data_dense_d.data(), QA_cost_d, cost_d, num_rows_d, num_cols_d, add_d, id_d); //id = 0;
         cudaDeviceSynchronize();
         end_time = std::chrono::high_resolution_clock::now();
        
@@ -182,11 +185,11 @@ void benchmark_svm_kernel_cuda::evaluate_dataset(const dataset& ds) {
         // polynomial
         fmt::print("dense (polynomial) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
         QA_cost = (*data_ptr_dense)[data_ptr_dense->size() - 1][(*data_ptr_dense)[0].size() - 1] * cost;
-        cudaMemcpy(QA_cost_d, QA_cost, sizeof(real_type), cudaMemcpyHostToDevice);
+        cudaMemcpy((void*)&QA_cost_d, (void*)&QA_cost, sizeof(real_type), cudaMemcpyHostToDevice);
         ret = std::vector<real_type>(data_ptr_dense->size(), 0.);
-        cudaMemcpy(ret_d, ret, sizeof(real_type)*ret.size(), cudaMemcpyHostToDevice);
+        cudaMemcpy((void*)&ret_d, (void*)&ret, sizeof(real_type)*ret.size(), cudaMemcpyHostToDevice);
         d = std::vector<real_type>(data_ptr_dense->size(), 1.);
-        cudaMemcpy(d_d, d, sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
+        cudaMemcpy((void*)&d_d, (void*)&d, sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
 
         plssvm::cuda::device_kernel_q_poly<<<grid_q, block_q>>>(q_d, data_dense_d, data_dense_last_d, num_rows_d, num_cols_d, degree_d, gamma_d, coef0_d);
         cudaDeviceSynchronize();
@@ -202,11 +205,11 @@ void benchmark_svm_kernel_cuda::evaluate_dataset(const dataset& ds) {
         // radial
         fmt::print("dense (radial) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
         QA_cost = (*data_ptr_dense)[data_ptr_dense->size() - 1][(*data_ptr_dense)[0].size() - 1] * cost;
-        cudaMemcpy(QA_cost_d, QA_cost, sizeof(real_type), cudaMemcpyHostToDevice);
+        cudaMemcpy((void*)&QA_cost_d, (void*)&QA_cost, sizeof(real_type), cudaMemcpyHostToDevice);
         ret = std::vector<real_type>(data_ptr_dense->size(), 0.);
-        cudaMemcpy(ret_d, ret, sizeof(real_type)*ret.size(), cudaMemcpyHostToDevice);
+        cudaMemcpy((void*)&ret_d, (void*)&ret, sizeof(real_type)*ret.size(), cudaMemcpyHostToDevice);
         d = std::vector<real_type>(data_ptr_dense->size(), 1.); 
-        cudaMemcpy(d_d, d, sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
+        cudaMemcpy((void*)&d_d, (void*)&d, sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
 
         plssvm::cuda::device_kernel_q_radial<<<grid_q, block_q>>>(q_d, data_dense_d, data_dense_last_d, num_rows_d, num_cols_d, gamma_d);
         cudaDeviceSynchronize();
@@ -219,15 +222,15 @@ void benchmark_svm_kernel_cuda::evaluate_dataset(const dataset& ds) {
         raw_runtimes_dense_radial.push_back(std::chrono::round<ns>(end_time - start_time));
         fmt::print(std::to_string(std::chrono::round<ns>(end_time - start_time).count()/1000000) + "ms)\n");
 
-        cudaFree(q_d);
-        cudaFree(QA_cost_d);
-        cudaFree(ret_d);
-        cudaFree(d_d);
-        cudaFree(data_dense_d);
-        cudaFree(num_rows_d);
-        cudaFree(num_cols_d);
-        cudaFree(data_dense_last_d);
-        cudaFree(id_d);
+        cudaFree((void*)&q_d);
+        cudaFree((void*)&QA_cost_d);
+        cudaFree((void*)&ret_d);
+        cudaFree((void*)&d_d);
+        cudaFree((void*)&data_dense_d);
+        cudaFree((void*)&num_rows_d);
+        cudaFree((void*)&num_cols_d);
+        cudaFree((void*)&data_dense_last_d);
+        cudaFree((void*)&id_d);
     }
     
     
@@ -237,18 +240,21 @@ void benchmark_svm_kernel_cuda::evaluate_dataset(const dataset& ds) {
     std::vector<ns> raw_runtimes_coo_radial;
     params.parse_libsvm_file_sparse(ds.path, data_ptr_coo);
 
-    num_rows_exc_last = data_ptr_coo.get() -> get_heigth() - 1;
+    num_rows_exc_last = data_ptr_coo.get() -> get_height() - 1;
+/*
+    range_q = plssvm::detail::execution_range({ static_cast<std::size_t>(std::ceil(static_cast<real_type>(num_rows_exc_last) / static_cast<real_type>(THREAD_BLOCK_SIZE))) },
+                                            { std::min<std::size_t>(THREAD_BLOCK_SIZE, num_rows_exc_last) });*/
 
-    range_q({ static_cast<std::size_t>(std::ceil(static_cast<real_type>(num_rows_exc_last) / static_cast<real_type>(THREAD_BLOCK_SIZE))) },
-                                            { std::min<std::size_t>(THREAD_BLOCK_SIZE, num_rows_exc_last) });
+    range_q = plssvm::detail::execution_range({ static_cast<std::size_t>(std::ceil(static_cast<real_type>(num_rows_exc_last) / static_cast<real_type>(THREAD_BLOCK_SIZE))) },
+                                            { std::min<std::size_t>(THREAD_BLOCK_SIZE, num_rows_exc_last) });                                         
     grid_q = dim3(range_q.grid[0], range_q.grid[1], range_q.grid[2]);
     block_q = dim3(range_q.block[0], range_q.block[1], range_q.block[2]); 
 
     grid = static_cast<std::size_t>(std::ceil(static_cast<real_type>(num_rows_exc_last) / static_cast<real_type>(boundary_size)));
-    range_svm({ grid, grid }, { THREAD_BLOCK_SIZE, THREAD_BLOCK_SIZE });
+    plssvm::detail::execution_range range_svm_coo({ grid, grid }, { THREAD_BLOCK_SIZE, THREAD_BLOCK_SIZE });
 
-    grid_svm = dim3(range_svm.grid[0], range_svm.grid[1], range_svm.grid[2]);
-    block_svm = dim3(range_svm.block[0], range_svm.block[1], range_svm.block[2]); 
+    grid_svm = dim3(range_svm_coo.grid[0], range_svm_coo.grid[1], range_svm_coo.grid[2]);
+    block_svm = dim3(range_svm_coo.block[0], range_svm_coo.block[1], range_svm_coo.block[2]); 
 
     for(size_t i = 0; i < cycles; i++) {
         cudaMalloc((void**)&q_d, sizeof(real_type)*(data_ptr_coo -> get_height() - 1));
@@ -263,22 +269,24 @@ void benchmark_svm_kernel_cuda::evaluate_dataset(const dataset& ds) {
         cudaMalloc((void**)&col_coo_d, sizeof(size_t)*(data_ptr_coo -> get_nnz()));
         cudaMalloc((void**)&row_coo_d, sizeof(size_t)*(data_ptr_coo -> get_nnz()));
 
-        cudaMemcpy(nnz_coo_d, data_ptr_coo.get() -> get_nnz(), sizeof(size_t), cudaMemcpyHostToDevice);
-        cudaMemcpy(last_row_begin_coo_d, data_ptr_coo.get() -> get_last_row_begin(), sizeof(size_t), cudaMemcpyHostToDevice);
-        cudaMemcpy(values_coo_d, data_ptr_coo.get() -> get_values(), sizeof(real_type)*(data_ptr_coo -> get_nnz()), cudaMemcpyHostToDevice);
-        cudaMemcpy(row_coo_d, data_ptr_coo.get() -> get_rows(), sizeof(real_type)*(data_ptr_coo -> get_nnz()), cudaMemcpyHostToDevice);
-        cudaMemcpy(column_coo_d, data_ptr_coo.get() -> get_columns(), sizeof(real_type)*(data_ptr_coo -> get_nnz()), cudaMemcpyHostToDevice);
+        auto nnz_coo = data_ptr_coo.get() -> get_nnz();
+        cudaMemcpy((void*)&nnz_coo_d, (void*)&nnz_coo, sizeof(size_t), cudaMemcpyHostToDevice);
+        auto last_row_begin_coo = data_ptr_coo.get() -> get_last_row_begin();
+        cudaMemcpy((void*)&last_row_begin_coo_d, (void*)&last_row_begin_coo, sizeof(size_t), cudaMemcpyHostToDevice);
+        cudaMemcpy((void*)&values_coo_d[0], (void*)&data_ptr_coo.get() -> get_values().at(0), sizeof(real_type)*(data_ptr_coo -> get_nnz()), cudaMemcpyHostToDevice);
+        cudaMemcpy((void*)&row_coo_d[0], (void*)&data_ptr_coo.get() -> get_row_ids().at(0), sizeof(real_type)*(data_ptr_coo -> get_nnz()), cudaMemcpyHostToDevice);
+        cudaMemcpy((void*)&col_coo_d[0], (void*)&data_ptr_coo.get() -> get_col_ids().at(0), sizeof(real_type)*(data_ptr_coo -> get_nnz()), cudaMemcpyHostToDevice);
 
         q = std::vector<real_type>(data_ptr_coo->get_height() - 1); // q-Vector
-        cudaMemcpy(q, q_d, sizeof(real_type)*q.size(), cudaMemcpyHostToDevice);
+        cudaMemcpy((void*)&q, (void*)&q_d, sizeof(real_type)*q.size(), cudaMemcpyHostToDevice);
         // linear
         fmt::print("coo (linear) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
         QA_cost = data_ptr_coo->get_element(data_ptr_coo->get_height() - 1, data_ptr_coo->get_width() - 1) * cost;
-        cudaMemcpy(QA_cost_d, QA_cost, sizeof(real_type), cudaMemcpyHostToDevice);
+        cudaMemcpy((void*)&QA_cost_d, (void*)&QA_cost, sizeof(real_type), cudaMemcpyHostToDevice);
         ret = std::vector<real_type>(data_ptr_coo->get_height(), 0.);
-        cudaMemcpy(ret_d, ret, sizeof(real_type)*ret.size(), cudaMemcpyHostToDevice);
+        cudaMemcpy((void*)&ret_d, (void*)&ret, sizeof(real_type)*ret.size(), cudaMemcpyHostToDevice);
         d = std::vector<real_type>(data_ptr_coo->get_height(), 1.); 
-        cudaMemcpy(d_d, d, sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
+        cudaMemcpy((void*)&d_d, (void*)&d, sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
 
         plssvm::cuda::device_kernel_q_linear<<<grid_q, block_q>>>(q_d, col_coo_d, row_coo_d, values_coo_d, last_row_begin_coo_d, nnz_coo_d);
         cudaDeviceSynchronize();
@@ -294,11 +302,11 @@ void benchmark_svm_kernel_cuda::evaluate_dataset(const dataset& ds) {
         // polynomial
         fmt::print("coo (polynomial) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
         QA_cost = data_ptr_coo->get_element(data_ptr_coo->get_height() - 1, data_ptr_coo->get_width() - 1) * cost;
-        cudaMemcpy(QA_cost_d, QA_cost, sizeof(real_type), cudaMemcpyHostToDevice);
+        cudaMemcpy((void*)&QA_cost_d, (void*)&QA_cost, sizeof(real_type), cudaMemcpyHostToDevice);
         ret = std::vector<real_type>(data_ptr_coo->get_height(), 0.);
-        cudaMemcpy(ret_d, ret, sizeof(real_type)*ret.size(), cudaMemcpyHostToDevice);
+        cudaMemcpy((void*)&ret_d, (void*)&ret, sizeof(real_type)*ret.size(), cudaMemcpyHostToDevice);
         d = std::vector<real_type>(data_ptr_coo->get_height(), 1.);
-        cudaMemcpy(d_d, d, sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
+        cudaMemcpy((void*)&d_d, (void*)&d, sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
 
         plssvm::cuda::device_kernel_q_poly<<<grid_q, block_q>>>(q_d, col_coo_d, row_coo_d, values_coo_d, last_row_begin_coo_d, nnz_coo_d, degree_d, gamma_d, coef0_d);
         cudaDeviceSynchronize();
@@ -314,11 +322,11 @@ void benchmark_svm_kernel_cuda::evaluate_dataset(const dataset& ds) {
         // radial
         fmt::print("coo (radial) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
         QA_cost = data_ptr_coo->get_element(data_ptr_coo->get_height() - 1, data_ptr_coo->get_width() - 1) * cost;
-        cudaMemcpy(QA_cost_d, QA_cost, sizeof(real_type), cudaMemcpyHostToDevice);
+        cudaMemcpy((void*)&QA_cost_d, (void*)&QA_cost, sizeof(real_type), cudaMemcpyHostToDevice);
         ret = std::vector<real_type>(data_ptr_coo->get_height(), 0.);
-        cudaMemcpy(ret_d, ret, sizeof(real_type)*ret.size(), cudaMemcpyHostToDevice);
+        cudaMemcpy((void*)&ret_d, (void*)&ret, sizeof(real_type)*ret.size(), cudaMemcpyHostToDevice);
         d = std::vector<real_type>(data_ptr_coo->get_height(), 1.); 
-        cudaMemcpy(d_d, d, sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
+        cudaMemcpy((void*)&d_d, (void*)&d, sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
 
         plssvm::cuda::device_kernel_q_radial<<<grid_q, block_q>>>(q_d, col_coo_d, row_coo_d, values_coo_d, last_row_begin_coo_d, nnz_coo_d, gamma_d);
         cudaDeviceSynchronize();
@@ -331,41 +339,41 @@ void benchmark_svm_kernel_cuda::evaluate_dataset(const dataset& ds) {
         raw_runtimes_coo_radial.push_back(std::chrono::round<ns>(end_time - start_time));
         fmt::print(std::to_string(std::chrono::round<ns>(end_time - start_time).count()/1000000) + "ms)\n");
 
-        cudaFree(q_d);
-        cudaFree(QA_cost_d);
-        cudaFree(ret_d);
-        cudaFree(d_d);
+        cudaFree((void*)&q_d);
+        cudaFree((void*)&QA_cost_d);
+        cudaFree((void*)&ret_d);
+        cudaFree((void*)&d_d);
 
-        cudaFree(nnz_coo_d);
-        cudaFree(last_row_begin_coo_d);
-        cudaFree(values_coo_d);
-        cudaFree(col_coo_d);
-        cudaFree(row_coo_d);
+        cudaFree((void*)&nnz_coo_d);
+        cudaFree((void*)&last_row_begin_coo_d);
+        cudaFree((void*)&values_coo_d);
+        cudaFree((void*)&col_coo_d);
+        cudaFree((void*)&row_coo_d);
     }
     
-    // coo
+    // csr
     std::vector<ns> raw_runtimes_csr_linear;
     std::vector<ns> raw_runtimes_csr_poly;
     std::vector<ns> raw_runtimes_csr_radial;
     params.parse_libsvm_file_sparse(ds.path, data_ptr_csr);
 
-    num_rows_exc_last = data_ptr_csr.get() -> get_heigth() - 1;
-
-    range_q({ static_cast<std::size_t>(std::ceil(static_cast<real_type>(num_rows_exc_last) / static_cast<real_type>(THREAD_BLOCK_SIZE))) },
-                                            { std::min<std::size_t>(THREAD_BLOCK_SIZE, num_rows_exc_last) });
+    num_rows_exc_last = data_ptr_csr.get() -> get_height() - 1;
+    
+    range_q = plssvm::detail::execution_range({ static_cast<std::size_t>(std::ceil(static_cast<real_type>(num_rows_exc_last) / static_cast<real_type>(THREAD_BLOCK_SIZE))) },
+                                            { std::min<std::size_t>(THREAD_BLOCK_SIZE, num_rows_exc_last) });                                         
     grid_q = dim3(range_q.grid[0], range_q.grid[1], range_q.grid[2]);
     block_q = dim3(range_q.block[0], range_q.block[1], range_q.block[2]); 
 
     grid = static_cast<std::size_t>(std::ceil(static_cast<real_type>(num_rows_exc_last) / static_cast<real_type>(boundary_size)));
-    range_svm({ grid, grid }, { THREAD_BLOCK_SIZE, THREAD_BLOCK_SIZE });
+    plssvm::detail::execution_range range_svm_csr({ grid, grid }, { THREAD_BLOCK_SIZE, THREAD_BLOCK_SIZE });
 
-    grid_svm = dim3(range_svm.grid[0], range_svm.grid[1], range_svm.grid[2]);
-    block_svm = dim3(range_svm.block[0], range_svm.block[1], range_svm.block[2]);
+    grid_svm = dim3(range_svm_csr.grid[0], range_svm_csr.grid[1], range_svm_csr.grid[2]);
+    block_svm = dim3(range_svm_csr.block[0], range_svm_csr.block[1], range_svm_csr.block[2]);
 
     for(size_t i = 0; i < cycles; i++) {
-        cudaMalloc((void**)&q_d, sizeof(real_type)*(data_ptr_csr -> get_height()-1));
-        cudaMalloc((void**)&ret_d, sizeof(real_type)*(data_ptr_dense -> get_height()));
-        cudaMalloc((void**)&d_d, sizeof(real_type)*(data_ptr_dense -> get_height()));
+        cudaMalloc((void**)&q_d, sizeof(real_type)*(data_ptr_dense -> size() - 1));
+        cudaMalloc((void**)&ret_d, sizeof(real_type)*(data_ptr_csr -> get_height()));
+        cudaMalloc((void**)&d_d, sizeof(real_type)*(data_ptr_csr -> get_height()));
         cudaMalloc((void**)&QA_cost_d, sizeof(real_type));
 
         cudaMalloc((void**)&height_csr_d, sizeof(size_t));
@@ -374,22 +382,24 @@ void benchmark_svm_kernel_cuda::evaluate_dataset(const dataset& ds) {
         cudaMalloc((void**)&col_csr_d, sizeof(size_t)*(data_ptr_csr -> get_nnz()));
         cudaMalloc((void**)&row_csr_d, sizeof(size_t)*(data_ptr_csr -> get_height()));
 
-        cudaMemcpy(height_csr_d, data_ptr_csr.get() -> get_height(), sizeof(size_t), cudaMemcpyHostToDevice);
-        cudaMemcpy(nnz_csr_d, data_ptr_csr.get() -> get_nnz(), sizeof(size_t), cudaMemcpyHostToDevice);
-        cudaMemcpy(values_csr_d, data_ptr_csr.get() -> get_values(), sizeof(real_type)*(data_ptr_csr -> get_nnz()), cudaMemcpyHostToDevice);
-        cudaMemcpy(row_csr_d, data_ptr_csr.get() -> get_rows(), sizeof(size_t)*(data_ptr_csr -> get_nnz()), cudaMemcpyHostToDevice);
-        cudaMemcpy(column_csr_d, data_ptr_csr.get() -> get_columns(), sizeof(size_t)*(data_ptr_csr -> get_height()), cudaMemcpyHostToDevice);
+        auto height_csr = data_ptr_csr.get() -> get_height();
+        cudaMemcpy((void*)&height_csr_d, (void*)&height_csr, sizeof(size_t), cudaMemcpyHostToDevice);
+        auto nnz_csr = data_ptr_csr.get() -> get_nnz();
+        cudaMemcpy((void*)&nnz_csr_d, (void*)&nnz_csr, sizeof(size_t), cudaMemcpyHostToDevice);
+        cudaMemcpy((void*)&values_csr_d, (void*)&data_ptr_csr.get() -> get_values().at(0), sizeof(real_type)*(data_ptr_csr -> get_nnz()), cudaMemcpyHostToDevice);
+        cudaMemcpy((void*)&row_csr_d, (void*)&data_ptr_csr.get() -> get_row_offset().at(0), sizeof(size_t)*(data_ptr_csr -> get_nnz()), cudaMemcpyHostToDevice);
+        cudaMemcpy((void*)&col_csr_d, (void*)&data_ptr_csr.get() -> get_col_ids().at(0), sizeof(size_t)*(data_ptr_csr -> get_height()), cudaMemcpyHostToDevice);
 
         q = std::vector<real_type>(data_ptr_csr->get_height() - 1); // q-Vector
-        cudaMemcpy(q, q_d, sizeof(real_type)*q.size(), cudaMemcpyHostToDevice);
+        cudaMemcpy((void*)&q, (void*)&q_d, sizeof(real_type)*q.size(), cudaMemcpyHostToDevice);
         // linear
         fmt::print("csr (linear) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
         QA_cost = data_ptr_csr->get_element(data_ptr_csr->get_height() - 1, data_ptr_csr->get_width() - 1) * cost;
-        cudaMemcpy(QA_cost_d, QA_cost, sizeof(real_type), cudaMemcpyHostToDevice);
+        cudaMemcpy((void*)&QA_cost_d, (void*)&QA_cost, sizeof(real_type), cudaMemcpyHostToDevice);
         ret = std::vector<real_type>(data_ptr_csr->get_height(), 0.);
-        cudaMemcpy(ret_d, ret, sizeof(real_type)*ret.size(), cudaMemcpyHostToDevice);
+        cudaMemcpy((void*)&ret_d, (void*)&ret, sizeof(real_type)*ret.size(), cudaMemcpyHostToDevice);
         d = std::vector<real_type>(data_ptr_csr->get_height(), 1.); 
-        cudaMemcpy(d_d, d, sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
+        cudaMemcpy((void*)&d_d,(void*)&d, sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
 
         plssvm::cuda::device_kernel_q_linear<<<grid_q, block_q>>>(q_d, col_csr_d, row_csr_d, values_csr_d, nnz_csr_d, height_csr_d);
         cudaDeviceSynchronize();
@@ -405,11 +415,11 @@ void benchmark_svm_kernel_cuda::evaluate_dataset(const dataset& ds) {
         // polynomial
         fmt::print("csr (polynomial) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
         QA_cost = data_ptr_csr->get_element(data_ptr_csr->get_height() - 1, data_ptr_csr->get_width() - 1) * cost;
-        cudaMemcpy(QA_cost_d, QA_cost, sizeof(real_type), cudaMemcpyHostToDevice);
+        cudaMemcpy((void*)&QA_cost_d, (void*)&QA_cost, sizeof(real_type), cudaMemcpyHostToDevice);
         ret = std::vector<real_type>(data_ptr_csr->get_height(), 0.);
-        cudaMemcpy(ret_d, ret, sizeof(real_type)*ret.size(), cudaMemcpyHostToDevice);
+        cudaMemcpy((void*)&ret_d, (void*)&ret, sizeof(real_type)*ret.size(), cudaMemcpyHostToDevice);
         d = std::vector<real_type>(data_ptr_csr->get_height(), 1.); 
-        cudaMemcpy(d_d, d, sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
+        cudaMemcpy((void*)&d_d, (void*)&d, sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
 
         plssvm::cuda::device_kernel_q_poly<<<grid_q, block_q>>>(q_d, col_csr_d, row_csr_d, values_csr_d, nnz_csr_d, height_csr_d, degree_d, gamma_d, coef0_d);
         cudaDeviceSynchronize();
@@ -425,11 +435,11 @@ void benchmark_svm_kernel_cuda::evaluate_dataset(const dataset& ds) {
         // radial
         fmt::print("csr (radial) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
         QA_cost = data_ptr_csr->get_element(data_ptr_csr->get_height() - 1, data_ptr_csr->get_width() - 1) * cost;
-        cudaMemcpy(QA_cost_d, QA_cost, sizeof(real_type), cudaMemcpyHostToDevice);
+        cudaMemcpy((void*)&QA_cost_d, (void*)&QA_cost, sizeof(real_type), cudaMemcpyHostToDevice);
         ret = std::vector<real_type>(data_ptr_csr->get_height(), 0.);
-        cudaMemcpy(ret_d, ret, sizeof(real_type)*ret.size(), cudaMemcpyHostToDevice);
+        cudaMemcpy((void*)&ret_d, (void*)&ret, sizeof(real_type)*ret.size(), cudaMemcpyHostToDevice);
         d = std::vector<real_type>(data_ptr_csr->get_height(), 1.); 
-        cudaMemcpy(d_d, d, sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
+        cudaMemcpy((void*)&d_d, (void*)&d, sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
 
         plssvm::cuda::device_kernel_q_radial<<<grid_q, block_q>>>(q_d, col_csr_d, row_csr_d, values_csr_d, nnz_csr_d, height_csr_d, gamma_d);
         cudaDeviceSynchronize();
@@ -442,33 +452,33 @@ void benchmark_svm_kernel_cuda::evaluate_dataset(const dataset& ds) {
         raw_runtimes_csr_radial.push_back(std::chrono::round<ns>(end_time - start_time));
         fmt::print(std::to_string(std::chrono::round<ns>(end_time - start_time).count()/1000000) + "ms)\n");
 
-        cudaFree(q_d);
-        cudaFree(QA_cost_d);
-        cudaFree(ret_d);
-        cudaFree(d_d);
+        cudaFree((void*)&q_d);
+        cudaFree((void*)&QA_cost_d);
+        cudaFree((void*)&ret_d);
+        cudaFree((void*)&d_d);
 
-        cudaFree(csr_height_d);
-        cudaFree(nnz_csr_d);
-        cudaFree(values_csr_d);
-        cudaFree(col_csr_d);
-        cudaFree(row_csr_d);
+        cudaFree((void*)&height_csr_d);
+        cudaFree((void*)&nnz_csr_d);
+        cudaFree((void*)&values_csr_d);
+        cudaFree((void*)&col_csr_d);
+        cudaFree((void*)&row_csr_d);
     }
 
-    cudaFree(cost_d);
-    cudaFree(add_d);
-    cudaFree(degree_d);
-    cudaFree(gamma_d);
-    cudaFree(coef0_d);
+    cudaFree((void*)&cost_d);
+    cudaFree((void*)&add_d);
+    cudaFree((void*)&degree_d);
+    cudaFree((void*)&gamma_d);
+    cudaFree((void*)&coef0_d);
     
-    sub_benchmark_names.push_back(sub_benchmark_name + "dense (linear)");
-    sub_benchmark_names.push_back(sub_benchmark_name + "COO (linear)");
-    sub_benchmark_names.push_back(sub_benchmark_name + "CSR (linear)");
-    sub_benchmark_names.push_back(sub_benchmark_name + "dense (polynomial)");
-    sub_benchmark_names.push_back(sub_benchmark_name + "COO (polynomial)");
-    sub_benchmark_names.push_back(sub_benchmark_name + "CSR (polynomial)");
-    sub_benchmark_names.push_back(sub_benchmark_name + "dense (radial)");
-    sub_benchmark_names.push_back(sub_benchmark_name + "COO (radial)");
-    sub_benchmark_names.push_back(sub_benchmark_name + "CSR (radial)");
+    sub_benchmark_names.push_back("dense (linear)");
+    sub_benchmark_names.push_back("COO (linear)");
+    sub_benchmark_names.push_back("CSR (linear)");
+    sub_benchmark_names.push_back("dense (polynomial)");
+    sub_benchmark_names.push_back("COO (polynomial)");
+    sub_benchmark_names.push_back("CSR (polynomial)");
+    sub_benchmark_names.push_back("dense (radial)");
+    sub_benchmark_names.push_back("COO (radial)");
+    sub_benchmark_names.push_back("CSR (radial)");
     auto sub_benchmark_runtimes = std::vector<std::vector<ns>>{
         raw_runtimes_dense_linear,
         raw_runtimes_coo_linear,
