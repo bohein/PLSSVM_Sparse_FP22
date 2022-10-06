@@ -45,7 +45,7 @@ endif()
 set(PLSSVM_SPARSE_CUDA_SOURCES
     # sparse
     ${CMAKE_CURRENT_LIST_DIR}/benchmark_q_kernel_cuda.cu
-    ${CMAKE_CURRENT_LIST_DIR}/benchmark_svm_kernel_cuda.cu
+    #${CMAKE_CURRENT_LIST_DIR}/benchmark_svm_kernel_cuda.cu
 )
 
 # set target properties

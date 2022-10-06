@@ -73,6 +73,14 @@ void csr<T>::append(const csr<real_type> &other) {
 }
 
 template <typename T>
+void csr<T>::add_zero_padding(const size_t padding_size) {
+    
+    std::vector<size_t> padding_vector(padding_size, 0);
+
+    row_offset.insert(row_offset.end(), padding_vector.begin(), padding_vector.end());
+}
+
+template <typename T>
 T csr<T>::get_element(const size_t col_id, const size_t row_id) const {
     // case: out of bounds
     if (row_id + 1 > height) {
