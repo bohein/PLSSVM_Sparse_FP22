@@ -1,9 +1,3 @@
-## Authors: Alexander Van Craen, Marcel Breyer
-## Copyright (C): 2018-today The PLSSVM project - All Rights Reserved
-## License: This file is part of the PLSSVM project which is released under the MIT license.
-##          See the LICENSE.md file in the project root for full license information.
-########################################################################################################################
-
 # check if CUDA can be enabled
 message(CHECK_START "Checking for CUDA backend")
 
@@ -31,13 +25,16 @@ message(CHECK_PASS "found")
 
 enable_language(CUDA)
 
+message("------------------ CMAKE BEnchmark CUDA")
+
 # set necessary flags
 set(CMAKE_CUDA_STANDARD 17)
 set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
+
 if(CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA")
     # use nvcc to compile CUDA code
-    set(CMAKE_CUDA_FLAGS_DEBUG "${CMAKE_CUDA_FLAGS_DEBUG} -lineinfo -Xptxas=-v -Xptxas -dlcm=cg" )
+    set(CMAKE_CUDA_FLAGS_DEBUG "${CMAKE_CUDA_FLAGS_DEBUG} -Wfatal-errors -lineinfo -Xptxas=-v -Xptxas -dlcm=cg" )
     set(CMAKE_CUDA_FLAGS_RELEASE "${CMAKE_CUDA_FLAGS} -O3 --use_fast_math -Wno-attributes")
 elseif(CMAKE_CUDA_COMPILER_ID STREQUAL "Clang")
     # use clang to compile CUDA code
@@ -45,24 +42,15 @@ elseif(CMAKE_CUDA_COMPILER_ID STREQUAL "Clang")
 endif()
 
 # explicitly set sources
-set(PLSSVM_CUDA_SOURCES
-    ${CMAKE_CURRENT_LIST_DIR}/detail/device_ptr.cu
-    ${CMAKE_CURRENT_LIST_DIR}/detail/utility.cu
-    ${CMAKE_CURRENT_LIST_DIR}/csvm.cu
-    ${CMAKE_CURRENT_LIST_DIR}/exceptions.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/predict_kernel.cu
-    ${CMAKE_CURRENT_LIST_DIR}/q_kernel.cu
-    ${CMAKE_CURRENT_LIST_DIR}/svm_kernel.cu
-    ${CMAKE_CURRENT_LIST_DIR}/../gpu_csvm.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/../gpu_device_ptr.cpp
+set(PLSSVM_SPARSE_CUDA_SOURCES
     # sparse
-    ${CMAKE_CURRENT_LIST_DIR}/sparse/coo_q_kernel.cu
-    ${CMAKE_CURRENT_LIST_DIR}/sparse/coo_svm_kernel.cu
+    ${CMAKE_CURRENT_LIST_DIR}/benchmark_q_kernel_cuda.cu
+    ${CMAKE_CURRENT_LIST_DIR}/benchmark_svm_kernel_cuda.cu
 )
 
 # set target properties
-set_local_and_parent(PLSSVM_CUDA_BACKEND_LIBRARY_NAME plssvm-CUDA)
-add_library(${PLSSVM_CUDA_BACKEND_LIBRARY_NAME} SHARED ${PLSSVM_CUDA_SOURCES})
+set_local_and_parent(PLSSVM_CUDA_BACKEND_LIBRARY_NAME plssvm-Benchmark-CUDA)
+add_library(${PLSSVM_CUDA_BACKEND_LIBRARY_NAME} SHARED ${PLSSVM_SPARSE_CUDA_SOURCES})
 if(CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA")
     set_target_properties(${PLSSVM_CUDA_BACKEND_LIBRARY_NAME} PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 endif()
