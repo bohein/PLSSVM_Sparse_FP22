@@ -59,7 +59,7 @@ template <typename real_type>
 void device_kernel_linear(const std::vector<real_type> &q, std::vector<real_type> &ret, const std::vector<real_type> &d, const coo<real_type> &data, const real_type QA_cost, const real_type cost, const real_type add) {
     const auto dept = static_cast<kernel_index_type>(d.size());
 
-    #pragma omp parallel for collapse(2) schedule(dynamic)
+    #pragma omp parallel for collapse(2) schedule(static)
     for (kernel_index_type i = 0; i < dept; i += OPENMP_BLOCK_SIZE) {
         for (kernel_index_type j = 0; j < dept; j += OPENMP_BLOCK_SIZE) {
             for (kernel_index_type ii = 0; ii < OPENMP_BLOCK_SIZE && ii + i < dept; ++ii) {
@@ -89,7 +89,7 @@ template <typename real_type>
 void device_kernel_linear(const std::vector<real_type> &q, std::vector<real_type> &ret, const std::vector<real_type> &d, const csr<real_type> &data, const real_type QA_cost, const real_type cost, const real_type add) {
     const auto dept = static_cast<kernel_index_type>(d.size());
 
-    #pragma omp parallel for collapse(2) schedule(dynamic)
+    #pragma omp parallel for collapse(2) schedule(static)
     for (kernel_index_type i = 0; i < dept; i += OPENMP_BLOCK_SIZE) {
         for (kernel_index_type j = 0; j < dept; j += OPENMP_BLOCK_SIZE) {
             for (kernel_index_type ii = 0; ii < OPENMP_BLOCK_SIZE && ii + i < dept; ++ii) {
@@ -126,7 +126,7 @@ template <typename real_type>
 void device_kernel_poly(const std::vector<real_type> &q, std::vector<real_type> &ret, const std::vector<real_type> &d, const coo<real_type> &data, const real_type QA_cost, const real_type cost, const real_type add, const int degree, const real_type gamma, const real_type coef0) {
     const auto dept = static_cast<kernel_index_type>(d.size());
 
-    #pragma omp parallel for collapse(2) schedule(dynamic)
+    #pragma omp parallel for collapse(2) schedule(static)
     for (kernel_index_type i = 0; i < dept; i += OPENMP_BLOCK_SIZE) {
         for (kernel_index_type j = 0; j < dept; j += OPENMP_BLOCK_SIZE) {
             for (kernel_index_type ii = 0; ii < OPENMP_BLOCK_SIZE && ii + i < dept; ++ii) {
@@ -156,7 +156,7 @@ template <typename real_type>
 void device_kernel_poly(const std::vector<real_type> &q, std::vector<real_type> &ret, const std::vector<real_type> &d, const csr<real_type> &data, const real_type QA_cost, const real_type cost, const real_type add, const int degree, const real_type gamma, const real_type coef0) {
     const auto dept = static_cast<kernel_index_type>(d.size());
 
-    #pragma omp parallel for collapse(2) schedule(dynamic)
+    #pragma omp parallel for collapse(2) schedule(static)
     for (kernel_index_type i = 0; i < dept; i += OPENMP_BLOCK_SIZE) {
         for (kernel_index_type j = 0; j < dept; j += OPENMP_BLOCK_SIZE) {
             for (kernel_index_type ii = 0; ii < OPENMP_BLOCK_SIZE && ii + i < dept; ++ii) {
@@ -193,7 +193,7 @@ template <typename real_type>
 void device_kernel_radial(const std::vector<real_type> &q, std::vector<real_type> &ret, const std::vector<real_type> &d, const coo<real_type> &data, const real_type QA_cost, const real_type cost, const real_type add, const real_type gamma) {
     const auto dept = static_cast<kernel_index_type>(d.size());
 
-    #pragma omp parallel for collapse(2) schedule(dynamic)
+    #pragma omp parallel for collapse(2) schedule(static)
     for (kernel_index_type i = 0; i < dept; i += OPENMP_BLOCK_SIZE) {
         for (kernel_index_type j = 0; j < dept; j += OPENMP_BLOCK_SIZE) {
             for (kernel_index_type ii = 0; ii < OPENMP_BLOCK_SIZE && ii + i < dept; ++ii) {
@@ -205,12 +205,12 @@ void device_kernel_radial(const std::vector<real_type> &q, std::vector<real_type
                             ret_iii += (temp + cost * add) * d[ii + i];
                         } else {
                             ret_iii += temp * d[jj + j];
-                            #pragma omp atomic
+                            //#pragma omp atomic
                             ret[jj + j] += temp * d[ii + i];
                         }
                     }
                 }
-                #pragma omp atomic
+                //#pragma omp atomic
                 ret[ii + i] += ret_iii;
             }
         }
@@ -223,7 +223,7 @@ template <typename real_type>
 void device_kernel_radial(const std::vector<real_type> &q, std::vector<real_type> &ret, const std::vector<real_type> &d, const csr<real_type> &data, const real_type QA_cost, const real_type cost, const real_type add, const real_type gamma) {
     const auto dept = static_cast<kernel_index_type>(d.size());
 
-    #pragma omp parallel for collapse(2) schedule(dynamic)
+    #pragma omp parallel for collapse(2) schedule(static)
     for (kernel_index_type i = 0; i < dept; i += OPENMP_BLOCK_SIZE) {
         for (kernel_index_type j = 0; j < dept; j += OPENMP_BLOCK_SIZE) {
             for (kernel_index_type ii = 0; ii < OPENMP_BLOCK_SIZE && ii + i < dept; ++ii) {
