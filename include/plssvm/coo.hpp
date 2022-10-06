@@ -80,6 +80,25 @@ class coo {
          */
         size_t get_width() const {return width;}
 
+        /**
+         * @return std::vector<size_t> col_ids of stored matrix
+         */
+        std::vector<size_t> get_col_ids() const {return col_ids;}
+
+        /**
+         * @return std::vector<size_t> row_ids of stored matrix
+         */
+        std::vector<size_t> get_row_ids() const {return row_ids;}
+
+        /**
+         * @return std::vector<real_type> values of stored matrix
+         */
+        std::vector<real_type> get_values() const {return values;}
+
+        /**
+         * @return size_t first index of last row
+         */
+        size_t get_last_row_begin() const {return last_row_begin;}
 
         ///////////////
         // modifiers //
@@ -120,6 +139,8 @@ class coo {
         size_t width;
         /// saves number of added empty rows
         size_t current_empty_rows;
+        /// saves the index for last row
+        size_t last_row_begin;
         /// column indices of stored data values
         std::vector<size_t> col_ids;
         /// row indices of stored data values

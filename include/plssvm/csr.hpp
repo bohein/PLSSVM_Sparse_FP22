@@ -72,6 +72,26 @@ class csr {
          */
         size_t get_width() const {return width;}
 
+        /**
+         * @return std::vector<size_t> col_ids of stored matrix
+         */
+        std::vector<size_t> get_col_ids() const {return col_ids;}
+
+        /**
+         * @return std::vector<size_t> row_ids of stored matrix
+         */
+        std::vector<size_t> get_row_offset() const {return row_offset;}
+
+        /**
+         * @return std::vector<real_type> values of stored matrix
+         */
+        std::vector<real_type> get_values() const {return values;}
+
+        /**
+         * @return size_t first index of last row
+         */
+        size_t get_last_row_begin() const {return row_offset.back();}
+
 
         ///////////////
         // modifiers //

@@ -1,5 +1,5 @@
 /**
- * @author Paul Arlt
+ * @author Paul Arlt, Pascal Miliczek
  * @copyright 2018-today The PLSSVM project - All Rights Reserved
  * @license This file is part of the PLSSVM project which is released under the MIT license.
  *          See the LICENSE.md file in the project root for full license information.
@@ -10,11 +10,12 @@
 #pragma once
 
 #include "plssvm/constants.hpp"  // plssvm::kernel_index_type
+#include <cstddef>      // std::size_t
 
 namespace plssvm::cuda {
 
 /**
- * @brief Calculates the C-SVM kernel using the linear kernel function on data in COO format.
+ * @brief Calculates the C-SVM kernel using the linear kernel function on data in CSR format.
  * @details Currently only single GPU execution is supported.
  * @tparam real_type the type of the data
  * @param[in] q the `q` vector
