@@ -11,7 +11,7 @@
 #include "plssvm/constants.hpp"                     // plssvm::INTERNAL_BLOCK_SIZE, plssvm::kernel_index_type
 
 // UNTESTED
-namespace plssvm::cuda {
+namespace plssvm::cuda::csr {
 
 template <typename real_type>
 __global__ void device_kernel_linear(const real_type *q, real_type *ret, const real_type *d, const size_t *col_ids, const size_t *row_offsets, const real_type *values, const real_type QA_cost, const real_type cost, const kernel_index_type nnz, const kernel_index_type height, const real_type add) {

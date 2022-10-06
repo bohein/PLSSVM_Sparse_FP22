@@ -11,7 +11,7 @@
 
 #include "plssvm/constants.hpp"  // plssvm::kernel_index_type
 #include <cstddef>      // std::size_t
-namespace plssvm::cuda {
+namespace plssvm::cuda::csr {
 
 /**
  * @brief Calculates the `q` vector using the linear C-SVM kernel on data in CSR format.

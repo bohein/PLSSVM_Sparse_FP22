@@ -11,7 +11,7 @@
 
 #include "plssvm/constants.hpp"  // plssvm::kernel_index_type
 
-namespace plssvm::cuda {
+namespace plssvm::cuda::coo {
 
 /**
  * @brief Calculates the C-SVM kernel using the linear kernel function on data in COO format.

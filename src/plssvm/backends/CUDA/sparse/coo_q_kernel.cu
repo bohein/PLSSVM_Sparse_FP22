@@ -10,9 +10,9 @@
 #include "plssvm/constants.hpp"  // plssvm::kernel_index_type
 
 // UNTESTED
-namespace plssvm::cuda {
+namespace plssvm::cuda::coo {
 template <typename real_type>
-__global__ void device_kernel_q_linear(real_type *q, const size_t *col_ids, const size_t *row_ids, const real_type *values, const kernel_index_type last_row_begin, const kernel_index_type nnz) {
+__global__ void device_kernel_q_linear(real_type *q, const size_t *col_ids, const size_t *row_ids, const real_type *values, const kernel_index_type nnz, const kernel_index_type last_row_begin) {
     
     const kernel_index_type row_index = blockIdx.x * blockDim.x + threadIdx.x;
     
@@ -42,7 +42,7 @@ template __global__ void device_kernel_q_linear(float *, const size_t *, const s
 template __global__ void device_kernel_q_linear(double *, const size_t *, const size_t *, const double *, const kernel_index_type, const kernel_index_type);
 
 template <typename real_type>
-__global__ void device_kernel_q_poly(real_type *q, const size_t *col_ids, const size_t *row_ids, const real_type *values, const kernel_index_type last_row_begin, const kernel_index_type nnz, const int degree, const real_type gamma, const real_type coef0) {
+__global__ void device_kernel_q_poly(real_type *q, const size_t *col_ids, const size_t *row_ids, const real_type *values, const kernel_index_type nnz, const kernel_index_type last_row_begin, const int degree, const real_type gamma, const real_type coef0) {
     const kernel_index_type row_index = blockIdx.x * blockDim.x + threadIdx.x;
     kernel_index_type search_index = row_index * last_row_begin / gridDim.x;
     real_type temp{ 0.0 };
@@ -70,7 +70,7 @@ template __global__ void device_kernel_q_poly(float *, const size_t *, const siz
 template __global__ void device_kernel_q_poly(double *, const size_t *, const size_t *, const double *, const kernel_index_type,const kernel_index_type, const int, const double, const double);
 
 template <typename real_type>
-__global__ void device_kernel_q_radial(real_type *q, const size_t *col_ids, const size_t *row_ids, const real_type *values, const kernel_index_type last_row_begin,const kernel_index_type nnz, const real_type gamma) {
+__global__ void device_kernel_q_radial(real_type *q, const size_t *col_ids, const size_t *row_ids, const real_type *values, const kernel_index_type nnz, const kernel_index_type last_row_begin, const real_type gamma) {
     const kernel_index_type row_index = blockIdx.x * blockDim.x + threadIdx.x;
     kernel_index_type search_index = row_index * last_row_begin / gridDim.x;
     real_type temp{ 0.0 };

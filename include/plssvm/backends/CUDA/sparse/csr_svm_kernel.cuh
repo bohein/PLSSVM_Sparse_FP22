@@ -12,7 +12,7 @@
 #include "plssvm/constants.hpp"  // plssvm::kernel_index_type
 #include <cstddef>      // std::size_t
 
-namespace plssvm::cuda {
+namespace plssvm::cuda::csr {
 
 /**
  * @brief Calculates the C-SVM kernel using the linear kernel function on data in CSR format.
