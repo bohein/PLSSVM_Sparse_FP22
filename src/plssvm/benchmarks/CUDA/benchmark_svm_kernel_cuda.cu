@@ -15,7 +15,7 @@
 #include "plssvm/backends/CUDA/sparse/coo_q_kernel.cuh"
 #include "plssvm/backends/CUDA/sparse/csr_q_kernel.cuh"
 
-#include "plssvm/backends/CUDA/svm_kernel.cuh"
+#include "plssvm/backends/CUDA/sparse/svm_kernel.cuh"
 #include "plssvm/backends/CUDA/sparse/coo_svm_kernel.cuh"
 #include "plssvm/backends/CUDA/sparse/csr_svm_kernel.cuh"
 
