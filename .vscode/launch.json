@@ -11,7 +11,7 @@
             "program": "${workspaceFolder}/build/plssvm-benchmark",
             //"args": ["--backend", "cuda", "--test", "${workspaceFolder}/my_data_file.libsvm", "--model", "${workspaceFolder}/my_data_file.libsvm.model"],
             "stopAtEntry": true,
-            "cwd": "${workspaceRoot}",
+            "cwd": "${workspaceRoot}/build/",
             "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",
