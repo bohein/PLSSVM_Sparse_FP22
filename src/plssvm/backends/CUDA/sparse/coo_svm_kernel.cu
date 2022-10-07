@@ -10,6 +10,7 @@
 #include "plssvm/backends/CUDA/detail/atomics.cuh"  // atomicAdd
 #include "plssvm/constants.hpp"                     // plssvm::INTERNAL_BLOCK_SIZE, plssvm::kernel_index_type
 
+#include <stdio.h>
 // UNTESTED
 namespace plssvm::cuda::coo {
 
@@ -46,6 +47,8 @@ __global__ void device_kernel_linear(const real_type *q, real_type *ret, const r
 
         row_1_indices[block_index] = row_1_index;
         row_2_indices[block_index] = row_2_index;
+
+             printf ("%s \n", "Linear Kernel");
     }
 
     #pragma unroll INTERNAL_BLOCK_SIZE

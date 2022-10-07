@@ -116,14 +116,14 @@ void benchmark_q_kernel_cuda::evaluate_dataset(const dataset &ds) {
         cudaMalloc((void**)&data_dense_d, sizeof(real_type)*(data_ptr_dense_1D.get() -> size()));
         cudaMalloc((void**)&num_rows_d, sizeof(int));
         cudaMalloc((void**)&num_cols_d, sizeof(int));
-        cudaMalloc((void**)&data_dense_last_d, sizeof(real_type)*(data_ptr_dense.get()->at(0).size()));
+        cudaMalloc((void**)&data_dense_last_d, sizeof(real_type) * (data_ptr_dense.get()->at(0).size()));
 
         size_t num_rows = num_rows_exc_last + boundary_size;
         size_t num_cols = data_ptr_dense.get()->at(0).size();
         cudaMemcpy((void*)&data_dense_d[0], (void*)&data_ptr_dense_1D->at(0), sizeof(real_type)*(data_ptr_dense_1D.get() -> size()), cudaMemcpyHostToDevice);
         cudaMemcpy((void*)&num_rows_d, (void*)&num_rows, sizeof(int),cudaMemcpyHostToDevice);
         cudaMemcpy((void*)&num_cols_d, (void*)&num_cols, sizeof(int) ,cudaMemcpyHostToDevice);
-        cudaMemcpy((void*)&data_dense_last_d[0], (void*)&data_dense_last, sizeof(real_type)*(data_ptr_dense.get()->at(0).size()),cudaMemcpyHostToDevice);
+        cudaMemcpy((void*)&data_dense_last_d[0], (void*)&data_dense_last->at(0), sizeof(real_type)*(data_ptr_dense.get()->at(0).size()),cudaMemcpyHostToDevice);
 
         std::vector<real_type> q(data_ptr_dense->size() - 1); // q-Vector
         cudaMemcpy((void*)&q_d[0], (void*)&q, sizeof(real_type)*q.size(), cudaMemcpyHostToDevice);
