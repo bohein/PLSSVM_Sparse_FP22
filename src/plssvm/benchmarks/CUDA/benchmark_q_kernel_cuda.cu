@@ -26,12 +26,14 @@ benchmark_q_kernel_cuda::benchmark_q_kernel_cuda() : benchmark{"Q-Kernels (CUDA)
 void benchmark_q_kernel_cuda::run() {
     using real_type = double;
 
-    datasets.insert(datasets.end(), DATAPOINT.begin(), DATAPOINT.end());
-    datasets.insert(datasets.end(), FEATURE.begin(), FEATURE.end());
-    datasets.insert(datasets.end(), DENSITY.begin(), DENSITY.end());
+    //datasets.insert(datasets.end(), DATAPOINT.begin(), DATAPOINT.end());
+    //datasets.insert(datasets.end(), FEATURE.begin(), FEATURE.end());
+    //datasets.insert(datasets.end(), DENSITY.begin(), DENSITY.end());
     //datasets.insert(datasets.end(), REAL_WORLD.begin(), REAL_WORLD.end());
 
-    for (auto& ds : datasets) evaluate_dataset(ds);
+    //for (auto& ds : datasets) evaluate_dataset(ds);
+    datasets.push_back(DATAPOINT[12]);
+    evaluate_dataset(DATAPOINT[12]);
 }
 
 void benchmark_q_kernel_cuda::evaluate_dataset(const dataset &ds) {
