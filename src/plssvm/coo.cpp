@@ -310,6 +310,18 @@ void coo<T>::append(const coo<real_type> &other) {
 }
 
 template <typename T>
+void coo<T>::add_zero_padding(const size_t padding_size) {
+    
+    std::vector<size_t> padding_vector(padding_size, 0);
+    std::vector<T> padding_vector_real(padding_size, 0.0);
+
+    col_ids.insert(col_ids.end(), padding_vector.begin(), padding_vector.end());
+    row_ids.insert(row_ids.end(), padding_vector.begin(), padding_vector.end());
+    values.insert(values.end(), padding_vector_real.begin(), padding_vector_real.end());
+    
+}
+
+template <typename T>
 bool coo<T>::operator==(const coo<T>& other) {
     return nnz == other.nnz
         && height == other.height

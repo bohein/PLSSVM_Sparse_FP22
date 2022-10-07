@@ -10,7 +10,6 @@
 #pragma once
 
 #include "plssvm/constants.hpp"  // plssvm::kernel_index_type
-#include <cstddef>      // std::size_t
 namespace plssvm::cuda::csr {
 
 /**
