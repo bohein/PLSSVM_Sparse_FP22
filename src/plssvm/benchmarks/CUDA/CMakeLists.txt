@@ -51,6 +51,7 @@ set(PLSSVM_SPARSE_CUDA_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/../../backends/CUDA/sparse/csr_q_kernel.cu
     ${CMAKE_CURRENT_LIST_DIR}/../../backends/CUDA/sparse/csr_svm_kernel.cu
     ${CMAKE_CURRENT_LIST_DIR}/../../backends/CUDA/q_kernel.cu
+    ${CMAKE_CURRENT_LIST_DIR}/../../backends/CUDA/svm_kernel.cu
 )
 
 # set target properties
