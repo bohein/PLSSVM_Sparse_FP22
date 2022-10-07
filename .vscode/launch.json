@@ -32,6 +32,15 @@
                     "ignoreFailures": true
                 },
             ]
+        },
+        {
+            "name": "(CUDA) Launch PLSSVM Debug",
+            "type": "cuda-gdb",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/plssvm-benchmark",
+            "args": "",
+            "stopAtEntry": true,
+            "cwd": "${workspaceRoot}/build/"
         }
     ]
 }

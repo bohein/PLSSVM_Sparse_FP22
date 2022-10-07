@@ -24,6 +24,8 @@ namespace plssvm::benchmarks {
 benchmark_q_kernel_cuda::benchmark_q_kernel_cuda() : benchmark{"Q-Kernels (CUDA)"} {}
 
 void benchmark_q_kernel_cuda::run() {
+
+    
     using real_type = double;
 
     datasets.insert(datasets.end(), DATAPOINT.begin(), DATAPOINT.end());

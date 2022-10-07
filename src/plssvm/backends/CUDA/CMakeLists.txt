@@ -37,7 +37,7 @@ set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
 if(CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA")
     # use nvcc to compile CUDA code
-    set(CMAKE_CUDA_FLAGS_DEBUG "${CMAKE_CUDA_FLAGS_DEBUG} -lineinfo -Xptxas=-v -Xptxas -dlcm=cg" )
+    set(CMAKE_CUDA_FLAGS_DEBUG "${CMAKE_CUDA_FLAGS_DEBUG} -g -G -lineinfo -Xptxas=-v -Xptxas -dlcm=cg" )
     set(CMAKE_CUDA_FLAGS_RELEASE "${CMAKE_CUDA_FLAGS} -O3 --use_fast_math -Wno-attributes")
 elseif(CMAKE_CUDA_COMPILER_ID STREQUAL "Clang")
     # use clang to compile CUDA code
