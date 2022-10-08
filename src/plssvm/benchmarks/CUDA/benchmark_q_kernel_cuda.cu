@@ -19,17 +19,50 @@
 #include <numeric>
 #include <iostream>
 
+#include <stdio.h>
 namespace plssvm::benchmarks {
 
 benchmark_q_kernel_cuda::benchmark_q_kernel_cuda() : benchmark{"Q-Kernels (CUDA)"} {}
 
 void benchmark_q_kernel_cuda::run() {
+    /*
+    int vector_size = 3;
+    std::vector<int> vec{ 0, 2, 5 };
+    std::vector<int> vec_d;
+
+    cudaError_t cudaStatus = cudaMalloc((void**)&vec_d, sizeof(int) * vector_size);
+    if (cudaStatus != cudaSuccess) {
+        printf("cudaMalloc failed: %i\n", cudaStatus);
+        return;
+    }
+
+    cudaStatus = cudaMemcpy((void*)&vec_d[0], (void*)&vec[0], sizeof(int) * vector_size, cudaMemcpyHostToDevice);
+    if (cudaStatus != cudaSuccess) {
+        printf("cudaMemcpy failed: %i\n", cudaStatus);
+        return;
+    }
+
+    // vector_size works pass by value
+    plssvm::cuda::coo::myKernel<<<1, 2>>>(vec_d.data(), vector_size);
+    cudaDeviceSynchronize();
+
+    auto *p_vec_d = &vec_d;
+    cudaStatus = cudaFree((void*)p_vec_d);
+    if (cudaStatus != cudaSuccess) {
+        printf("cudaFree failed: %i\n", cudaStatus);
+    }
+
+    return;
+    */
+
     using real_type = double;
 
-   // evaluate_dataset("tiny (~150)", DATASET_TINY);
-   // evaluate_dataset("small (~5000)", DATASET_SMALL);
-   // evaluate_dataset("medium (~50000)", DATASET_MEDIUM);
-   // evaluate_dataset("large (~250000)", DATASET_LARGE);
+    datasets.insert(datasets.end(), DATAPOINT.begin(), DATAPOINT.end());
+    datasets.insert(datasets.end(), FEATURE.begin(), FEATURE.end());
+    datasets.insert(datasets.end(), DENSITY.begin(), DENSITY.end());
+    //datasets.insert(datasets.end(), REAL_WORLD.begin(), REAL_WORLD.end());
+
+    for (auto& ds : datasets) evaluate_dataset(ds);
 }
 
 void benchmark_q_kernel_cuda::evaluate_dataset(const dataset &ds) {
@@ -90,7 +123,7 @@ void benchmark_q_kernel_cuda::evaluate_dataset(const dataset &ds) {
     dim3 grid(range_q.grid[0], range_q.grid[1], range_q.grid[2]);
     dim3 block(range_q.block[0], range_q.block[1], range_q.block[2]); 
 
-    for(size_t i = 0; i < cycles; i++) {
+    for(size_t i = 0; i < 0; i++) {
         cudaMalloc((void**)&q_d, sizeof(real_type)*(data_ptr_dense -> size() - 1));
         cudaMalloc((void**)&data_dense_d, sizeof(real_type)*(data_ptr_dense_1D -> size()));
         cudaMalloc((void**)&data_dense_last_d, sizeof(real_type)*(data_ptr_dense -> at(0).size()));

@@ -244,21 +244,27 @@ T coo<T>::get_row_squared_euclidean_dist(const size_t row_id_1, const size_t row
         }
     }
 
-    #pragma omp parallel for reduction(+ : result)
-    for (size_t i = row_1_first; i <= row_1_last; ++i) {
-        result += values[i] * values[i];
+    if (row_ids[row_1_first] == row_id_1) {
+        #pragma omp parallel for reduction(+ : result)
+        for (size_t i = row_1_first; i <= row_1_last; ++i) {
+            result += values[i] * values[i];
+        }
     }
-    #pragma omp parallel for reduction(+ : result)
-    for (size_t i = row_2_first; i <= row_2_last; ++i) {
-        result += values[i] * values[i];
+    if (row_ids[row_2_first] == row_id_2) {
+        #pragma omp parallel for reduction(+ : result)
+        for (size_t i = row_2_first; i <= row_2_last; ++i) {
+            result += values[i] * values[i];
+        }
     }
 
-    // adjust if shared non-zero entry; according to 2nd binom formula
-    #pragma omp parallel for collapse(2) reduction(+ : temp)
-    for (size_t i = row_1_first; i <= row_1_last; ++i) {
-        for (size_t j = row_2_first; j <= row_2_last; ++j) {
-            if (col_ids[i] == col_ids[j]) {
-                temp += 2 * values[i] * values[j];
+    if (row_ids[row_1_first] == row_id_1 && row_ids[row_2_first] == row_id_2) {
+        // adjust if shared non-zero entry; according to 2nd binom formula
+        #pragma omp parallel for collapse(2) reduction(+ : temp)
+        for (size_t i = row_1_first; i <= row_1_last; ++i) {
+            for (size_t j = row_2_first; j <= row_2_last; ++j) {
+                if (col_ids[i] == col_ids[j]) {
+                    temp += 2 * values[i] * values[j];
+                }
             }
         }
     }

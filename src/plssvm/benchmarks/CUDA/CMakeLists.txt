@@ -34,7 +34,7 @@ set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
 if(CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA")
     # use nvcc to compile CUDA code
-    set(CMAKE_CUDA_FLAGS_DEBUG "${CMAKE_CUDA_FLAGS_DEBUG} -Wfatal-errors -lineinfo -Xptxas=-v -Xptxas -dlcm=cg" )
+    set(CMAKE_CUDA_FLAGS_DEBUG "${CMAKE_CUDA_FLAGS_DEBUG}  -g -G -Wfatal-errors -lineinfo -Xptxas=-v -Xptxas -dlcm=cg" )
     set(CMAKE_CUDA_FLAGS_RELEASE "${CMAKE_CUDA_FLAGS} -O3 --use_fast_math -Wno-attributes")
 elseif(CMAKE_CUDA_COMPILER_ID STREQUAL "Clang")
     # use clang to compile CUDA code
@@ -46,6 +46,12 @@ set(PLSSVM_SPARSE_CUDA_SOURCES
     # sparse
     ${CMAKE_CURRENT_LIST_DIR}/benchmark_q_kernel_cuda.cu
     ${CMAKE_CURRENT_LIST_DIR}/benchmark_svm_kernel_cuda.cu
+    ${CMAKE_CURRENT_LIST_DIR}/../../backends/CUDA/sparse/coo_q_kernel.cu
+    ${CMAKE_CURRENT_LIST_DIR}/../../backends/CUDA/sparse/coo_svm_kernel.cu
+    ${CMAKE_CURRENT_LIST_DIR}/../../backends/CUDA/sparse/csr_q_kernel.cu
+    ${CMAKE_CURRENT_LIST_DIR}/../../backends/CUDA/sparse/csr_svm_kernel.cu
+    ${CMAKE_CURRENT_LIST_DIR}/../../backends/CUDA/q_kernel.cu
+    ${CMAKE_CURRENT_LIST_DIR}/../../backends/CUDA/svm_kernel.cu
 )
 
 # set target properties

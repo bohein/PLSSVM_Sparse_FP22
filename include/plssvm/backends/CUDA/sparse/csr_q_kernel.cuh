@@ -10,7 +10,6 @@
 #pragma once
 
 #include "plssvm/constants.hpp"  // plssvm::kernel_index_type
-
 namespace plssvm::cuda::csr {
 
 /**
@@ -57,6 +56,6 @@ __global__ void device_kernel_q_poly(real_type *q, const size_t *col_ids, const 
  * @param[in] gamma the gamma parameter used in the rbf kernel function
  */
 template <typename real_type>
-__global__ void device_kernel_q_radial(real_type *q, const size_t *col_ids, const size_t *row_offsets, const real_type *values, const kernel_index_type nnz, const  kernel_index_type height, const real_type gamma);
+__global__ void device_kernel_q_radial(real_type *q, const size_t *col_ids, const size_t *row_offsets, const real_type *values, const kernel_index_type nnz, const kernel_index_type height, const real_type gamma);
 
 }  // namespace plssvm::cuda
