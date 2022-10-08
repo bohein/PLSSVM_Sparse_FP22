@@ -8,14 +8,23 @@
 #include "plssvm/backends/CUDA/sparse/coo_q_kernel.cuh"
 
 #include "plssvm/constants.hpp"  // plssvm::kernel_index_type
+#include <stdio.h>
 
 // UNTESTED
 namespace plssvm::cuda::coo {
+
+__global__ void myKernel(int *vector, int vector_size) {
+    for (int i = 0; i < vector_size; i++) {
+        printf("value [%d]: %i\n", i, vector[i]);
+    }
+}
+
 template <typename real_type>
 __global__ void device_kernel_q_linear(real_type *q, const size_t *col_ids, const size_t *row_ids, const real_type *values, const kernel_index_type nnz, const kernel_index_type last_row_begin) {
     
     const kernel_index_type row_index = blockIdx.x * blockDim.x + threadIdx.x;
     
+    printf("Started: %i\n", last_row_begin);
     kernel_index_type search_index = row_index * last_row_begin / gridDim.x;
     real_type temp{ 0.0 };
 
@@ -35,7 +44,7 @@ __global__ void device_kernel_q_linear(real_type *q, const size_t *col_ids, cons
             temp += values[search_index] * values[last_row_index];
         }
     }
-    
+    printf("Finished: %i\n", last_row_begin);
     q[row_index] = temp;
 }
 template __global__ void device_kernel_q_linear(float *, const size_t *, const size_t *, const float *, const kernel_index_type, const kernel_index_type);
