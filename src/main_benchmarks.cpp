@@ -23,6 +23,7 @@
 #include <iostream>   // std::cerr, std::clog, std::endl
 #include <fstream>    // std::ofstream
 #include <filesystem> // fs::create_directory
+#include <unistd.h>
 
 // perform calculations in single precision if requested
 #ifdef PLSSVM_EXECUTABLES_USE_SINGLE_PRECISION
@@ -34,6 +35,8 @@ using real_type = double;
 std::string OUTPUT_DIR = "../benchmark_data/results";
 
 int main(int argc, char *argv[]) {
+
+    
     using namespace plssvm::benchmarks;
 
     std::vector<benchmark*> benchmarks;
@@ -43,6 +46,7 @@ int main(int argc, char *argv[]) {
     //benchmarks.push_back(new benchmark_q_kernel_openmp);
     //benchmarks.push_back(new benchmark_svm_kernel_openmp);
     benchmarks.push_back(new benchmark_q_kernel_cuda);
+
 
     for (benchmark* b : benchmarks) { // DO NOT PARALLELIZE THIS!
             b->run();

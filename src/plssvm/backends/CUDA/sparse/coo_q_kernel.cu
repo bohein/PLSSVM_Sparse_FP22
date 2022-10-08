@@ -21,7 +21,7 @@ __global__ void myKernel(int *vector, int vector_size) {
 
 template <typename real_type>
 __global__ void device_kernel_q_linear(real_type *q, const size_t *col_ids, const size_t *row_ids, const real_type *values, const kernel_index_type nnz, const kernel_index_type last_row_begin) {
-    
+     
     const kernel_index_type row_index = blockIdx.x * blockDim.x + threadIdx.x;
     
     printf("Started: %i\n", last_row_begin);
