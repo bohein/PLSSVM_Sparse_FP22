@@ -19,13 +19,42 @@
 #include <numeric>
 #include <iostream>
 
+#include <stdio.h>
 namespace plssvm::benchmarks {
 
 benchmark_q_kernel_cuda::benchmark_q_kernel_cuda() : benchmark{"Q-Kernels (CUDA)"} {}
 
 void benchmark_q_kernel_cuda::run() {
+    /*
+    int vector_size = 3;
+    std::vector<int> vec{ 0, 2, 5 };
+    std::vector<int> vec_d;
 
-    
+    cudaError_t cudaStatus = cudaMalloc((void**)&vec_d, sizeof(int) * vector_size);
+    if (cudaStatus != cudaSuccess) {
+        printf("cudaMalloc failed: %i\n", cudaStatus);
+        return;
+    }
+
+    cudaStatus = cudaMemcpy((void*)&vec_d[0], (void*)&vec[0], sizeof(int) * vector_size, cudaMemcpyHostToDevice);
+    if (cudaStatus != cudaSuccess) {
+        printf("cudaMemcpy failed: %i\n", cudaStatus);
+        return;
+    }
+
+    // vector_size works pass by value
+    plssvm::cuda::coo::myKernel<<<1, 2>>>(vec_d.data(), vector_size);
+    cudaDeviceSynchronize();
+
+    auto *p_vec_d = &vec_d;
+    cudaStatus = cudaFree((void*)p_vec_d);
+    if (cudaStatus != cudaSuccess) {
+        printf("cudaFree failed: %i\n", cudaStatus);
+    }
+
+    return;
+    */
+
     using real_type = double;
 
     //datasets.insert(datasets.end(), DATAPOINT.begin(), DATAPOINT.end());
@@ -115,7 +144,7 @@ void benchmark_q_kernel_cuda::evaluate_dataset(const dataset &ds) {
     dim3 grid(range_q.grid[0], range_q.grid[1], range_q.grid[2]);
     dim3 block(range_q.block[0], range_q.block[1], range_q.block[2]); 
 
-    for(size_t i = 0; i < cycles; i++) {
+    for(size_t i = 0; i < 0; i++) {
         cudaMalloc((void**)&q_d, sizeof(real_type)*(data_ptr_dense -> size() - 1));
         cudaMalloc((void**)&data_dense_d, sizeof(real_type)*(data_ptr_dense_1D.get() -> size()));
         cudaMalloc((void**)&num_rows_d, sizeof(int));
