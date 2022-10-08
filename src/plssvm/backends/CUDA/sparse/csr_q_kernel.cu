@@ -16,10 +16,6 @@ template <typename real_type>
 
 __global__ void device_kernel_q_linear(real_type *q, const size_t *col_ids, const size_t *row_offsets, const real_type *values, const kernel_index_type nnz, const kernel_index_type height) {
     const kernel_index_type row_index = blockIdx.x * blockDim.x + threadIdx.x;
-    //not necessary (padding)
-    if(row_index + 1 > height){
-        return;
-    }
 
     kernel_index_type last_row_cur_index = row_offsets[height - 1];
 
@@ -48,9 +44,6 @@ template __global__ void device_kernel_q_linear(double *, const size_t *, const 
 template <typename real_type>
 __global__ void device_kernel_q_poly(real_type *q, const size_t *col_ids, const size_t *row_offsets, const real_type *values, const kernel_index_type nnz, const kernel_index_type height, const int degree, const real_type gamma, const real_type coef0) {
     const kernel_index_type row_index = blockIdx.x * blockDim.x + threadIdx.x;
-    if(row_index + 1 > height){
-        return;
-    }
 
     kernel_index_type last_row_cur_index = row_offsets[height - 1];
 
@@ -79,9 +72,6 @@ template __global__ void device_kernel_q_poly(double *, const size_t *, const si
 template <typename real_type>
 __global__ void device_kernel_q_radial(real_type *q, const size_t *col_ids, const size_t *row_offsets, const real_type *values, const kernel_index_type nnz, const  kernel_index_type height, const real_type gamma) {
    const kernel_index_type row_index = blockIdx.x * blockDim.x + threadIdx.x;
-    if(row_index + 1 > height){
-        return;
-    }
 
     kernel_index_type last_row_cur_index = row_offsets[height - 1];
     kernel_index_type cur_index = row_offsets[row_index];

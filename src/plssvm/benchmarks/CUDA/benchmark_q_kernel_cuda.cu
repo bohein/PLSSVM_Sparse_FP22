@@ -124,16 +124,17 @@ void benchmark_q_kernel_cuda::evaluate_dataset(const dataset &ds) {
     dim3 block(range_q.block[0], range_q.block[1], range_q.block[2]); 
 
     for(size_t i = 0; i < 0; i++) {
-        cudaMalloc((void**)&q_d, sizeof(real_type)*(data_ptr_dense -> size() - 1));
-        cudaMalloc((void**)&data_dense_d, sizeof(real_type)*(data_ptr_dense_1D -> size()));
-        cudaMalloc((void**)&data_dense_last_d, sizeof(real_type)*(data_ptr_dense -> at(0).size()));
-
         size_t num_rows = num_rows_exc_last + boundary_size;
         size_t num_cols = data_ptr_dense -> at(0).size();
-        cudaMemcpy(data_dense_d, data_ptr_dense_1D -> data(), sizeof(real_type)*(data_ptr_dense_1D -> size()), cudaMemcpyHostToDevice);
-        cudaMemcpy(data_dense_last_d, data_dense_last -> data(), sizeof(real_type)*(data_ptr_dense ->at(0).size()),cudaMemcpyHostToDevice);
 
-        std::vector<real_type> q(data_ptr_dense->size() - 1); // q-Vector
+        cudaMalloc((void**)&q_d, sizeof(real_type)*num_rows);
+        cudaMalloc((void**)&data_dense_d, sizeof(real_type)*(data_ptr_dense_1D -> size()));
+        cudaMalloc((void**)&data_dense_last_d, sizeof(real_type)*num_cols);
+
+        cudaMemcpy(data_dense_d, data_ptr_dense_1D -> data(), sizeof(real_type)*(data_ptr_dense_1D -> size()), cudaMemcpyHostToDevice);
+        cudaMemcpy(data_dense_last_d, data_dense_last -> data(), sizeof(real_type)*num_cols,cudaMemcpyHostToDevice);
+
+        std::vector<real_type> q(num_rows); // q-Vector
         cudaMemcpy(q_d, q.data(), sizeof(real_type)*q.size(), cudaMemcpyHostToDevice);
 
         // linear
@@ -190,23 +191,23 @@ void benchmark_q_kernel_cuda::evaluate_dataset(const dataset &ds) {
     block = dim3(range_q.block[0], range_q.block[1], range_q.block[2]); 
 
     plssvm::openmp::coo<real_type> data_coo_padded = *(data_ptr_coo.get());
-    data_coo_padded.add_zero_padding(boundary_size);
+    data_coo_padded.add_padding(boundary_size, 0, 0, 0);
     auto data_ptr_coo_padded = std::make_shared<const plssvm::openmp::coo<real_type>>(std::move(data_coo_padded));
 
     for(size_t i = 0; i < cycles; i++) {
-        cudaMalloc((void**)&q_d, sizeof(real_type)*(data_ptr_coo -> get_height() - 1));
-        cudaMalloc((void**)&values_coo_d, sizeof(real_type)*((data_ptr_coo -> get_nnz()) + boundary_size));
-        cudaMalloc((void**)&col_coo_d, sizeof(size_t)*((data_ptr_coo -> get_nnz()) + boundary_size));
-        cudaMalloc((void**)&row_coo_d, sizeof(size_t)*((data_ptr_coo -> get_nnz()) + boundary_size));
-
         auto nnz_coo = data_ptr_coo -> get_nnz();
         auto last_row_begin_coo = data_ptr_coo -> get_last_row_begin();
-        
-        cudaMemcpy(values_coo_d, data_ptr_coo_padded -> get_values().data(), sizeof(real_type)*((data_ptr_coo -> get_nnz()) + boundary_size), cudaMemcpyHostToDevice);
-        cudaMemcpy(row_coo_d, data_ptr_coo_padded -> get_row_ids().data(), sizeof(size_t)*((data_ptr_coo -> get_nnz()) + boundary_size), cudaMemcpyHostToDevice);
-        cudaMemcpy(col_coo_d, data_ptr_coo_padded -> get_col_ids().data(), sizeof(size_t)*((data_ptr_coo -> get_nnz()) + boundary_size), cudaMemcpyHostToDevice);
 
-        std::vector<real_type> q(data_ptr_coo->get_height() - 1); // q-Vector
+        cudaMalloc((void**)&q_d, sizeof(real_type)*((data_ptr_coo -> get_height() - 1) + boundary_size));
+        cudaMalloc((void**)&values_coo_d, sizeof(real_type)*(nnz_coo + boundary_size));
+        cudaMalloc((void**)&col_coo_d, sizeof(size_t)*(nnz_coo + boundary_size));
+        cudaMalloc((void**)&row_coo_d, sizeof(size_t)*(nnz_coo + boundary_size));
+        
+        cudaMemcpy(values_coo_d, data_ptr_coo_padded -> get_values().data(), sizeof(real_type)*(nnz_coo + boundary_size), cudaMemcpyHostToDevice);
+        cudaMemcpy(row_coo_d, data_ptr_coo_padded -> get_row_ids().data(), sizeof(size_t)*(nnz_coo + boundary_size), cudaMemcpyHostToDevice);
+        cudaMemcpy(col_coo_d, data_ptr_coo_padded -> get_col_ids().data(), sizeof(size_t)*(nnz_coo + boundary_size), cudaMemcpyHostToDevice);
+
+        std::vector<real_type> q((data_ptr_coo -> get_height() - 1) + boundary_size); // q-Vector
         cudaMemcpy(q_d, q.data(), sizeof(real_type)*q.size(), cudaMemcpyHostToDevice);
 
         // linear
@@ -263,25 +264,23 @@ void benchmark_q_kernel_cuda::evaluate_dataset(const dataset &ds) {
     block= dim3(range_q.block[0], range_q.block[1], range_q.block[2]);
 
     plssvm::openmp::csr<real_type> data_csr_padded = *(data_ptr_csr.get());
-    data_csr_padded.add_zero_padding(boundary_size);
+    data_csr_padded.add_padding(boundary_size, data_ptr_csr -> get_nnz());
     auto data_ptr_csr_padded = std::make_shared<const plssvm::openmp::csr<real_type>>(std::move(data_csr_padded));
 
     for(size_t i = 0; i < cycles; i++) {
-        cudaMalloc((void**)&q_d, sizeof(real_type)*(data_ptr_csr -> get_height() - 1));
-        cudaMalloc((void**)&values_csr_d, sizeof(real_type)*(data_ptr_csr -> get_nnz()));
-        cudaMalloc((void**)&col_csr_d, sizeof(size_t)*(data_ptr_csr -> get_nnz()));
-        cudaMalloc((void**)&row_csr_d, sizeof(size_t)*((data_ptr_csr -> get_height()) + boundary_size));
-
-
-       
         auto height_csr = data_ptr_csr -> get_height();
         auto nnz_csr = data_ptr_csr -> get_nnz();
         
-        cudaMemcpy(values_csr_d, data_ptr_csr -> get_values().data(), sizeof(real_type)*(data_ptr_csr -> get_nnz()), cudaMemcpyHostToDevice);
-        cudaMemcpy(row_csr_d, data_ptr_csr_padded -> get_row_offset().data(), sizeof(size_t)*((data_ptr_csr -> get_height()) + boundary_size), cudaMemcpyHostToDevice);
-        cudaMemcpy(col_csr_d, data_ptr_csr -> get_col_ids().data(), sizeof(size_t)*(data_ptr_csr -> get_nnz()), cudaMemcpyHostToDevice);
+        cudaMalloc((void**)&q_d, sizeof(real_type)*(height_csr - 1 + boundary_size));
+        cudaMalloc((void**)&values_csr_d, sizeof(real_type)*nnz_csr);
+        cudaMalloc((void**)&col_csr_d, sizeof(size_t)*nnz_csr);
+        cudaMalloc((void**)&row_csr_d, sizeof(size_t)*(height_csr - 1 + boundary_size));
         
-        std::vector<real_type> q(data_ptr_csr->get_height() - 1); // q-Vector
+        cudaMemcpy(values_csr_d, data_ptr_csr -> get_values().data(), sizeof(real_type)*nnz_csr, cudaMemcpyHostToDevice);
+        cudaMemcpy(row_csr_d, data_ptr_csr_padded -> get_row_offset().data(), sizeof(size_t)*(height_csr - 1 + boundary_size), cudaMemcpyHostToDevice);
+        cudaMemcpy(col_csr_d, data_ptr_csr -> get_col_ids().data(), sizeof(size_t)*nnz_csr, cudaMemcpyHostToDevice);
+        
+        std::vector<real_type> q(height_csr - 1 + boundary_size); // q-Vector
         cudaMemcpy(q_d, q.data(), sizeof(real_type)*q.size(), cudaMemcpyHostToDevice);
 
         // linear

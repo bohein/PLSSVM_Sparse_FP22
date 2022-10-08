@@ -73,9 +73,9 @@ void csr<T>::append(const csr<real_type> &other) {
 }
 
 template <typename T>
-void csr<T>::add_zero_padding(const size_t padding_size) {
+void csr<T>::add_padding(const size_t padding_size, const size_t padding_value) {
     
-    std::vector<size_t> padding_vector(padding_size, 0);
+    std::vector<size_t> padding_vector(padding_size, padding_value);
 
     row_offset.insert(row_offset.end(), padding_vector.begin(), padding_vector.end());
 }
