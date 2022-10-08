@@ -46,9 +46,7 @@ __global__ void device_kernel_linear(const real_type *q, real_type *ret, const r
         }
 
         row_1_indices[block_index] = row_1_index;
-        row_2_indices[block_index] = row_2_index;
-
-             printf ("%s \n", "Linear Kernel");
+        row_2_indices[block_index] = row_2_index;       
     }
 
     #pragma unroll INTERNAL_BLOCK_SIZE
