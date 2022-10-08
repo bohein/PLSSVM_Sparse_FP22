@@ -26,6 +26,19 @@ template <typename T>
 class SparseMatrix : public ::testing::Test {};
 TYPED_TEST_SUITE(SparseMatrix, floating_point_types);
 
+TYPED_TEST(SparseMatrix, coo_get_last_row_begin) {
+    using real_type = TypeParam;
+
+    // sparse matrix
+    plssvm::openmp::coo<real_type> sparse{};
+    sparse.insert_element(0, 0, 1.0);
+    sparse.insert_element(1, 1, 5.0);
+    sparse.insert_element(1, 2, 8.0);
+    sparse.insert_element(2, 2, 9.0);
+
+    EXPECT_EQ(sparse.get_last_row_begin(), 2);
+}
+
 TYPED_TEST(SparseMatrix, coo_get_element) {
     using real_type = TypeParam;
 
