@@ -114,11 +114,12 @@ class csr {
         void append(const csr<real_type> &other);
 
         /**
-         * @brief inserts zero padding to row array
+         * @brief inserts padding to row array
          * 
-         * @param padding_size
+         * @param padding_size size of added padding
+         * @param padding_value value in padding
          */
-        void add_zero_padding(const size_t padding_size);
+        void add_padding(const size_t padding_size, const size_t padding_value);
 
 
         //////////////////////////

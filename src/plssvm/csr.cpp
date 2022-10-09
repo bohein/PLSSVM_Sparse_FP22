@@ -73,9 +73,9 @@ void csr<T>::append(const csr<real_type> &other) {
 }
 
 template <typename T>
-void csr<T>::add_zero_padding(const size_t padding_size) {
+void csr<T>::add_padding(const size_t padding_size, const size_t padding_value) {
     
-    std::vector<size_t> padding_vector(padding_size, 0);
+    std::vector<size_t> padding_vector(padding_size, padding_value);
 
     row_offset.insert(row_offset.end(), padding_vector.begin(), padding_vector.end());
 }
@@ -136,11 +136,10 @@ T csr<T>::get_row_dot_product(const size_t row_id_1, const size_t row_id_2) cons
    //     }
     //}
 
-    #pragma omp parallel for collapse(2)
+    #pragma omp parallel for collapse(2) reduction(+ : result)
     for (size_t i = row_1_start; i < row_1_end; ++i) {
         for (size_t j = row_2_start; j < row_2_end; ++j) {
             if (col_ids[i] == col_ids[j]) {
-                #pragma omp atomic
                 result += values[i] * values[j];
             }
         }
@@ -154,6 +153,7 @@ T csr<T>::get_row_squared_euclidean_dist(const size_t row_id_1, const size_t row
         return 0;
 
     T result = 0;
+    T temp = 0.0;
 
     // get borders of row 1
     size_t row_1_start = row_offset[row_id_1];
@@ -186,40 +186,29 @@ T csr<T>::get_row_squared_euclidean_dist(const size_t row_id_1, const size_t row
    // }
 
     // exploit assumtion that row 1 and row 2 have few non-zero dimensions in common
-    #pragma omp parallel sections
-    {
-        #pragma omp section  // sq.e.d. from row 1 to origin
-        {
-            #pragma omp parallel for
-            for (size_t i = row_1_start; i < row_1_end; ++i) {
-                #pragma omp atomic
-                result += values[i] * values[i];
-            }
-        }
-        #pragma omp section  // sq.e.d. from row 2 to origin
-        {
-            #pragma omp parallel for
-            for (size_t i = row_2_start; i < row_2_end; ++i) {
-                #pragma omp atomic
-                result += values[i] * values[i];
-            }
-        }
-        #pragma omp section
-        {
-             // adjust if shared non-zero entry; according to 2nd binom formula
-            #pragma omp parallel for collapse(2)
-            for (size_t i = row_1_start; i < row_1_end; ++i) {
-                for (size_t j = row_2_start; j < row_2_end; ++j) {
-                    if (col_ids[i] == col_ids[j]) {
-                        #pragma omp atomic
-                        result -= 2 * values[i] * values[j];
-                    }
-                }
+    #pragma omp parallel for reduction(+ : result)
+    for (size_t i = row_1_start; i < row_1_end; ++i) {
+        result += values[i] * values[i];
+    }
+        
+    // exploit assumtion that row 1 and row 2 have few non-zero dimensions in common   
+    #pragma omp parallel for reduction(+ : result)
+    for (size_t i = row_2_start; i < row_2_end; ++i) {
+        result += values[i] * values[i];
+    }
+        
+       
+    // adjust if shared non-zero entry; according to 2nd binom formula
+    #pragma omp parallel for collapse(2) reduction(+ : temp)
+    for (size_t i = row_1_start; i < row_1_end; ++i) {
+        for (size_t j = row_2_start; j < row_2_end; ++j) {
+            if (col_ids[i] == col_ids[j]) {
+                temp += 2 * values[i] * values[j];
             }
         }
     }
 
-    return result;
+    return result - temp;
 }
 
 
