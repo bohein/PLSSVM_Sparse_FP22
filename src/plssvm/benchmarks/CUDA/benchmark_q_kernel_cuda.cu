@@ -132,7 +132,7 @@ void benchmark_q_kernel_cuda::evaluate_dataset(const dataset &ds) {
         cudaMalloc((void**)&data_dense_last_d, sizeof(real_type)*num_cols);
 
         cudaMemcpy(data_dense_d, data_ptr_dense_1D -> data(), sizeof(real_type)*(data_ptr_dense_1D -> size()), cudaMemcpyHostToDevice);
-        cudaMemcpy(data_dense_last_d, data_dense_last -> data(), sizeof(real_type)*num_cols,cudaMemcpyHostToDevice);
+        cudaMemcpy(data_dense_last_d, data_dense_last -> data(), sizeof(real_type)*num_cols, cudaMemcpyHostToDevice);
 
         std::vector<real_type> q(num_rows); // q-Vector
         cudaMemcpy(q_d, q.data(), sizeof(real_type)*q.size(), cudaMemcpyHostToDevice);

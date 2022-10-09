@@ -320,7 +320,6 @@ void coo<T>::add_padding(const size_t padding_size, const size_t padding_value_r
     
     std::vector<size_t> padding_vector_col(padding_size, padding_value_col);
     std::vector<size_t> padding_vector_row(padding_size, padding_value_row);
-
     std::vector<T> padding_vector_val(padding_value_val);
 
     col_ids.insert(col_ids.end(), padding_vector_col.begin(), padding_vector_col.end());
