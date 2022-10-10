@@ -29,6 +29,8 @@ __global__ void device_kernel_q_linear(real_type *q, const size_t *col_ids, cons
     for(kernel_index_type cur_index = row_offsets[row_index]; cur_index < row_end_index && last_row_cur_index < nnz;){
         if(col_ids[cur_index] == col_ids[last_row_cur_index]){
             temp += values[cur_index] * values[last_row_cur_index];
+            last_row_cur_index++;
+            cur_index++;
         } else if(col_ids[cur_index] > col_ids[last_row_cur_index]){
             last_row_cur_index++;
         } else{
@@ -57,6 +59,8 @@ __global__ void device_kernel_q_poly(real_type *q, const size_t *col_ids, const 
     for(kernel_index_type cur_index = row_offsets[row_index]; cur_index < row_end_index && last_row_cur_index < nnz;){
         if(col_ids[cur_index] == col_ids[last_row_cur_index]){
             temp += values[cur_index] * values[last_row_cur_index];
+            last_row_cur_index++;
+            cur_index++;
         } else if(col_ids[cur_index] > col_ids[last_row_cur_index]){
             last_row_cur_index++;
         } else{
@@ -86,6 +90,8 @@ __global__ void device_kernel_q_radial(real_type *q, const size_t *col_ids, cons
     for(;cur_index < row_end_index && last_row_cur_index < nnz;){
         if(col_ids[cur_index] == col_ids[last_row_cur_index]){
             temp += (values[cur_index] - values[last_row_cur_index]) * (values[cur_index] - values[last_row_cur_index]);
+            last_row_cur_index++;
+            cur_index++;
         } else if(col_ids[cur_index] > col_ids[last_row_cur_index]){
             temp += values[last_row_cur_index] * values[last_row_cur_index];
             last_row_cur_index++;

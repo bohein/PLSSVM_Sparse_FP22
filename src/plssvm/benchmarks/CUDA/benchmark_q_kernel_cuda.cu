@@ -20,6 +20,14 @@
 #include <iostream>
 
 #include <stdio.h>
+
+#define CUDA_CALL( call )               \
+{                                       \
+cudaError_t result = call;              \
+if ( cudaSuccess != result )            \
+    std::cerr << "CUDA error " << result << " in " << __FILE__ << ":" << __LINE__ << ": " << cudaGetErrorString( result ) << " (" << #call << ")" << std::endl;  \
+}
+
 namespace plssvm::benchmarks {
 
 benchmark_q_kernel_cuda::benchmark_q_kernel_cuda() : benchmark{"Q-Kernels (CUDA)"} {}
@@ -58,13 +66,13 @@ void benchmark_q_kernel_cuda::run() {
     using real_type = double;
 
     //datasets.insert(datasets.end(), DATAPOINT.begin(), DATAPOINT.end());
-    //datasets.insert(datasets.end(), FEATURE.begin(), FEATURE.end());
+    datasets.insert(datasets.end(), FEATURE.begin(), FEATURE.end());
     //datasets.insert(datasets.end(), DENSITY.begin(), DENSITY.end());
     //datasets.insert(datasets.end(), REAL_WORLD.begin(), REAL_WORLD.end());
 
-    //for (auto& ds : datasets) evaluate_dataset(ds);
-    datasets.push_back(DATAPOINT[12]);
-    evaluate_dataset(DATAPOINT[12]);
+    for (auto& ds : datasets) evaluate_dataset(ds);
+    //datasets.push_back(DATAPOINT[12]);
+    //evaluate_dataset(DATAPOINT[12]);
 }
 
 void benchmark_q_kernel_cuda::evaluate_dataset(const dataset &ds) {
@@ -175,7 +183,7 @@ void benchmark_q_kernel_cuda::evaluate_dataset(const dataset &ds) {
 
         cudaFree(q_d);
         cudaFree(data_dense_d);
-        cudaFree(data_dense_last_d);
+         cudaFree(data_dense_last_d);
     }
     
     // coo
@@ -200,11 +208,11 @@ void benchmark_q_kernel_cuda::evaluate_dataset(const dataset &ds) {
         auto nnz_coo = data_ptr_coo -> get_nnz();
         auto last_row_begin_coo = data_ptr_coo -> get_last_row_begin();
 
-        cudaMalloc((void**)&q_d, sizeof(real_type)*((data_ptr_coo -> get_height() - 1) + boundary_size));
+        CUDA_CALL(cudaMalloc((void**)&q_d, sizeof(real_type)*((data_ptr_coo -> get_height() - 1) + boundary_size)));
         cudaMalloc((void**)&values_coo_d, sizeof(real_type)*(nnz_coo + boundary_size));
         cudaMalloc((void**)&col_coo_d, sizeof(size_t)*(nnz_coo + boundary_size));
         cudaMalloc((void**)&row_coo_d, sizeof(size_t)*(nnz_coo + boundary_size));
-        
+    
         cudaMemcpy(values_coo_d, data_ptr_coo_padded -> get_values().data(), sizeof(real_type)*(nnz_coo + boundary_size), cudaMemcpyHostToDevice);
         cudaMemcpy(row_coo_d, data_ptr_coo_padded -> get_row_ids().data(), sizeof(size_t)*(nnz_coo + boundary_size), cudaMemcpyHostToDevice);
         cudaMemcpy(col_coo_d, data_ptr_coo_padded -> get_col_ids().data(), sizeof(size_t)*(nnz_coo + boundary_size), cudaMemcpyHostToDevice);
@@ -217,7 +225,7 @@ void benchmark_q_kernel_cuda::evaluate_dataset(const dataset &ds) {
        
         start_time = std::chrono::high_resolution_clock::now();
         plssvm::cuda::coo::device_kernel_q_linear<<<grid, block>>>(q_d, col_coo_d, row_coo_d, values_coo_d, nnz_coo, last_row_begin_coo);
-        cudaDeviceSynchronize();
+          cudaDeviceSynchronize();
         end_time = std::chrono::high_resolution_clock::now();
        
         raw_runtimes_coo_linear.push_back(std::chrono::round<ns>(end_time - start_time));
@@ -228,7 +236,7 @@ void benchmark_q_kernel_cuda::evaluate_dataset(const dataset &ds) {
        
         start_time = std::chrono::high_resolution_clock::now();
         plssvm::cuda::coo::device_kernel_q_poly<<<grid, block>>>(q_d, col_coo_d, row_coo_d, values_coo_d, nnz_coo, last_row_begin_coo, degree, gamma, coef0);
-        cudaDeviceSynchronize();
+         cudaDeviceSynchronize();
         end_time = std::chrono::high_resolution_clock::now();
        
         raw_runtimes_coo_poly.push_back(std::chrono::round<ns>(end_time - start_time));
