@@ -29,17 +29,17 @@ __global__ void device_kernel_linear(const real_type *q, real_type *ret, const r
 
     #pragma unroll INTERNAL_BLOCK_SIZE
     for (kernel_index_type block_index = 0; block_index < INTERNAL_BLOCK_SIZE; ++block_index) {
-        row_1_start_indices[block_index] = row_offsets[i + blockindex];
-        row_2_start_indices[block_index] = row_offsets[j + blockindex];
+        row_1_start_indices[block_index] = row_offsets[i + block_index];
+        row_2_start_indices[block_index] = row_offsets[j + block_index];
 
         row_1_end_indices[block_index] = nnz;
         if(i + block_index < height - 1){
-            row_1_end_indices[block_index] = row_offsets[i + blockindex + 1];
+            row_1_end_indices[block_index] = row_offsets[i + block_index + 1];
         }
 
         row_2_end_indices[block_index] = nnz;
         if(j + block_index < height - 1){
-            row_2_end_indices[block_index] = row_offsets[j + blockindex + 1];
+            row_2_end_indices[block_index] = row_offsets[j + block_index + 1];
         }
     }
 
@@ -95,17 +95,17 @@ __global__ void device_kernel_poly(const real_type *q, real_type *ret, const rea
 
     #pragma unroll INTERNAL_BLOCK_SIZE
     for (kernel_index_type block_index = 0; block_index < INTERNAL_BLOCK_SIZE; ++block_index) {
-        row_1_start_indices[block_index] = row_offsets[i + blockindex];
-        row_2_start_indices[block_index] = row_offsets[j + blockindex];
+        row_1_start_indices[block_index] = row_offsets[i + block_index];
+        row_2_start_indices[block_index] = row_offsets[j + block_index];
 
         row_1_end_indices[block_index] = nnz;
         if(i + block_index < height - 1){
-            row_1_end_indices[block_index] = row_offsets[i + blockindex + 1];
+            row_1_end_indices[block_index] = row_offsets[i + block_index + 1];
         }
 
         row_2_end_indices[block_index] = nnz;
         if(j + block_index < height - 1){
-            row_2_end_indices[block_index] = row_offsets[j + blockindex + 1];
+            row_2_end_indices[block_index] = row_offsets[j + block_index + 1];
         }
     }
 
@@ -161,17 +161,17 @@ __global__ void device_kernel_radial(const real_type *q, real_type *ret, const r
 
     #pragma unroll INTERNAL_BLOCK_SIZE
     for (kernel_index_type block_index = 0; block_index < INTERNAL_BLOCK_SIZE; ++block_index) {
-        row_1_start_indices[block_index] = row_offsets[i + blockindex];
-        row_2_start_indices[block_index] = row_offsets[j + blockindex];
+        row_1_start_indices[block_index] = row_offsets[i + block_index];
+        row_2_start_indices[block_index] = row_offsets[j + block_index];
 
         row_1_end_indices[block_index] = nnz;
         if(i + block_index < height - 1){
-            row_1_end_indices[block_index] = row_offsets[i + blockindex + 1];
+            row_1_end_indices[block_index] = row_offsets[i + block_index + 1];
         }
 
         row_2_end_indices[block_index] = nnz;
         if(j + block_index < height - 1){
-            row_2_end_indices[block_index] = row_offsets[j + blockindex + 1];
+            row_2_end_indices[block_index] = row_offsets[j + block_index + 1];
         }
     }
 
@@ -216,7 +216,7 @@ __global__ void device_kernel_radial(const real_type *q, real_type *ret, const r
         atomicAdd(&ret[j + y], ret_jy);
     }
 }
-template __global__ void device_kernel_radial(const float *, float *, const float *, const size_t *, const size_t *, const float *, const float, const float, const kernel_index_type, const kernel_index_type, const float, const float,);
+template __global__ void device_kernel_radial(const float *, float *, const float *, const size_t *, const size_t *, const float *, const float, const float, const kernel_index_type, const kernel_index_type, const float, const float);
 template __global__ void device_kernel_radial(const double *, double *, const double *, const size_t *, const size_t *, const double *, const double, const double, const kernel_index_type, const kernel_index_type, const double, const double);
 
 }  // namespace plssvm::cuda
