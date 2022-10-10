@@ -125,7 +125,7 @@ void benchmark_q_kernel_cuda::evaluate_dataset(const dataset &ds) {
     dim3 grid(range_q.grid[0], range_q.grid[1], range_q.grid[2]);
     dim3 block(range_q.block[0], range_q.block[1], range_q.block[2]); 
 
-    for(size_t i = 0; i < 0; i++) {
+    for(size_t i = 0; i < cycles; i++) {
         size_t num_rows = num_rows_exc_last + boundary_size;
         size_t num_cols = data_ptr_dense -> at(0).size();
 
