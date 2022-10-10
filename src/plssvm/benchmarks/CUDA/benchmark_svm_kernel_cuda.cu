@@ -78,12 +78,11 @@ void benchmark_svm_kernel_cuda::evaluate_dataset(const dataset& ds) {
     //auto data_ptr_dense_1D = std::make_shared<const std::vector<real_type>>(plssvm::csvm<real_type>::transform_data(data_ptr_dense.get(), 0, 
     // ((*data_ptr_dense.get())[0].size()) * (data_ptr_dense.get() -> size()))); //padding----------------------
 
-    const size_t num = ((*data_ptr_dense.get())[0].size()) * (data_ptr_dense -> size());
-    std::vector<real_type> vec_1D(num);
+    std::vector<real_type> vec_1D(data_ptr_dense -> at(0).size() * (num_rows_exc_last + boundary_size));
     
-    for (typename std::vector<real_type>::size_type col = 0; col < data_ptr_dense.get()[0].size(); ++col) {
-        for (std::size_t row = 0; row < data_ptr_dense -> size(); ++row) {
-            vec_1D[col * data_ptr_dense -> size() + row] = data_ptr_dense->at(row)[col];
+    for (typename std::vector<real_type>::size_type col = 0; col <  data_ptr_dense -> at(0).size(); ++col) {
+        for (std::size_t row = 0; row < num_rows_exc_last; ++row) {
+            vec_1D[col * (num_rows_exc_last + boundary_size)  + row] = data_ptr_dense->at(row).at(col);
         }
     }
 
@@ -334,10 +333,10 @@ void benchmark_svm_kernel_cuda::evaluate_dataset(const dataset& ds) {
 
         cudaMalloc((void**)&values_csr_d, sizeof(real_type)*nnz_csr);
         cudaMalloc((void**)&col_csr_d, sizeof(size_t)*nnz_csr);
-        cudaMalloc((void**)&row_csr_d, sizeof(size_t)*(height_csr - 1 + boundary_size));
+        cudaMalloc((void**)&row_csr_d, sizeof(size_t)*(height_csr + boundary_size));
        
         cudaMemcpy(values_csr_d, data_ptr_csr -> get_values().data(), sizeof(real_type)*nnz_csr, cudaMemcpyHostToDevice);
-        cudaMemcpy(row_csr_d, data_ptr_csr_padded -> get_row_offset().data(), sizeof(size_t)*(height_csr - 1 + boundary_size), cudaMemcpyHostToDevice);
+        cudaMemcpy(row_csr_d, data_ptr_csr_padded -> get_row_offset().data(), sizeof(size_t)*(height_csr + boundary_size), cudaMemcpyHostToDevice);
         cudaMemcpy(col_csr_d, data_ptr_csr -> get_col_ids().data(), sizeof(size_t)*nnz_csr, cudaMemcpyHostToDevice);
 
         q = std::vector<real_type>(height_csr + boundary_size - 1); // q-Vector
