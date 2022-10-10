@@ -24,36 +24,38 @@ __global__ void device_kernel_linear(const real_type *q, real_type *ret, const r
 
     i += threadIdx.x * INTERNAL_BLOCK_SIZE;
     j += threadIdx.y * INTERNAL_BLOCK_SIZE;
+    kernel_index_type row_1_indices[(INTERNAL_BLOCK_SIZE - 1) / THREAD_BLOCK_SIZE + 1] = { 0 };
+    kernel_index_type row_2_indices[(INTERNAL_BLOCK_SIZE - 1) / THREAD_BLOCK_SIZE + 1] = { 0 };
 
     __shared__ real_type block_c_rows_1[THREAD_BLOCK_SIZE][INTERNAL_BLOCK_SIZE];
     __shared__ real_type block_c_rows_2[THREAD_BLOCK_SIZE][INTERNAL_BLOCK_SIZE];
     real_type thread_c_kernel[INTERNAL_BLOCK_SIZE][INTERNAL_BLOCK_SIZE] = { 0.0 };
     real_type thread_c_row[INTERNAL_BLOCK_SIZE];
 
-    kernel_index_type row_1_indices[INTERNAL_BLOCK_SIZE] = { 0 };
-    kernel_index_type row_2_indices[INTERNAL_BLOCK_SIZE] = { 0 };
+    #pragma unroll (INTERNAL_BLOCK_SIZE - 1) / THREAD_BLOCK_SIZE + 1
+    for (kernel_index_type row_number = 0; row_number < (INTERNAL_BLOCK_SIZE - 1) / THREAD_BLOCK_SIZE + 1; ++row_number) {
+        kernel_index_type row_1_index = nnz * (i + row_number * THREAD_BLOCK_SIZE) / height;
+        kernel_index_type row_2_index = nnz * (j + row_number * THREAD_BLOCK_SIZE) / height;
 
-    #pragma unroll INTERNAL_BLOCK_SIZE
-    for (kernel_index_type block_index = 0; block_index < INTERNAL_BLOCK_SIZE; ++block_index) {
-        kernel_index_type row_1_index = nnz * (i + block_index) / height;
-        kernel_index_type row_2_index = nnz * (j + block_index) / height;
-
-        if (row_ids[row_1_index] < i + block_index) {
-            for (; row_1_index < nnz && row_ids[row_1_index] < i + block_index; ++row_1_index);
-        } else {
-            for (; row_1_index >= 0 && row_ids[row_1_index] >= i + block_index; --row_1_index);
-            row_1_index++;
+        if (row_1_index < nnz) {
+            if (row_ids[row_1_index] < i + row_number) {
+                for (; row_1_index < nnz && row_ids[row_1_index] < i + row_number; ++row_1_index);
+            } else {
+                for (; row_1_index >= 0 && row_ids[row_1_index] >= i + row_number; --row_1_index);
+                row_1_index++;
+            }
+            row_1_indices[row_number] = row_1_index;
         }
 
-        if (row_ids[row_2_index] < j + block_index) {
-            for (; row_2_index < nnz && row_ids[row_2_index] < j + block_index; ++row_2_index);
-        } else {
-            for (; row_2_index >= 0 && row_ids[row_2_index] >= j + block_index; --row_2_index);
-            row_2_index++;
+        if (row_2_index < nnz) {
+            if (row_ids[row_2_index] < j + row_number) {
+                for (; row_2_index < nnz && row_ids[row_2_index] < j + row_number; ++row_2_index);
+            } else {
+                for (; row_2_index >= 0 && row_ids[row_2_index] >= j + row_number; --row_2_index);
+                row_2_index++;
+            }
+            row_2_indices[row_number] = row_2_index;
         }
-
-        row_1_indices[block_index] = row_1_index;
-        row_2_indices[block_index] = row_2_index;
     }
 
     for (kernel_index_type feature_index = 0; feature_index < width; ++feature_index) {
@@ -62,20 +64,20 @@ __global__ void device_kernel_linear(const real_type *q, real_type *ret, const r
         for (kernel_index_type internal_index = 0; internal_index < INTERNAL_BLOCK_SIZE; ++internal_index) {
             const kernel_index_type thread_row_match_1 = internal_index % THREAD_BLOCK_SIZE;
             if (threadIdx.y == thread_row_match_1) {
-                const kernel_index_type row_1_index = row_1_indices[internal_index];
+                const kernel_index_type row_1_index = row_1_indices[internal_index / THREAD_BLOCK_SIZE];
                 if (col_ids[row_1_index] == feature_index && row_ids[row_1_index] == i) {
-                    block_c_rows_1[threadIdx.x][internal_index] = values[row_1_indices[internal_index]];
-                    row_1_indices[internal_index] = row_1_index + 1;
+                    block_c_rows_1[threadIdx.x][internal_index] = values[row_1_index];
+                    row_1_indices[internal_index / THREAD_BLOCK_SIZE] = row_1_index + 1;
                 } else {
                     block_c_rows_1[threadIdx.x][internal_index] = 0;
                 }
             }
             const kernel_index_type thread_row_match_2 = (internal_index + INTERNAL_BLOCK_SIZE) % THREAD_BLOCK_SIZE;
             if (threadIdx.y == thread_row_match_2) {
-                const kernel_index_type row_2_index = row_2_indices[internal_index];
+                const kernel_index_type row_2_index = row_2_indices[internal_index / THREAD_BLOCK_SIZE];
                 if (col_ids[row_2_index] == feature_index) {
                     block_c_rows_2[threadIdx.x][internal_index] = values[row_2_index];
-                    row_2_indices[internal_index] = row_2_index + 1;
+                    row_2_indices[internal_index / THREAD_BLOCK_SIZE] = row_2_index + 1;
                 } else {
                     block_c_rows_2[threadIdx.x][internal_index] = 0;
                 }
@@ -129,36 +131,38 @@ __global__ void device_kernel_poly(const real_type *q, real_type *ret, const rea
 
     i += threadIdx.x * INTERNAL_BLOCK_SIZE;
     j += threadIdx.y * INTERNAL_BLOCK_SIZE;
+    kernel_index_type row_1_indices[(INTERNAL_BLOCK_SIZE - 1) / THREAD_BLOCK_SIZE + 1] = { 0 };
+    kernel_index_type row_2_indices[(INTERNAL_BLOCK_SIZE - 1) / THREAD_BLOCK_SIZE + 1] = { 0 };
 
     __shared__ real_type block_c_rows_1[THREAD_BLOCK_SIZE][INTERNAL_BLOCK_SIZE];
     __shared__ real_type block_c_rows_2[THREAD_BLOCK_SIZE][INTERNAL_BLOCK_SIZE];
     real_type thread_c_kernel[INTERNAL_BLOCK_SIZE][INTERNAL_BLOCK_SIZE] = { 0.0 };
     real_type thread_c_row[INTERNAL_BLOCK_SIZE];
 
-    kernel_index_type row_1_indices[INTERNAL_BLOCK_SIZE] = { 0 };
-    kernel_index_type row_2_indices[INTERNAL_BLOCK_SIZE] = { 0 };
+    #pragma unroll (INTERNAL_BLOCK_SIZE - 1) / THREAD_BLOCK_SIZE + 1
+    for (kernel_index_type row_number = 0; row_number < (INTERNAL_BLOCK_SIZE - 1) / THREAD_BLOCK_SIZE + 1; ++row_number) {
+        kernel_index_type row_1_index = nnz * (i + row_number * THREAD_BLOCK_SIZE) / height;
+        kernel_index_type row_2_index = nnz * (j + row_number * THREAD_BLOCK_SIZE) / height;
 
-    #pragma unroll INTERNAL_BLOCK_SIZE
-    for (kernel_index_type block_index = 0; block_index < INTERNAL_BLOCK_SIZE; ++block_index) {
-        kernel_index_type row_1_index = nnz * (i + block_index) / height;
-        kernel_index_type row_2_index = nnz * (j + block_index) / height;
-
-        if (row_ids[row_1_index] < i + block_index) {
-            for (; row_1_index < nnz && row_ids[row_1_index] < i + block_index; ++row_1_index);
-        } else {
-            for (; row_1_index >= 0 && row_ids[row_1_index] >= i + block_index; --row_1_index);
-            row_1_index++;
+        if (row_1_index < nnz) {
+            if (row_ids[row_1_index] < i + row_number) {
+                for (; row_1_index < nnz && row_ids[row_1_index] < i + row_number; ++row_1_index);
+            } else {
+                for (; row_1_index >= 0 && row_ids[row_1_index] >= i + row_number; --row_1_index);
+                row_1_index++;
+            }
+            row_1_indices[row_number] = row_1_index;
         }
 
-        if (row_ids[row_2_index] < j + block_index) {
-            for (; row_2_index < nnz && row_ids[row_2_index] < j + block_index; ++row_2_index);
-        } else {
-            for (; row_2_index >= 0 && row_ids[row_2_index] >= j + block_index; --row_2_index);
-            row_2_index++;
+        if (row_2_index < nnz) {
+            if (row_ids[row_2_index] < j + row_number) {
+                for (; row_2_index < nnz && row_ids[row_2_index] < j + row_number; ++row_2_index);
+            } else {
+                for (; row_2_index >= 0 && row_ids[row_2_index] >= j + row_number; --row_2_index);
+                row_2_index++;
+            }
+            row_2_indices[row_number] = row_2_index;
         }
-
-        row_1_indices[block_index] = row_1_index;
-        row_2_indices[block_index] = row_2_index;
     }
 
     for (kernel_index_type feature_index = 0; feature_index < width; ++feature_index) {
@@ -167,20 +171,20 @@ __global__ void device_kernel_poly(const real_type *q, real_type *ret, const rea
         for (kernel_index_type internal_index = 0; internal_index < INTERNAL_BLOCK_SIZE; ++internal_index) {
             const kernel_index_type thread_row_match_1 = internal_index % THREAD_BLOCK_SIZE;
             if (threadIdx.y == thread_row_match_1) {
-                const kernel_index_type row_1_index = row_1_indices[internal_index];
+                const kernel_index_type row_1_index = row_1_indices[internal_index / THREAD_BLOCK_SIZE];
                 if (col_ids[row_1_index] == feature_index && row_ids[row_1_index] == i) {
-                    block_c_rows_1[threadIdx.x][internal_index] = values[row_1_indices[internal_index]];
-                    row_1_indices[internal_index] = row_1_index + 1;
+                    block_c_rows_1[threadIdx.x][internal_index] = values[row_1_index]];
+                    row_1_indices[internal_index / THREAD_BLOCK_SIZE] = row_1_index + 1;
                 } else {
                     block_c_rows_1[threadIdx.x][internal_index] = 0;
                 }
             }
             const kernel_index_type thread_row_match_2 = (internal_index + INTERNAL_BLOCK_SIZE) % THREAD_BLOCK_SIZE;
             if (threadIdx.y == thread_row_match_2) {
-                const kernel_index_type row_2_index = row_2_indices[internal_index];
+                const kernel_index_type row_2_index = row_2_indices[internainternal_index / THREAD_BLOCK_SIZEl_index];
                 if (col_ids[row_2_index] == feature_index) {
                     block_c_rows_2[threadIdx.x][internal_index] = values[row_2_index];
-                    row_2_indices[internal_index] = row_2_index + 1;
+                    row_2_indices[internal_index / THREAD_BLOCK_SIZE] = row_2_index + 1;
                 } else {
                     block_c_rows_2[threadIdx.x][internal_index] = 0;
                 }
@@ -234,36 +238,38 @@ __global__ void device_kernel_radial(const real_type *q, real_type *ret, const r
 
     i += threadIdx.x * INTERNAL_BLOCK_SIZE;
     j += threadIdx.y * INTERNAL_BLOCK_SIZE;
+    kernel_index_type row_1_indices[(INTERNAL_BLOCK_SIZE - 1) / THREAD_BLOCK_SIZE + 1] = { 0 };
+    kernel_index_type row_2_indices[(INTERNAL_BLOCK_SIZE - 1) / THREAD_BLOCK_SIZE + 1] = { 0 };
 
     __shared__ real_type block_c_rows_1[THREAD_BLOCK_SIZE][INTERNAL_BLOCK_SIZE];
     __shared__ real_type block_c_rows_2[THREAD_BLOCK_SIZE][INTERNAL_BLOCK_SIZE];
     real_type thread_c_kernel[INTERNAL_BLOCK_SIZE][INTERNAL_BLOCK_SIZE] = { 0.0 };
     real_type thread_c_row[INTERNAL_BLOCK_SIZE];
 
-    kernel_index_type row_1_indices[INTERNAL_BLOCK_SIZE] = { 0 };
-    kernel_index_type row_2_indices[INTERNAL_BLOCK_SIZE] = { 0 };
+    #pragma unroll (INTERNAL_BLOCK_SIZE - 1) / THREAD_BLOCK_SIZE + 1
+    for (kernel_index_type row_number = 0; row_number < (INTERNAL_BLOCK_SIZE - 1) / THREAD_BLOCK_SIZE + 1; ++row_number) {
+        kernel_index_type row_1_index = nnz * (i + row_number * THREAD_BLOCK_SIZE) / height;
+        kernel_index_type row_2_index = nnz * (j + row_number * THREAD_BLOCK_SIZE) / height;
 
-    #pragma unroll INTERNAL_BLOCK_SIZE
-    for (kernel_index_type block_index = 0; block_index < INTERNAL_BLOCK_SIZE; ++block_index) {
-        kernel_index_type row_1_index = nnz * (i + block_index) / height;
-        kernel_index_type row_2_index = nnz * (j + block_index) / height;
-
-        if (row_ids[row_1_index] < i + block_index) {
-            for (; row_1_index < nnz && row_ids[row_1_index] < i + block_index; ++row_1_index);
-        } else {
-            for (; row_1_index >= 0 && row_ids[row_1_index] >= i + block_index; --row_1_index);
-            row_1_index++;
+        if (row_1_index < nnz) {
+            if (row_ids[row_1_index] < i + row_number) {
+                for (; row_1_index < nnz && row_ids[row_1_index] < i + row_number; ++row_1_index);
+            } else {
+                for (; row_1_index >= 0 && row_ids[row_1_index] >= i + row_number; --row_1_index);
+                row_1_index++;
+            }
+            row_1_indices[row_number] = row_1_index;
         }
 
-        if (row_ids[row_2_index] < j + block_index) {
-            for (; row_2_index < nnz && row_ids[row_2_index] < j + block_index; ++row_2_index);
-        } else {
-            for (; row_2_index >= 0 && row_ids[row_2_index] >= j + block_index; --row_2_index);
-            row_2_index++;
+        if (row_2_index < nnz) {
+            if (row_ids[row_2_index] < j + row_number) {
+                for (; row_2_index < nnz && row_ids[row_2_index] < j + row_number; ++row_2_index);
+            } else {
+                for (; row_2_index >= 0 && row_ids[row_2_index] >= j + row_number; --row_2_index);
+                row_2_index++;
+            }
+            row_2_indices[row_number] = row_2_index;
         }
-
-        row_1_indices[block_index] = row_1_index;
-        row_2_indices[block_index] = row_2_index;
     }
 
     for (kernel_index_type feature_index = 0; feature_index < width; ++feature_index) {
@@ -272,20 +278,20 @@ __global__ void device_kernel_radial(const real_type *q, real_type *ret, const r
         for (kernel_index_type internal_index = 0; internal_index < INTERNAL_BLOCK_SIZE; ++internal_index) {
             const kernel_index_type thread_row_match_1 = internal_index % THREAD_BLOCK_SIZE;
             if (threadIdx.y == thread_row_match_1) {
-                const kernel_index_type row_1_index = row_1_indices[internal_index];
+                const kernel_index_type row_1_index = row_1_indices[internal_index / THREAD_BLOCK_SIZE];
                 if (col_ids[row_1_index] == feature_index && row_ids[row_1_index] == i) {
-                    block_c_rows_1[threadIdx.x][internal_index] = values[row_1_indices[internal_index]];
-                    row_1_indices[internal_index] = row_1_index + 1;
+                    block_c_rows_1[threadIdx.x][internal_index] = values[row_1_index];
+                    row_1_indices[internal_index / THREAD_BLOCK_SIZE] = row_1_index + 1;
                 } else {
                     block_c_rows_1[threadIdx.x][internal_index] = 0;
                 }
             }
             const kernel_index_type thread_row_match_2 = (internal_index + INTERNAL_BLOCK_SIZE) % THREAD_BLOCK_SIZE;
             if (threadIdx.y == thread_row_match_2) {
-                const kernel_index_type row_2_index = row_2_indices[internal_index];
+                const kernel_index_type row_2_index = row_2_indices[internal_index / THREAD_BLOCK_SIZE];
                 if (col_ids[row_2_index] == feature_index) {
                     block_c_rows_2[threadIdx.x][internal_index] = values[row_2_index];
-                    row_2_indices[internal_index] = row_2_index + 1;
+                    row_2_indices[internal_index / THREAD_BLOCK_SIZE] = row_2_index + 1;
                 } else {
                     block_c_rows_2[threadIdx.x][internal_index] = 0;
                 }
