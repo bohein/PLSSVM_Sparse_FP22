@@ -11,6 +11,10 @@
 #include "plssvm/csr.hpp"
 #include "plssvm/benchmarks/benchmark.hpp"
 #include "plssvm/constants.hpp"
+#include "plssvm/detail/execution_range.hpp"
+#include "plssvm/backends/CUDA/q_kernel.cuh"
+#include "plssvm/backends/CUDA/sparse/coo_q_kernel.cuh"
+#include "plssvm/backends/CUDA/sparse/csr_q_kernel.cuh"
 
 namespace plssvm::benchmarks {
 

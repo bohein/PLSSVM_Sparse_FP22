@@ -7,20 +7,20 @@
  * @brief Creating and using sparse q kernels (coo and csr) for testing purposes.
  */
 
-#include "sparse_q_kernel.hpp"
+#include "plssvm/backends/CUDA/sparse/sparse_q_kernel.hpp"
 
 namespace plssvm::benchmarks {
 
 template <typename real_type>
 void sparse_q_kernel<real_type>::test_coo_q_kernel_linear() {
     // needs to be filled
-    const benchmarks::dataset &ds //= DATAPOINT[12]
+    const benchmarks::dataset &ds = {"datapoint_128_a", "../benchmark_data/datapoint/128_8192_005_A.libsvm", 128, 8192, .005};
     parameter<real_type> params;
     
     real_type *q_d;
 
     // coo
-    plssvm::openmp::coo<real_type> coo
+    plssvm::openmp::coo<real_type> coo;
     real_type *values_coo_d;
     size_t *row_coo_d;
     size_t *col_coo_d;
@@ -68,13 +68,13 @@ void sparse_q_kernel<real_type>::test_coo_q_kernel_linear() {
 template <typename real_type>
 void sparse_q_kernel<real_type>::test_coo_q_kernel_polynomial() {
     // needs to be filled
-    const dataset &ds //= DATAPOINT[12]
-    plssvm::parameter<real_type> params;
+    const benchmarks::dataset &ds = {"datapoint_128_a", "../benchmark_data/datapoint/128_8192_005_A.libsvm", 128, 8192, .005};
+    parameter<real_type> params;
     
     real_type *q_d;
 
     // coo
-    plssvm::openmp::coo<real_type> coo
+    plssvm::openmp::coo<real_type> coo;
     real_type *values_coo_d;
     size_t *row_coo_d;
     size_t *col_coo_d;
@@ -122,13 +122,13 @@ void sparse_q_kernel<real_type>::test_coo_q_kernel_polynomial() {
 template <typename real_type>
 void sparse_q_kernel<real_type>::test_coo_q_kernel_radial() {
     // needs to be filled
-    const dataset &ds //= DATAPOINT[12]
-    plssvm::parameter<real_type> params;
+    const benchmarks::dataset &ds = {"datapoint_128_a", "../benchmark_data/datapoint/128_8192_005_A.libsvm", 128, 8192, .005};
+    parameter<real_type> params;
     
     real_type *q_d;
 
     // coo
-    plssvm::openmp::coo<real_type> coo
+    plssvm::openmp::coo<real_type> coo;
     real_type *values_coo_d;
     size_t *row_coo_d;
     size_t *col_coo_d;

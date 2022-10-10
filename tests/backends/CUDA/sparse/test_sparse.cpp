@@ -7,7 +7,7 @@
  * @brief Tests for the functionality related to the cuda backend using sparse data structures.
  */
 #include "plssvm/coo.hpp"
-#include "plssvm/tests/backends/CUDA/sparse/sparse_q_kernel.hpp"
+#include "plssvm/backends/CUDA/sparse/sparse_q_kernel.hpp"
 #include <vector>
 
 #include "gtest/gtest.h" 
