@@ -11,7 +11,9 @@
 
 #include "plssvm/constants.hpp"  // plssvm::kernel_index_type
 
-namespace plssvm::cuda {
+namespace plssvm::cuda::coo {
+
+__global__ void myKernel(int *vector, int vector_size);
 
 /**
  * @brief Calculates the `q` vector using the linear C-SVM kernel on data in COO format.

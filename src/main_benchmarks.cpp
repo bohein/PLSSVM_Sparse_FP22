@@ -13,6 +13,7 @@
 #include "plssvm/benchmarks/benchmark_read_data.hpp"   // plssvm::benchmarks::benchmark_read_data
 #include "plssvm/benchmarks/benchmark_q_kernel_openmp.hpp" // plssvm::benchmarks::benchmark_q_kernel_openmp
 #include "plssvm/benchmarks/benchmark_svm_kernel_openmp.hpp" // plssvm::benchmarks::benchmark_svm_kernel_openmp
+//#include "plssvm/benchmarks/CUDA/benchmark_q_kernel_cuda.cuh" // plssvm::benchmarks::benchmark_q_kernel_cuda
 
 #include "fmt/core.h"     // std::format
 #include "fmt/ostream.h"  // use operator<< to output enum class
@@ -22,6 +23,7 @@
 #include <iostream>   // std::cerr, std::clog, std::endl
 #include <fstream>    // std::ofstream
 #include <filesystem> // fs::create_directory
+#include <unistd.h>
 
 // perform calculations in single precision if requested
 #ifdef PLSSVM_EXECUTABLES_USE_SINGLE_PRECISION
@@ -30,17 +32,21 @@ using real_type = float;
 using real_type = double;
 #endif
 
-std::string OUTPUT_DIR = "./benchmark_data/results"; // TODO: figure out relative paths somehow
+std::string OUTPUT_DIR = "../benchmark_data/results";
 
 int main(int argc, char *argv[]) {
+
+    
     using namespace plssvm::benchmarks;
 
     std::vector<benchmark*> benchmarks;
 
     // Create Benchmarks
     //benchmarks.push_back(new benchmark_read_data);
-    //benchmarks.push_back(new benchmark_q_kernel_openmp);
+    benchmarks.push_back(new benchmark_q_kernel_openmp);
     benchmarks.push_back(new benchmark_svm_kernel_openmp);
+    //benchmarks.push_back(new benchmark_q_kernel_cuda);
+
 
     for (benchmark* b : benchmarks) { // DO NOT PARALLELIZE THIS!
             b->run();

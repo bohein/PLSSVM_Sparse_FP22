@@ -244,21 +244,27 @@ T coo<T>::get_row_squared_euclidean_dist(const size_t row_id_1, const size_t row
         }
     }
 
-    #pragma omp parallel for reduction(+ : result)
-    for (size_t i = row_1_first; i <= row_1_last; ++i) {
-        result += values[i] * values[i];
+    if (row_ids[row_1_first] == row_id_1) {
+        #pragma omp parallel for reduction(+ : result)
+        for (size_t i = row_1_first; i <= row_1_last; ++i) {
+            result += values[i] * values[i];
+        }
     }
-    #pragma omp parallel for reduction(+ : result)
-    for (size_t i = row_2_first; i <= row_2_last; ++i) {
-        result += values[i] * values[i];
+    if (row_ids[row_2_first] == row_id_2) {
+        #pragma omp parallel for reduction(+ : result)
+        for (size_t i = row_2_first; i <= row_2_last; ++i) {
+            result += values[i] * values[i];
+        }
     }
 
-    // adjust if shared non-zero entry; according to 2nd binom formula
-    #pragma omp parallel for collapse(2) reduction(+ : temp)
-    for (size_t i = row_1_first; i <= row_1_last; ++i) {
-        for (size_t j = row_2_first; j <= row_2_last; ++j) {
-            if (col_ids[i] == col_ids[j]) {
-                temp += 2 * values[i] * values[j];
+    if (row_ids[row_1_first] == row_id_1 && row_ids[row_2_first] == row_id_2) {
+        // adjust if shared non-zero entry; according to 2nd binom formula
+        #pragma omp parallel for collapse(2) reduction(+ : temp)
+        for (size_t i = row_1_first; i <= row_1_last; ++i) {
+            for (size_t j = row_2_first; j <= row_2_last; ++j) {
+                if (col_ids[i] == col_ids[j]) {
+                    temp += 2 * values[i] * values[j];
+                }
             }
         }
     }
@@ -307,6 +313,19 @@ void coo<T>::append(const coo<real_type> &other) {
     height += current_empty_rows + other.height;
     width = std::max(width, other.width);
     current_empty_rows = 0;
+}
+
+template <typename T>
+void coo<T>::add_padding(const size_t padding_size, const size_t padding_value_row, const size_t padding_value_col, const T padding_value_val) {
+    
+    std::vector<size_t> padding_vector_col(padding_size, padding_value_col);
+    std::vector<size_t> padding_vector_row(padding_size, padding_value_row);
+    std::vector<T> padding_vector_val(padding_value_val);
+
+    col_ids.insert(col_ids.end(), padding_vector_col.begin(), padding_vector_col.end());
+    row_ids.insert(row_ids.end(), padding_vector_row.begin(), padding_vector_row.end());
+    values.insert(values.end(), padding_vector_val.begin(), padding_vector_val.end());
+    
 }
 
 template <typename T>

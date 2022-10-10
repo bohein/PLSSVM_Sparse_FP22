@@ -205,12 +205,12 @@ void device_kernel_radial(const std::vector<real_type> &q, std::vector<real_type
                             ret_iii += (temp + cost * add) * d[ii + i];
                         } else {
                             ret_iii += temp * d[jj + j];
-                            //#pragma omp atomic
+                            #pragma omp atomic
                             ret[jj + j] += temp * d[ii + i];
                         }
                     }
                 }
-                //#pragma omp atomic
+                #pragma omp atomic
                 ret[ii + i] += ret_iii;
             }
         }

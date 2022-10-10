@@ -23,9 +23,6 @@ class benchmark_read_data : public benchmark {
 
     protected:
         void evaluate_dataset(const dataset &ds) override;
-
-        uint16_t num_data_structures = 4;
-        uint16_t num_kernel_types = 1;
 };
 
 }  // namespace plssvm::benchmarks

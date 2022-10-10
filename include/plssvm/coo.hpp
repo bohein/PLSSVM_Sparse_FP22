@@ -123,6 +123,16 @@ class coo {
          */
         void append(const coo<real_type> &other);
 
+        /**
+         * @brief inserts padding to row, col and val arrays
+         * 
+         * @param padding_size size of padding
+         * @param padding_value_row value in row padding
+         * @param padding_value_col value in col padding
+         * @param padding_value_val value in val padding
+         */
+        void add_padding(const size_t padding_size, const size_t padding_value_row, const size_t padding_value_col, const T padding_value_val);
+
 
         //////////////////////////
         // non-member functions //
