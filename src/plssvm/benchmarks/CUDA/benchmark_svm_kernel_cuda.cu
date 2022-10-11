@@ -44,6 +44,8 @@ void benchmark_svm_kernel_cuda::run() {
 void benchmark_svm_kernel_cuda::evaluate_dataset(const dataset& ds) {
     using real_type = double;
 
+    cudaError_t cudaStatus;
+
     std::chrono::time_point start_time = std::chrono::high_resolution_clock::now();
     std::chrono::time_point end_time = std::chrono::high_resolution_clock::now();
 
@@ -114,33 +116,81 @@ void benchmark_svm_kernel_cuda::evaluate_dataset(const dataset& ds) {
         auto num_rows = data_ptr_dense -> size() + boundary_size;
         auto num_cols = data_ptr_dense -> at(0).size();
         
-        cudaMalloc((void**)&q_d, sizeof(real_type)*(num_rows - 1));
-        cudaMalloc((void**)&ret_d, sizeof(real_type)*(num_rows - 1));
-        cudaMalloc((void**)&d_d, sizeof(real_type)*(num_rows - 1));
+        cudaStatus = cudaMalloc((void**)&q_d, sizeof(real_type)*(num_rows - 1));
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaMalloc failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
+        cudaStatus = cudaMalloc((void**)&ret_d, sizeof(real_type)*(num_rows - 1));
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaMalloc failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
+        cudaStatus =  cudaMalloc((void**)&d_d, sizeof(real_type)*(num_rows - 1));
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaMalloc failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
 
-        cudaMalloc((void**)&data_dense_d, sizeof(real_type)*(data_ptr_dense_1D -> size()));
+        cudaStatus = cudaMalloc((void**)&data_dense_d, sizeof(real_type)*(data_ptr_dense_1D -> size()));
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaMalloc failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
         //cudaMalloc((void**)&data_dense_last_d, sizeof(real_type)*(*data_ptr_dense_1D.get())[0].size());
-        cudaMalloc((void**)&data_dense_last_d, sizeof(real_type)*num_cols);
+        cudaStatus = cudaMalloc((void**)&data_dense_last_d, sizeof(real_type)*num_cols);
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaMalloc failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
 
         
-        cudaMemcpy(data_dense_d, data_ptr_dense_1D -> data(), sizeof(real_type)*(data_ptr_dense_1D -> size()),cudaMemcpyHostToDevice);
-        cudaMemcpy(data_dense_last_d, data_dense_last -> data(), sizeof(real_type) * num_cols,cudaMemcpyHostToDevice);
+        cudaStatus = cudaMemcpy(data_dense_d, data_ptr_dense_1D -> data(), sizeof(real_type)*(data_ptr_dense_1D -> size()),cudaMemcpyHostToDevice);
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaMemcpy failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+
+        cudaStatus = cudaMemcpy(data_dense_last_d, data_dense_last -> data(), sizeof(real_type) * num_cols,cudaMemcpyHostToDevice);
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaMemcpy failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
 
         q = std::vector<real_type>(num_rows - 1); // q-Vector
-        cudaMemcpy(q_d, q.data(), sizeof(real_type)*q.size(), cudaMemcpyHostToDevice);
+        cudaStatus = cudaMemcpy(q_d, q.data(), sizeof(real_type)*q.size(), cudaMemcpyHostToDevice);
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaMemcpy failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
         // linear
         fmt::print("dense (linear) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
         QA_cost = (*data_ptr_dense)[data_ptr_dense->size() - 1][(*data_ptr_dense)[0].size() - 1] * cost;
         ret = std::vector<real_type>((num_rows - 1), 0.);
-        cudaMemcpy(ret_d, ret.data(), sizeof(real_type)*ret.size(), cudaMemcpyHostToDevice);
+        cudaStatus = cudaMemcpy(ret_d, ret.data(), sizeof(real_type)*ret.size(), cudaMemcpyHostToDevice);
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaMemcpy failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
         d = std::vector<real_type>((num_rows - 1), 1.); 
-        cudaMemcpy(d_d, d.data(), sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
+        cudaStatus = cudaMemcpy(d_d, d.data(), sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaMemcpy failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
 
         plssvm::cuda::device_kernel_q_linear<<<grid_q, block_q>>>(q_d, data_dense_d, data_dense_last_d, num_rows, num_cols);
+        if (cudaPeekAtLastError() != cudaSuccess) {
+            printf("q_kernel failed: %i on line %d\n", cudaPeekAtLastError(), __LINE__ - 2);
+        }
+
         cudaDeviceSynchronize();
        
         start_time = std::chrono::high_resolution_clock::now();
        // plssvm::cuda::device_kernel_linear<<<grid_svm, block_svm>>>(q_d, ret_d, d_d, data_dense_d, QA_cost, cost, num_rows, num_cols, add, id); //id = 0;
+       // if (cudaPeekAtLastError() != cudaSuccess) {
+       //     printf("q_kernel failed: %i on line %d\n", cudaPeekAtLastError(), __LINE__ - 2);
+       // }
+
        // cudaDeviceSynchronize();
         end_time = std::chrono::high_resolution_clock::now();
        
@@ -151,15 +201,31 @@ void benchmark_svm_kernel_cuda::evaluate_dataset(const dataset& ds) {
         fmt::print("dense (polynomial) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
         QA_cost = (*data_ptr_dense)[data_ptr_dense->size() - 1][(*data_ptr_dense)[0].size() - 1] * cost;
         ret = std::vector<real_type>((num_rows - 1), 0.);
-        cudaMemcpy(ret_d, ret.data(), sizeof(real_type)*ret.size(), cudaMemcpyHostToDevice);
+        cudaStatus = cudaMemcpy(ret_d, ret.data(), sizeof(real_type)*ret.size(), cudaMemcpyHostToDevice);
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaMemcpy failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
         d = std::vector<real_type>((num_rows - 1), 1.);
-        cudaMemcpy(d_d, d.data(), sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
+        cudaStatus = cudaMemcpy(d_d, d.data(), sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaMemcpy failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
 
         plssvm::cuda::device_kernel_q_poly<<<grid_q, block_q>>>(q_d, data_dense_d, data_dense_last_d, num_rows, num_cols, degree, gamma, coef0);
+        if (cudaPeekAtLastError() != cudaSuccess) {
+            printf("q_kernel failed: %i on line %d\n", cudaPeekAtLastError(), __LINE__ - 2);
+        }
+
         cudaDeviceSynchronize();
         
         start_time = std::chrono::high_resolution_clock::now();
         //plssvm::cuda::device_kernel_poly<<<grid_svm, block_svm>>>(q_d, ret_d, d_d, data_dense_d, QA_cost, cost, num_rows, num_cols, add, degree, gamma, coef0);
+        //if (cudaPeekAtLastError() != cudaSuccess) {
+        //    printf("q_kernel failed: %i on line %d\n", cudaPeekAtLastError(), __LINE__ - 2);
+        //}
+
         //cudaDeviceSynchronize();
         end_time = std::chrono::high_resolution_clock::now();
         
@@ -170,26 +236,62 @@ void benchmark_svm_kernel_cuda::evaluate_dataset(const dataset& ds) {
         fmt::print("dense (radial) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
         QA_cost = (*data_ptr_dense)[data_ptr_dense->size() - 1][(*data_ptr_dense)[0].size() - 1] * cost;
         ret = std::vector<real_type>((num_rows - 1), 0.);
-        cudaMemcpy(ret_d, ret.data(), sizeof(real_type)*ret.size(), cudaMemcpyHostToDevice);
+        cudaStatus = cudaMemcpy(ret_d, ret.data(), sizeof(real_type)*ret.size(), cudaMemcpyHostToDevice);
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaMemcpy failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
         d = std::vector<real_type>((num_rows - 1), 1.); 
-        cudaMemcpy(d_d, d.data(), sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
+        cudaStatus = cudaMemcpy(d_d, d.data(), sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaMemcpy failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
 
         plssvm::cuda::device_kernel_q_radial<<<grid_q, block_q>>>(q_d, data_dense_d, data_dense_last_d, num_rows, num_cols, gamma);
+        if (cudaPeekAtLastError() != cudaSuccess) {
+            printf("q_kernel failed: %i on line %d\n", cudaPeekAtLastError(), __LINE__ - 2);
+        }
+
         cudaDeviceSynchronize();
         
         start_time = std::chrono::high_resolution_clock::now();
         //plssvm::cuda::device_kernel_radial<<<grid_svm, block_svm>>>(q_d, ret_d, d_d, data_dense_d, QA_cost, cost, num_rows, num_cols, add, gamma);
+        //if (cudaPeekAtLastError() != cudaSuccess) {
+        //    printf("q_kernel failed: %i on line %d\n", cudaPeekAtLastError(), __LINE__ - 2);
+       //}
+
         //cudaDeviceSynchronize();
         end_time = std::chrono::high_resolution_clock::now();
        
         raw_runtimes_dense_radial.push_back(std::chrono::round<ns>(end_time - start_time));
         fmt::print(std::to_string(std::chrono::round<ns>(end_time - start_time).count()/1000000) + "ms)\n");
 
-        cudaFree(q_d);
-        cudaFree(ret_d);
-        cudaFree(d_d);
-        cudaFree(data_dense_d);
-        cudaFree(data_dense_last_d);
+        cudaStatus = cudaFree(q_d);
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaFree failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+
+        cudaStatus = cudaFree(ret_d);
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaFree failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
+        cudaStatus = cudaFree(d_d);
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaFree failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
+        cudaStatus = cudaFree(data_dense_d);
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaFree failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
+        cudaStatus = cudaFree(data_dense_last_d);
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaFree failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
     }
     
     
@@ -225,33 +327,89 @@ void benchmark_svm_kernel_cuda::evaluate_dataset(const dataset& ds) {
         auto height_coo = data_ptr_coo -> get_height();
         auto width_coo = data_ptr_coo -> get_width();
         
-        cudaMalloc((void**)&q_d, sizeof(real_type)*(height_coo - 1 + boundary_size));
-        cudaMalloc((void**)&ret_d, sizeof(real_type)*(height_coo - 1 + boundary_size));
-        cudaMalloc((void**)&d_d, sizeof(real_type)*(height_coo - 1 + boundary_size));
+        cudaStatus = cudaMalloc((void**)&q_d, sizeof(real_type)*(height_coo - 1 + boundary_size));
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaMalloc failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
+        cudaStatus = cudaMalloc((void**)&ret_d, sizeof(real_type)*(height_coo - 1 + boundary_size));
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaMalloc failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
+        cudaStatus = cudaMalloc((void**)&d_d, sizeof(real_type)*(height_coo - 1 + boundary_size));
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaMalloc failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
 
-        cudaMalloc((void**)&values_coo_d, sizeof(real_type)*(nnz_coo + boundary_size));
-        cudaMalloc((void**)&col_coo_d, sizeof(size_t)*(nnz_coo + boundary_size));
-        cudaMalloc((void**)&row_coo_d, sizeof(size_t)*(nnz_coo + boundary_size));
+        cudaStatus = cudaMalloc((void**)&values_coo_d, sizeof(real_type)*(nnz_coo + boundary_size));
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaMalloc failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
+        cudaStatus = cudaMalloc((void**)&col_coo_d, sizeof(size_t)*(nnz_coo + boundary_size));
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaMalloc failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
+        cudaStatus = cudaMalloc((void**)&row_coo_d, sizeof(size_t)*(nnz_coo + boundary_size));
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaMalloc failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
 
-        cudaMemcpy(values_coo_d, data_ptr_coo_padded -> get_values().data(), sizeof(real_type)*(nnz_coo + boundary_size), cudaMemcpyHostToDevice);
-        cudaMemcpy(row_coo_d, data_ptr_coo_padded -> get_row_ids().data(), sizeof(real_type)*(nnz_coo + boundary_size), cudaMemcpyHostToDevice);
-        cudaMemcpy(col_coo_d, data_ptr_coo_padded -> get_col_ids().data(), sizeof(real_type)*(nnz_coo + boundary_size), cudaMemcpyHostToDevice);
+        cudaStatus = cudaMemcpy(values_coo_d, data_ptr_coo_padded -> get_values().data(), sizeof(real_type)*(nnz_coo + boundary_size), cudaMemcpyHostToDevice);
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaMemcpy failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
+        cudaStatus = cudaMemcpy(row_coo_d, data_ptr_coo_padded -> get_row_ids().data(), sizeof(real_type)*(nnz_coo + boundary_size), cudaMemcpyHostToDevice);
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaMemcpy failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
+        cudaStatus = cudaMemcpy(col_coo_d, data_ptr_coo_padded -> get_col_ids().data(), sizeof(real_type)*(nnz_coo + boundary_size), cudaMemcpyHostToDevice);
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaMemcpy failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
 
         q = std::vector<real_type>(height_coo - 1 + boundary_size); // q-Vector
-        cudaMemcpy(q_d, q.data(), sizeof(real_type)*q.size(), cudaMemcpyHostToDevice);
+        cudaStatus = cudaMemcpy(q_d, q.data(), sizeof(real_type)*q.size(), cudaMemcpyHostToDevice);
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaMemcpy failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
         // linear
         fmt::print("coo (linear) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
         QA_cost = data_ptr_coo->get_element(data_ptr_coo->get_height() - 1, data_ptr_coo->get_width() - 1) * cost;
         ret = std::vector<real_type>((height_coo - 1 + boundary_size), 0.);
-        cudaMemcpy(ret_d, ret.data(), sizeof(real_type)*ret.size(), cudaMemcpyHostToDevice);
+        cudaStatus = cudaMemcpy(ret_d, ret.data(), sizeof(real_type)*ret.size(), cudaMemcpyHostToDevice);
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaMemcpy failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
         d = std::vector<real_type>((height_coo - 1 + boundary_size), 1.); 
-        cudaMemcpy(d_d, d.data(), sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
+        cudaStatus = cudaMemcpy(d_d, d.data(), sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaMemcpy failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
 
         plssvm::cuda::coo::device_kernel_q_linear<<<grid_q, block_q>>>(q_d, col_coo_d, row_coo_d, values_coo_d, last_row_begin_coo, nnz_coo);
+        if (cudaPeekAtLastError() != cudaSuccess) {
+            printf("q_kernel failed: %i on line %d\n", cudaPeekAtLastError(), __LINE__ - 2);
+        }
+
         cudaDeviceSynchronize();
         
         start_time = std::chrono::high_resolution_clock::now();
         plssvm::cuda::coo::device_kernel_linear<<<grid_svm, block_svm>>>(q_d, ret_d, d_d, col_coo_d, row_coo_d, values_coo_d, QA_cost, cost, nnz_coo, width_coo, height_coo, add);
+        if (cudaPeekAtLastError() != cudaSuccess) {
+            printf("q_kernel failed: %i on line %d\n", cudaPeekAtLastError(), __LINE__ - 2);
+        }
+
         cudaDeviceSynchronize();
         end_time = std::chrono::high_resolution_clock::now();
         
@@ -262,15 +420,31 @@ void benchmark_svm_kernel_cuda::evaluate_dataset(const dataset& ds) {
         fmt::print("coo (polynomial) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
         QA_cost = data_ptr_coo->get_element(data_ptr_coo->get_height() - 1, data_ptr_coo->get_width() - 1) * cost;
         ret = std::vector<real_type>((height_coo - 1 + boundary_size), 0.);
-        cudaMemcpy(ret_d, ret.data(), sizeof(real_type)*ret.size(), cudaMemcpyHostToDevice);
+        cudaStatus = cudaMemcpy(ret_d, ret.data(), sizeof(real_type)*ret.size(), cudaMemcpyHostToDevice);
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaMemcpy failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
         d = std::vector<real_type>((height_coo - 1 + boundary_size), 1.);
-        cudaMemcpy(d_d, d.data(), sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
+        cudaStatus = cudaMemcpy(d_d, d.data(), sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaMemcpy failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
 
         plssvm::cuda::coo::device_kernel_q_poly<<<grid_q, block_q>>>(q_d, col_coo_d, row_coo_d, values_coo_d, last_row_begin_coo, nnz_coo, degree, gamma, coef0);
+        if (cudaPeekAtLastError() != cudaSuccess) {
+            printf("q_kernel failed: %i on line %d\n", cudaPeekAtLastError(), __LINE__ - 2);
+        }
+
         cudaDeviceSynchronize();
         
         start_time = std::chrono::high_resolution_clock::now();
         plssvm::cuda::coo::device_kernel_poly<<<grid_svm, block_svm>>>(q_d, ret_d, d_d, col_coo_d, row_coo_d, values_coo_d, QA_cost, cost, nnz_coo, width_coo, height_coo, add, degree, gamma, coef0);
+        if (cudaPeekAtLastError() != cudaSuccess) {
+            printf("q_kernel failed: %i on line %d\n", cudaPeekAtLastError(), __LINE__ - 2);
+        }
+
         cudaDeviceSynchronize();
         end_time = std::chrono::high_resolution_clock::now();
         
@@ -281,28 +455,68 @@ void benchmark_svm_kernel_cuda::evaluate_dataset(const dataset& ds) {
         fmt::print("coo (radial) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
         QA_cost = data_ptr_coo->get_element(data_ptr_coo->get_height() - 1, data_ptr_coo->get_width() - 1) * cost;
         ret = std::vector<real_type>((height_coo - 1 + boundary_size), 0.);
-        cudaMemcpy(ret_d, ret.data(), sizeof(real_type)*ret.size(), cudaMemcpyHostToDevice);
+        cudaStatus = cudaMemcpy(ret_d, ret.data(), sizeof(real_type)*ret.size(), cudaMemcpyHostToDevice);
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaMemcpy failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
         d = std::vector<real_type>((height_coo - 1 + boundary_size), 1.); 
-        cudaMemcpy(d_d, d.data(), sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
+        cudaStatus = cudaMemcpy(d_d, d.data(), sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaMemcpy failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
 
         plssvm::cuda::coo::device_kernel_q_radial<<<grid_q, block_q>>>(q_d, col_coo_d, row_coo_d, values_coo_d, last_row_begin_coo, nnz_coo, gamma);
+        if (cudaPeekAtLastError() != cudaSuccess) {
+            printf("q_kernel failed: %i on line %d\n", cudaPeekAtLastError(), __LINE__ - 2);
+        }
+
         cudaDeviceSynchronize();
         
         start_time = std::chrono::high_resolution_clock::now();
         plssvm::cuda::coo::device_kernel_radial<<<grid_svm, block_svm>>>(q_d, ret_d, d_d, col_coo_d, row_coo_d, values_coo_d, QA_cost, cost, nnz_coo, width_coo, height_coo, add, gamma);
+        if (cudaPeekAtLastError() != cudaSuccess) {
+            printf("q_kernel failed: %i on line %d\n", cudaPeekAtLastError(), __LINE__ - 2);
+        }
+
         cudaDeviceSynchronize();
         end_time = std::chrono::high_resolution_clock::now();
         
         raw_runtimes_coo_radial.push_back(std::chrono::round<ns>(end_time - start_time));
         fmt::print(std::to_string(std::chrono::round<ns>(end_time - start_time).count()/1000000) + "ms)\n");
 
-        cudaFree(q_d);
-        cudaFree(ret_d);
-        cudaFree(d_d);
+        cudaStatus = cudaFree(q_d);
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaFree failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
+        cudaStatus = cudaFree(ret_d);
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaFree failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
+        cudaStatus = cudaFree(d_d);
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaFree failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
 
-        cudaFree(values_coo_d);
-        cudaFree(col_coo_d);
-        cudaFree(row_coo_d);
+        cudaStatus = cudaFree(values_coo_d);
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaFree failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
+        cudaStatus = cudaFree(col_coo_d);
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaFree failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
+        cudaStatus = cudaFree(row_coo_d);
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaFree failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
     }
     
     // csr
@@ -332,33 +546,89 @@ void benchmark_svm_kernel_cuda::evaluate_dataset(const dataset& ds) {
         auto height_csr = data_ptr_csr -> get_height();
         auto nnz_csr = data_ptr_csr -> get_nnz();
         
-        cudaMalloc((void**)&q_d, sizeof(real_type)*(height_csr + boundary_size - 1));
-        cudaMalloc((void**)&ret_d, sizeof(real_type)*(height_csr + boundary_size));
-        cudaMalloc((void**)&d_d, sizeof(real_type)*(height_csr + boundary_size));
+        cudaStatus = cudaMalloc((void**)&q_d, sizeof(real_type)*(height_csr + boundary_size - 1));
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaMalloc failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
 
-        cudaMalloc((void**)&values_csr_d, sizeof(real_type)*nnz_csr);
-        cudaMalloc((void**)&col_csr_d, sizeof(size_t)*nnz_csr);
-        cudaMalloc((void**)&row_csr_d, sizeof(size_t)*(height_csr + boundary_size));
+        cudaStatus = cudaMalloc((void**)&ret_d, sizeof(real_type)*(height_csr + boundary_size));
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaMalloc failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
+        cudaStatus = cudaMalloc((void**)&d_d, sizeof(real_type)*(height_csr + boundary_size));
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaMalloc failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
+
+        cudaStatus = cudaMalloc((void**)&values_csr_d, sizeof(real_type)*nnz_csr);
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaMalloc failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
+        cudaStatus = cudaMalloc((void**)&col_csr_d, sizeof(size_t)*nnz_csr);
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaMalloc failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
+        cudaStatus = cudaMalloc((void**)&row_csr_d, sizeof(size_t)*(height_csr + boundary_size));
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaMalloc failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
        
-        cudaMemcpy(values_csr_d, data_ptr_csr -> get_values().data(), sizeof(real_type)*nnz_csr, cudaMemcpyHostToDevice);
-        cudaMemcpy(row_csr_d, data_ptr_csr_padded -> get_row_offset().data(), sizeof(size_t)*(height_csr + boundary_size), cudaMemcpyHostToDevice);
-        cudaMemcpy(col_csr_d, data_ptr_csr -> get_col_ids().data(), sizeof(size_t)*nnz_csr, cudaMemcpyHostToDevice);
+        cudaStatus = cudaMemcpy(values_csr_d, data_ptr_csr -> get_values().data(), sizeof(real_type)*nnz_csr, cudaMemcpyHostToDevice);
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaMemcpy failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
+        cudaStatus = cudaMemcpy(row_csr_d, data_ptr_csr_padded -> get_row_offset().data(), sizeof(size_t)*(height_csr + boundary_size), cudaMemcpyHostToDevice);
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaMemcpy failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
+        cudaStatus = cudaMemcpy(col_csr_d, data_ptr_csr -> get_col_ids().data(), sizeof(size_t)*nnz_csr, cudaMemcpyHostToDevice);
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaMemcpy failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
 
         q = std::vector<real_type>(height_csr + boundary_size - 1); // q-Vector
-        cudaMemcpy(q_d, q.data(), sizeof(real_type)*q.size(), cudaMemcpyHostToDevice);
+        cudaStatus = cudaMemcpy(q_d, q.data(), sizeof(real_type)*q.size(), cudaMemcpyHostToDevice);
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaMemcpy failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
         // linear
         fmt::print("csr (linear) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
         QA_cost = data_ptr_csr->get_element(data_ptr_csr->get_height() - 1, data_ptr_csr->get_width() - 1) * cost;
         ret = std::vector<real_type>((height_csr + boundary_size - 1), 0.);
-        cudaMemcpy(ret_d, ret.data(), sizeof(real_type)*ret.size(), cudaMemcpyHostToDevice);
+        cudaStatus = cudaMemcpy(ret_d, ret.data(), sizeof(real_type)*ret.size(), cudaMemcpyHostToDevice);
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaMemcpy failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
         d = std::vector<real_type>((height_csr + boundary_size - 1), 1.); 
-        cudaMemcpy(d_d, d.data(), sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
+        cudaStatus = cudaMemcpy(d_d, d.data(), sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaMemcpy failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
 
         plssvm::cuda::csr::device_kernel_q_linear<<<grid_q, block_q>>>(q_d, col_csr_d, row_csr_d, values_csr_d, nnz_csr, height_csr);
+        if (cudaPeekAtLastError() != cudaSuccess) {
+            printf("q_kernel failed: %i on line %d\n", cudaPeekAtLastError(), __LINE__ - 2);
+        }
+
         cudaDeviceSynchronize();
         
         start_time = std::chrono::high_resolution_clock::now();
         plssvm::cuda::csr::device_kernel_linear<<<grid_svm, block_svm>>>(q_d, ret_d, d_d, col_csr_d, row_csr_d, values_csr_d, QA_cost, cost, nnz_csr, height_csr, add);
+        if (cudaPeekAtLastError() != cudaSuccess) {
+            printf("q_kernel failed: %i on line %d\n", cudaPeekAtLastError(), __LINE__ - 2);
+        }
+
         cudaDeviceSynchronize();
         end_time = std::chrono::high_resolution_clock::now();
         
@@ -369,15 +639,31 @@ void benchmark_svm_kernel_cuda::evaluate_dataset(const dataset& ds) {
         fmt::print("csr (polynomial) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
         QA_cost = data_ptr_csr->get_element(data_ptr_csr->get_height() - 1, data_ptr_csr->get_width() - 1) * cost;
         ret = std::vector<real_type>((height_csr + boundary_size - 1), 0.);
-        cudaMemcpy(ret_d, ret.data(), sizeof(real_type)*ret.size(), cudaMemcpyHostToDevice);
+        cudaStatus = cudaMemcpy(ret_d, ret.data(), sizeof(real_type)*ret.size(), cudaMemcpyHostToDevice);
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaMemcpy failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
         d = std::vector<real_type>((height_csr + boundary_size - 1), 1.); 
-        cudaMemcpy(d_d, d.data(), sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
+        cudaStatus = cudaMemcpy(d_d, d.data(), sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaMemcpy failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
 
         plssvm::cuda::csr::device_kernel_q_poly<<<grid_q, block_q>>>(q_d, col_csr_d, row_csr_d, values_csr_d, nnz_csr, height_csr, degree, gamma, coef0);
+        if (cudaPeekAtLastError() != cudaSuccess) {
+            printf("q_kernel failed: %i on line %d\n", cudaPeekAtLastError(), __LINE__ - 2);
+        }
+
         cudaDeviceSynchronize();
         
         start_time = std::chrono::high_resolution_clock::now();
         plssvm::cuda::csr::device_kernel_poly<<<grid_svm, block_svm>>>(q_d, ret_d, d_d, col_csr_d, row_csr_d, values_csr_d, QA_cost, cost, nnz_csr, height_csr, add, degree, gamma, coef0);
+        if (cudaPeekAtLastError() != cudaSuccess) {
+            printf("q_kernel failed: %i on line %d\n", cudaPeekAtLastError(), __LINE__ - 2);
+        }
+
         cudaDeviceSynchronize();
         end_time = std::chrono::high_resolution_clock::now();
         
@@ -388,28 +674,68 @@ void benchmark_svm_kernel_cuda::evaluate_dataset(const dataset& ds) {
         fmt::print("csr (radial) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
         QA_cost = data_ptr_csr->get_element(data_ptr_csr->get_height() - 1, data_ptr_csr->get_width() - 1) * cost;
         ret = std::vector<real_type>((height_csr + boundary_size - 1), 0.);
-        cudaMemcpy(ret_d, ret.data(), sizeof(real_type)*ret.size(), cudaMemcpyHostToDevice);
+        cudaStatus = cudaMemcpy(ret_d, ret.data(), sizeof(real_type)*ret.size(), cudaMemcpyHostToDevice);
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaMemcpy failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
         d = std::vector<real_type>((height_csr + boundary_size - 1), 1.); 
-        cudaMemcpy(d_d, d.data(), sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
+        cudaStatus = cudaMemcpy(d_d, d.data(), sizeof(real_type)*d.size(), cudaMemcpyHostToDevice);
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaMemcpy failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
 
         plssvm::cuda::csr::device_kernel_q_radial<<<grid_q, block_q>>>(q_d, col_csr_d, row_csr_d, values_csr_d, nnz_csr, height_csr, gamma);
+        if (cudaPeekAtLastError() != cudaSuccess) {
+            printf("q_kernel failed: %i on line %d\n", cudaPeekAtLastError(), __LINE__ - 2);
+        }
+
         cudaDeviceSynchronize();
         
         start_time = std::chrono::high_resolution_clock::now();
         plssvm::cuda::csr::device_kernel_radial<<<grid_svm, block_svm>>>(q_d, ret_d, d_d, col_csr_d, row_csr_d, values_csr_d, QA_cost, cost, nnz_csr, height_csr, add, gamma);
+        if (cudaPeekAtLastError() != cudaSuccess) {
+            printf("q_kernel failed: %i on line %d\n", cudaPeekAtLastError(), __LINE__ - 2);
+        }
+
         cudaDeviceSynchronize();
         end_time = std::chrono::high_resolution_clock::now();
         
         raw_runtimes_csr_radial.push_back(std::chrono::round<ns>(end_time - start_time));
         fmt::print(std::to_string(std::chrono::round<ns>(end_time - start_time).count()/1000000) + "ms)\n");
 
-        cudaFree(q_d);
-        cudaFree(ret_d);
-        cudaFree(d_d);
+        cudaStatus = cudaFree(q_d);
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaFree failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
+        cudaStatus = cudaFree(ret_d);
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaFree failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
+        cudaStatus = cudaFree(d_d);
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaFree failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
 
-        cudaFree(values_csr_d);
-        cudaFree(col_csr_d);
-        cudaFree(row_csr_d);
+        cudaStatus = cudaFree(values_csr_d);
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaFree failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
+        cudaStatus = cudaFree(col_csr_d);
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaFree failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
+        cudaStatus = cudaFree(row_csr_d);
+        if (cudaStatus != cudaSuccess) {
+            printf("cudaFree failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
+        }
+        
     }
     
     sub_benchmark_names.push_back("dense (linear)");
