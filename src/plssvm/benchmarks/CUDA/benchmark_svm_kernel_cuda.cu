@@ -31,10 +31,14 @@ benchmark_svm_kernel_cuda::benchmark_svm_kernel_cuda() : benchmark{"SVM-Kernels 
 void benchmark_svm_kernel_cuda::run() {
     using real_type = double;
 
-    //evaluate_dataset("tiny (~150)", DATASET_TINY);
-    //evaluate_dataset("small (~5000)", DATASET_SMALL);
-    //evaluate_dataset("medium (~50000)", DATASET_MEDIUM);
-    //evaluate_dataset("large (~250000)", DATASET_LARGE);
+    //datasets.insert(datasets.end(), DATAPOINT.begin(), DATAPOINT.end());
+    //datasets.insert(datasets.end(), FEATURE.begin(), FEATURE.end());
+    //datasets.insert(datasets.end(), DENSITY.begin(), DENSITY.end());
+    //datasets.insert(datasets.end(), REAL_WORLD.begin(), REAL_WORLD.end());
+
+    //for (auto& ds : datasets) evaluate_dataset(ds);
+    datasets.push_back(FEATURE[18]);
+    evaluate_dataset(FEATURE[18]);
 }
 
 void benchmark_svm_kernel_cuda::evaluate_dataset(const dataset& ds) {
@@ -78,8 +82,8 @@ void benchmark_svm_kernel_cuda::evaluate_dataset(const dataset& ds) {
     //auto data_ptr_dense_1D = std::make_shared<const std::vector<real_type>>(plssvm::csvm<real_type>::transform_data(data_ptr_dense.get(), 0, 
     // ((*data_ptr_dense.get())[0].size()) * (data_ptr_dense.get() -> size()))); //padding----------------------
 
-    size_t boundary_size = static_cast<std::size_t>(THREAD_BLOCK_SIZE * INTERNAL_BLOCK_SIZE);
     size_t num_rows_exc_last = data_ptr_dense -> size() - 1;
+    size_t boundary_size = static_cast<std::size_t>(THREAD_BLOCK_SIZE * INTERNAL_BLOCK_SIZE);
 
     std::vector<real_type> vec_1D(data_ptr_dense -> at(0).size() * (num_rows_exc_last + boundary_size));
     
@@ -93,6 +97,7 @@ void benchmark_svm_kernel_cuda::evaluate_dataset(const dataset& ds) {
 
     auto data_dense_last = std::make_shared<const std::vector<real_type>>((*data_ptr_dense.get())[data_ptr_dense.get() -> size() - 1]);
     real_type *data_dense_last_d;
+    
 
     plssvm::detail::execution_range range_q({ static_cast<std::size_t>(std::ceil(static_cast<real_type>(num_rows_exc_last) / static_cast<real_type>(THREAD_BLOCK_SIZE))) },
                                             { std::min<std::size_t>(THREAD_BLOCK_SIZE, num_rows_exc_last) });
@@ -135,8 +140,8 @@ void benchmark_svm_kernel_cuda::evaluate_dataset(const dataset& ds) {
         cudaDeviceSynchronize();
        
         start_time = std::chrono::high_resolution_clock::now();
-        plssvm::cuda::device_kernel_linear<<<grid_svm, block_svm>>>(q_d, ret_d, d_d, data_dense_d, QA_cost, cost, num_rows, num_cols, add, id); //id = 0;
-        cudaDeviceSynchronize();
+       // plssvm::cuda::device_kernel_linear<<<grid_svm, block_svm>>>(q_d, ret_d, d_d, data_dense_d, QA_cost, cost, num_rows, num_cols, add, id); //id = 0;
+       // cudaDeviceSynchronize();
         end_time = std::chrono::high_resolution_clock::now();
        
         raw_runtimes_dense_linear.push_back(std::chrono::round<ns>(end_time - start_time));
@@ -154,8 +159,8 @@ void benchmark_svm_kernel_cuda::evaluate_dataset(const dataset& ds) {
         cudaDeviceSynchronize();
         
         start_time = std::chrono::high_resolution_clock::now();
-        plssvm::cuda::device_kernel_poly<<<grid_svm, block_svm>>>(q_d, ret_d, d_d, data_dense_d, QA_cost, cost, num_rows, num_cols, add, degree, gamma, coef0);
-        cudaDeviceSynchronize();
+        //plssvm::cuda::device_kernel_poly<<<grid_svm, block_svm>>>(q_d, ret_d, d_d, data_dense_d, QA_cost, cost, num_rows, num_cols, add, degree, gamma, coef0);
+        //cudaDeviceSynchronize();
         end_time = std::chrono::high_resolution_clock::now();
         
         raw_runtimes_dense_poly.push_back(std::chrono::round<ns>(end_time - start_time));
@@ -173,8 +178,8 @@ void benchmark_svm_kernel_cuda::evaluate_dataset(const dataset& ds) {
         cudaDeviceSynchronize();
         
         start_time = std::chrono::high_resolution_clock::now();
-        plssvm::cuda::device_kernel_radial<<<grid_svm, block_svm>>>(q_d, ret_d, d_d, data_dense_d, QA_cost, cost, num_rows, num_cols, add, gamma);
-        cudaDeviceSynchronize();
+        //plssvm::cuda::device_kernel_radial<<<grid_svm, block_svm>>>(q_d, ret_d, d_d, data_dense_d, QA_cost, cost, num_rows, num_cols, add, gamma);
+        //cudaDeviceSynchronize();
         end_time = std::chrono::high_resolution_clock::now();
        
         raw_runtimes_dense_radial.push_back(std::chrono::round<ns>(end_time - start_time));

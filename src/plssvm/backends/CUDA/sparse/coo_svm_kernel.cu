@@ -26,10 +26,12 @@ __global__ void device_kernel_linear(const real_type *q, real_type *ret, const r
     kernel_index_type row_1_indices[INTERNAL_BLOCK_SIZE] = { 0 };
     kernel_index_type row_2_indices[INTERNAL_BLOCK_SIZE] = { 0 };
 
+    unsigned long long nnzL = nnz;
+
     #pragma unroll INTERNAL_BLOCK_SIZE
     for (kernel_index_type block_index = 0; block_index < INTERNAL_BLOCK_SIZE; ++block_index) {
-        kernel_index_type row_1_index = nnz * (i + block_index) / height;
-        kernel_index_type row_2_index = nnz * (j + block_index) / height;
+        kernel_index_type row_1_index = nnzL * (i + block_index) / height;
+        kernel_index_type row_2_index = nnzL * (j + block_index) / height;
 
         if (row_ids[row_1_index] < i + block_index) {
             for (; row_1_index < nnz && row_ids[row_1_index] < i + block_index; ++row_1_index);
@@ -97,10 +99,12 @@ __global__ void device_kernel_poly(const real_type *q, real_type *ret, const rea
     kernel_index_type row_1_indices[INTERNAL_BLOCK_SIZE] = { 0 };
     kernel_index_type row_2_indices[INTERNAL_BLOCK_SIZE] = { 0 };
 
+     unsigned long long nnzL = nnz;
+
     #pragma unroll INTERNAL_BLOCK_SIZE
     for (kernel_index_type block_index = 0; block_index < INTERNAL_BLOCK_SIZE; ++block_index) {
-        kernel_index_type row_1_index = nnz * (i + block_index) / height;
-        kernel_index_type row_2_index = nnz * (j + block_index) / height;
+        kernel_index_type row_1_index = nnzL * (i + block_index) / height;
+        kernel_index_type row_2_index = nnzL * (j + block_index) / height;
 
         if (row_ids[row_1_index] < i + block_index) {
             for (; row_1_index < nnz && row_ids[row_1_index] < i + block_index; ++row_1_index);
@@ -168,9 +172,11 @@ __global__ void device_kernel_radial(const real_type *q, real_type *ret, const r
     kernel_index_type row_1_indices[INTERNAL_BLOCK_SIZE] = { 0 };
     kernel_index_type row_2_indices[INTERNAL_BLOCK_SIZE] = { 0 };
 
+    unsigned long long nnzL = nnz;
+
     for (kernel_index_type block_index = 0; block_index < INTERNAL_BLOCK_SIZE; ++block_index) {
-        kernel_index_type row_1_index = nnz * (i + block_index) / height;
-        kernel_index_type row_2_index = nnz * (j + block_index) / height;
+        kernel_index_type row_1_index = nnzL * (i + block_index) / height;
+        kernel_index_type row_2_index = nnzL * (j + block_index) / height;
 
         if (row_ids[row_1_index] < i + block_index) {
             for (; row_1_index < nnz && row_ids[row_1_index] < i + block_index; ++row_1_index);

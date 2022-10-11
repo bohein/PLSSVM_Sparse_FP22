@@ -23,9 +23,7 @@ template <typename real_type>
 __global__ void device_kernel_q_linear(real_type *q, const size_t *col_ids, const size_t *row_ids, const real_type *values, const kernel_index_type nnz, const kernel_index_type last_row_begin) {
      
     const kernel_index_type row_index = blockIdx.x * blockDim.x + threadIdx.x;
-    
-    printf("Started: %i\n", last_row_begin);
-    kernel_index_type search_index = row_index * last_row_begin / gridDim.x;
+    kernel_index_type search_index = row_index * last_row_begin / (gridDim.x * blockDim.x);
     real_type temp{ 0.0 };
 
     if (row_ids[search_index] < row_index) {
@@ -44,7 +42,6 @@ __global__ void device_kernel_q_linear(real_type *q, const size_t *col_ids, cons
             temp += values[search_index] * values[last_row_index];
         }
     }
-    printf("Finished: %i\n", last_row_begin);
     q[row_index] = temp;
 }
 template __global__ void device_kernel_q_linear(float *, const size_t *, const size_t *, const float *, const kernel_index_type, const kernel_index_type);
@@ -53,7 +50,7 @@ template __global__ void device_kernel_q_linear(double *, const size_t *, const 
 template <typename real_type>
 __global__ void device_kernel_q_poly(real_type *q, const size_t *col_ids, const size_t *row_ids, const real_type *values, const kernel_index_type nnz, const kernel_index_type last_row_begin, const int degree, const real_type gamma, const real_type coef0) {
     const kernel_index_type row_index = blockIdx.x * blockDim.x + threadIdx.x;
-    kernel_index_type search_index = row_index * last_row_begin / gridDim.x;
+    kernel_index_type search_index = row_index * last_row_begin /(gridDim.x * blockDim.x);
     real_type temp{ 0.0 };
 
     if (row_ids[search_index] < row_index) {
@@ -81,7 +78,7 @@ template __global__ void device_kernel_q_poly(double *, const size_t *, const si
 template <typename real_type>
 __global__ void device_kernel_q_radial(real_type *q, const size_t *col_ids, const size_t *row_ids, const real_type *values, const kernel_index_type nnz, const kernel_index_type last_row_begin, const real_type gamma) {
     const kernel_index_type row_index = blockIdx.x * blockDim.x + threadIdx.x;
-    kernel_index_type search_index = row_index * last_row_begin / gridDim.x;
+    kernel_index_type search_index = row_index * last_row_begin /(gridDim.x * blockDim.x);
     real_type temp{ 0.0 };
 
     if (row_ids[search_index] < row_index) {

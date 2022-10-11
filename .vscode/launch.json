@@ -39,7 +39,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/build/plssvm-benchmark",
             "args": "",
-            "stopAtEntry": true,
+            "stopAtEntry": false,
             "cwd": "${workspaceRoot}/build/"
         }
     ]
