@@ -78,6 +78,9 @@ void benchmark_svm_kernel_cuda::evaluate_dataset(const dataset& ds) {
     //auto data_ptr_dense_1D = std::make_shared<const std::vector<real_type>>(plssvm::csvm<real_type>::transform_data(data_ptr_dense.get(), 0, 
     // ((*data_ptr_dense.get())[0].size()) * (data_ptr_dense.get() -> size()))); //padding----------------------
 
+    size_t boundary_size = static_cast<std::size_t>(THREAD_BLOCK_SIZE * INTERNAL_BLOCK_SIZE);
+    size_t num_rows_exc_last = data_ptr_dense -> size() - 1;
+
     std::vector<real_type> vec_1D(data_ptr_dense -> at(0).size() * (num_rows_exc_last + boundary_size));
     
     for (typename std::vector<real_type>::size_type col = 0; col <  data_ptr_dense -> at(0).size(); ++col) {
@@ -90,9 +93,6 @@ void benchmark_svm_kernel_cuda::evaluate_dataset(const dataset& ds) {
 
     auto data_dense_last = std::make_shared<const std::vector<real_type>>((*data_ptr_dense.get())[data_ptr_dense.get() -> size() - 1]);
     real_type *data_dense_last_d;
-    
-    size_t boundary_size = static_cast<std::size_t>(THREAD_BLOCK_SIZE * INTERNAL_BLOCK_SIZE);
-    size_t num_rows_exc_last = data_ptr_dense -> size() - 1;
 
     plssvm::detail::execution_range range_q({ static_cast<std::size_t>(std::ceil(static_cast<real_type>(num_rows_exc_last) / static_cast<real_type>(THREAD_BLOCK_SIZE))) },
                                             { std::min<std::size_t>(THREAD_BLOCK_SIZE, num_rows_exc_last) });
