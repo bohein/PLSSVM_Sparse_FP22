@@ -14,6 +14,8 @@
 #include "plssvm/benchmarks/benchmark_q_kernel_openmp.hpp" // plssvm::benchmarks::benchmark_q_kernel_openmp
 #include "plssvm/benchmarks/benchmark_svm_kernel_openmp.hpp" // plssvm::benchmarks::benchmark_svm_kernel_openmp
 #include "plssvm/benchmarks/CUDA/benchmark_q_kernel_cuda.cuh" // plssvm::benchmarks::benchmark_q_kernel_cuda
+#include "plssvm/benchmarks/CUDA/benchmark_svm_kernel_cuda.cuh" // plssvm::benchmarks::benchmark_svm_kernel_cuda
+
 
 #include "fmt/core.h"     // std::format
 #include "fmt/ostream.h"  // use operator<< to output enum class
@@ -45,7 +47,8 @@ int main(int argc, char *argv[]) {
     //benchmarks.push_back(new benchmark_read_data);
     //benchmarks.push_back(new benchmark_q_kernel_openmp);
     //benchmarks.push_back(new benchmark_svm_kernel_openmp);
-    benchmarks.push_back(new benchmark_q_kernel_cuda);
+    //benchmarks.push_back(new benchmark_q_kernel_cuda);
+    benchmarks.push_back(new benchmark_svm_kernel_cuda);
 
 
     for (benchmark* b : benchmarks) { // DO NOT PARALLELIZE THIS!
