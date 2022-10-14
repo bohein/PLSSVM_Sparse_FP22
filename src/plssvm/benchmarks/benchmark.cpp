@@ -41,13 +41,13 @@ std::string benchmark::data_to_csv() {
                 + std::to_string(datasets[i].numDatapoints) + ',' 
                 + std::to_string(datasets[i].numFeatures) + ',' 
                 + std::to_string(datasets[i].approxDensity) + ',' 
-                + sub_benchmark_names[i+j] + ',' 
-                + std::to_string(runtimes_mean[i+j].count() / 1000000.0) + ',' 
-                + std::to_string(runtimes_median[i+j].count() / 1000000.0) + ','
-                + std::to_string(runtimes_min[i+j].count() / 1000000.0) + ','  
-                + std::to_string(runtimes_max[i+j].count() / 1000000.0) + ',' 
-                + std::to_string(runtimes_variance[i+j].count() / 1000000000000.0) + ',' // 10^6 * 10^6
-                + std::to_string(runtimes_std_deviation[i+j].count() / 1000000.0) + "\n";
+                + sub_benchmark_names[i * num_data_structures * num_kernel_types + j] + ',' 
+                + std::to_string(runtimes_mean[i * num_data_structures * num_kernel_types + j].count() / 1000000.0) + ',' 
+                + std::to_string(runtimes_median[i * num_data_structures * num_kernel_types + j].count() / 1000000.0) + ','
+                + std::to_string(runtimes_min[i * num_data_structures * num_kernel_types + j].count() / 1000000.0) + ','  
+                + std::to_string(runtimes_max[i * num_data_structures * num_kernel_types + j].count() / 1000000.0) + ',' 
+                + std::to_string(runtimes_variance[i * num_data_structures * num_kernel_types + j].count() / 1000000000000.0) + ',' // 10^6 * 10^6
+                + std::to_string(runtimes_std_deviation[i * num_data_structures * num_kernel_types + j].count() / 1000000.0) + "\n";
             }
         }
     }

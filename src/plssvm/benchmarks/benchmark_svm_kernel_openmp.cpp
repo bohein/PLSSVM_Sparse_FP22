@@ -23,9 +23,9 @@ benchmark_svm_kernel_openmp::benchmark_svm_kernel_openmp() : benchmark{"SVM-Kern
 void benchmark_svm_kernel_openmp::run() {
     using real_type = double;
 
-    datasets.insert(datasets.end(), DATAPOINT.begin(), DATAPOINT.end());
-    datasets.insert(datasets.end(), FEATURE.begin(), FEATURE.end());
-    datasets.insert(datasets.end(), DENSITY.begin(), DENSITY.end());
+    datasets.insert(datasets.end(), DATAPOINT.end() - 3, DATAPOINT.end());
+    //datasets.insert(datasets.end(), FEATURE.begin(), FEATURE.end() - 6);
+    //datasets.insert(datasets.end(), DENSITY.begin(), DENSITY.end());
     //datasets.insert(datasets.end(), REAL_WORLD.begin(), REAL_WORLD.end());
 
     for (auto& ds : datasets) evaluate_dataset(ds);
