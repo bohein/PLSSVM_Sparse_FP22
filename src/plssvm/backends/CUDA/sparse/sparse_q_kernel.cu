@@ -8,6 +8,14 @@
  */
 
 #include "plssvm/backends/CUDA/sparse/sparse_q_kernel.hpp"
+#include "plssvm/backends/CUDA/q_kernel.cuh"
+#include "plssvm/backends/CUDA/sparse/coo_q_kernel.cuh"
+#include "plssvm/backends/CUDA/sparse/csr_q_kernel.cuh"
+#include "plssvm/coo.hpp"
+#include "plssvm/csr.hpp"
+#include "plssvm/benchmarks/benchmark.hpp"
+#include "plssvm/constants.hpp"
+#include "plssvm/detail/execution_range.hpp"
 
 namespace plssvm::benchmarks {
 
@@ -173,18 +181,20 @@ void sparse_q_kernel<real_type>::test_coo_q_kernel_radial() {
     cudaFree(row_coo_d);
 }
 
-template <typename real_type>
-void sparse_q_kernel<real_type>::test_csr_q_kernel(plssvm::openmp::csr<real_type> csr) {
-    real_type *q_d;
+// template <typename real_type>
+// void sparse_q_kernel<real_type>::test_csr_q_kernel(plssvm::openmp::csr<real_type> csr) {
+//     real_type *q_d;
 
-    real_type *values_csr_d;
-    size_t *row_csr_d;
-    size_t *col_csr_d;
+//     real_type *values_csr_d;
+//     size_t *row_csr_d;
+//     size_t *col_csr_d;
     
-    auto data_ptr_csr = std::make_shared<const plssvm::openmp::csr<real_type>>(std::move(csr));
+//     auto data_ptr_csr = std::make_shared<const plssvm::openmp::csr<real_type>>(std::move(csr));
 
-    size_t boundary_size = static_cast<std::size_t>(THREAD_BLOCK_SIZE * INTERNAL_BLOCK_SIZE);
+//     size_t boundary_size = static_cast<std::size_t>(THREAD_BLOCK_SIZE * INTERNAL_BLOCK_SIZE);
 
-}
+// }
+template class sparse_q_kernel<float>;
+template class sparse_q_kernel<double>;
 
 }

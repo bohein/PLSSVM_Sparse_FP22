@@ -21,9 +21,7 @@ TYPED_TEST_SUITE(SparseQKernel, floating_point_types);
 TYPED_TEST(SparseQKernel, device_kernel_q_linear) {
     using real_type = TypeParam;
     
-    plssvm::benchmarks::sparse_q_kernel sqk{};
+    plssvm::benchmarks::sparse_q_kernel<real_type> sqk{};
     sqk.test_coo_q_kernel_linear();
-
-
 }
 

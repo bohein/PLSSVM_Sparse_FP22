@@ -7,26 +7,18 @@
  * @brief Wrapper for sparse q kernels (coo and csr) for testing purposes.
  */
 #include <vector>
-#include "plssvm/coo.hpp"
-#include "plssvm/csr.hpp"
-#include "plssvm/benchmarks/benchmark.hpp"
-#include "plssvm/constants.hpp"
-#include "plssvm/detail/execution_range.hpp"
-#include "plssvm/backends/CUDA/q_kernel.cuh"
-#include "plssvm/backends/CUDA/sparse/coo_q_kernel.cuh"
-#include "plssvm/backends/CUDA/sparse/csr_q_kernel.cuh"
 
 namespace plssvm::benchmarks {
 
 template <typename real_type>
 class sparse_q_kernel{
     public:
-        sparse_q_kernel();
+        sparse_q_kernel() = default;
         void test_coo_q_kernel_linear();
         void test_coo_q_kernel_polynomial();
         void test_coo_q_kernel_radial();
 
-        void test_csr_q_kernel(plssvm::openmp::csr<real_type> csr);
+        //void test_csr_q_kernel(plssvm::openmp::csr<real_type> csr);
 
 
         int degree = 3; 
@@ -34,4 +26,6 @@ class sparse_q_kernel{
         real_type coef0 = 3;
 };
 
+extern template class sparse_q_kernel<float>;
+extern template class sparse_q_kernel<double>;
 }
