@@ -22,7 +22,7 @@ TYPED_TEST(SparseQKernel, device_kernel_q_linear) {
     using real_type = TypeParam;
     
     plssvm::benchmarks::sparse_q_kernel sqk{};
-    //sqk.test_coo_q_kernel_linear();
+    sqk.test_coo_q_kernel_linear();
 
 
 }

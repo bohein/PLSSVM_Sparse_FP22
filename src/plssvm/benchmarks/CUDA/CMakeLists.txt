@@ -25,7 +25,7 @@ message(CHECK_PASS "found")
 
 enable_language(CUDA)
 
-message("------------------ CMAKE BEnchmark CUDA")
+message("------------------ CMAKE Benchmark CUDA")
 
 # set necessary flags
 set(CMAKE_CUDA_STANDARD 17)
