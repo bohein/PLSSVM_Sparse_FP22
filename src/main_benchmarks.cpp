@@ -43,8 +43,8 @@ int main(int argc, char *argv[]) {
 
     // Create Benchmarks
     //benchmarks.push_back(new benchmark_read_data);
-    //benchmarks.push_back(new benchmark_q_kernel_openmp);
-    benchmarks.push_back(new benchmark_svm_kernel_openmp);
+    benchmarks.push_back(new benchmark_q_kernel_openmp);
+    //benchmarks.push_back(new benchmark_svm_kernel_openmp);
     //benchmarks.push_back(new benchmark_q_kernel_cuda);
 
 

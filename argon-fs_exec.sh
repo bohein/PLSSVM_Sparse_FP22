@@ -1,8 +1,8 @@
 #!/bin/bash
-#SBATCH -w argon-gtx
+#SBATCH -w argon-tesla1
 #SBATCH --job-name="sparPLS"
 #SBATCH --output=job.out
-#SBATCH --time=24:00:00
+#SBATCH --time=48:00:00
 #SBATCH --ntasks-per-node=8
 #SBATCH --nodes=1
 #SBATCH --gres=gpu # braucht man um innerhalb von SLURM GPUs nutzen zu können
