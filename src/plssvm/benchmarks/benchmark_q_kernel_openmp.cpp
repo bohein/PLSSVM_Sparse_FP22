@@ -109,6 +109,7 @@ void benchmark_q_kernel_openmp::evaluate_dataset(const dataset &ds) {
         start_time = std::chrono::high_resolution_clock::now();
         plssvm::openmp::device_kernel_q_poly<real_type>(q, *data_ptr_coo, degree, gamma, coef0);
         end_time = std::chrono::high_resolution_clock::now();
+        raw_runtimes_coo_poly.push_back(std::chrono::round<ns>(end_time - start_time));
         std::cout << fmt::format(std::to_string(std::chrono::round<ns>(end_time - start_time).count()/1000000) + "ms)") << std::endl;
         //fmt::print(std::to_string(std::chrono::round<ns>(end_time - start_time).count()/1000000) + "ms)\n");
 

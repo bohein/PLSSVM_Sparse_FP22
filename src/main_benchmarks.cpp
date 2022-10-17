@@ -11,7 +11,7 @@
 
 #include "plssvm/benchmarks/benchmark.hpp"             // plssvm::benchmarks::benchmark
 #include "plssvm/benchmarks/benchmark_read_data.hpp"   // plssvm::benchmarks::benchmark_read_data
-//#include "plssvm/benchmarks/benchmark_q_kernel_openmp.hpp" // plssvm::benchmarks::benchmark_q_kernel_openmp
+#include "plssvm/benchmarks/benchmark_q_kernel_openmp.hpp" // plssvm::benchmarks::benchmark_q_kernel_openmp
 #include "plssvm/benchmarks/benchmark_svm_kernel_openmp.hpp" // plssvm::benchmarks::benchmark_svm_kernel_openmp
 //#include "plssvm/benchmarks/CUDA/benchmark_q_kernel_cuda.cuh" // plssvm::benchmarks::benchmark_q_kernel_cuda
 
