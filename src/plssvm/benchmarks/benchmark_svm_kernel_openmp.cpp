@@ -23,9 +23,9 @@ benchmark_svm_kernel_openmp::benchmark_svm_kernel_openmp() : benchmark{"SVM-Kern
 void benchmark_svm_kernel_openmp::run() {
     using real_type = double;
 
-    datasets.insert(datasets.end(), DATAPOINT.begin(), DATAPOINT.end());
-    datasets.insert(datasets.end(), FEATURE.begin(), FEATURE.end());
-    datasets.insert(datasets.end(), DENSITY.begin(), DENSITY.end());
+    datasets.insert(datasets.end(), DATAPOINT.end() - 3, DATAPOINT.end() - 2);
+    //datasets.insert(datasets.end(), FEATURE.begin(), FEATURE.end());
+    //datasets.insert(datasets.end(), DENSITY.begin(), DENSITY.end());
     //datasets.insert(datasets.end(), REAL_WORLD.begin(), REAL_WORLD.end());
 
     for (auto& ds : datasets) evaluate_dataset(ds);
@@ -60,7 +60,8 @@ void benchmark_svm_kernel_openmp::evaluate_dataset(const dataset &ds) {
         q = std::vector<real_type>(data_ptr_dense->size() - 1); // q-Vector
         
         // linear
-        fmt::print("dense (linear) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
+        std::cout << fmt::format("dense (linear) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
+        //fmt::print("dense (linear) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
         QA_cost = (*data_ptr_dense)[data_ptr_dense->size() - 1][(*data_ptr_dense)[0].size() - 1] * cost;
         ret = std::vector<real_type>(data_ptr_dense->size(), 0.);
         d = std::vector<real_type>(data_ptr_dense->size(), 1.); 
@@ -69,10 +70,12 @@ void benchmark_svm_kernel_openmp::evaluate_dataset(const dataset &ds) {
         plssvm::openmp::device_kernel_linear<real_type>(q, ret, d, *data_ptr_dense, QA_cost, cost, add);
         end_time = std::chrono::high_resolution_clock::now();
         raw_runtimes_dense_linear.push_back(std::chrono::round<ns>(end_time - start_time));
-        fmt::print(std::to_string(std::chrono::round<ns>(end_time - start_time).count()/1000000) + "ms)\n");
+        std::cout << fmt::format(std::to_string(std::chrono::round<ns>(end_time - start_time).count()/1000000) + "ms)") << std::endl;
+        //fmt::print(std::to_string(std::chrono::round<ns>(end_time - start_time).count()/1000000) + "ms)\n");
 
         // polynomial
-        fmt::print("dense (polynomial) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
+        std::cout << fmt::format("dense (polynomial) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
+        //fmt::print("dense (polynomial) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
         QA_cost = (*data_ptr_dense)[data_ptr_dense->size() - 1][(*data_ptr_dense)[0].size() - 1] * cost;
         ret = std::vector<real_type>(data_ptr_dense->size(), 0.);
         d = std::vector<real_type>(data_ptr_dense->size(), 1.); 
@@ -81,10 +84,12 @@ void benchmark_svm_kernel_openmp::evaluate_dataset(const dataset &ds) {
         plssvm::openmp::device_kernel_poly<real_type>(q, ret, d, *data_ptr_dense, QA_cost, cost, add, degree, gamma, coef0);
         end_time = std::chrono::high_resolution_clock::now();
         raw_runtimes_dense_poly.push_back(std::chrono::round<ns>(end_time - start_time));
-        fmt::print(std::to_string(std::chrono::round<ns>(end_time - start_time).count()/1000000) + "ms)\n");
+        std::cout << fmt::format(std::to_string(std::chrono::round<ns>(end_time - start_time).count()/1000000) + "ms)") << std::endl;
+        //fmt::print(std::to_string(std::chrono::round<ns>(end_time - start_time).count()/1000000) + "ms)\n");
 
         // radial
-        fmt::print("dense (radial) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
+        std::cout << fmt::format("dense (radial) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
+        //fmt::print("dense (radial) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
         QA_cost = (*data_ptr_dense)[data_ptr_dense->size() - 1][(*data_ptr_dense)[0].size() - 1] * cost;
         ret = std::vector<real_type>(data_ptr_dense->size(), 0.);
         d = std::vector<real_type>(data_ptr_dense->size(), 1.); 
@@ -93,7 +98,8 @@ void benchmark_svm_kernel_openmp::evaluate_dataset(const dataset &ds) {
         plssvm::openmp::device_kernel_radial<real_type>(q, ret, d, *data_ptr_dense, QA_cost, cost, add, gamma);
         end_time = std::chrono::high_resolution_clock::now();
         raw_runtimes_dense_radial.push_back(std::chrono::round<ns>(end_time - start_time));
-        fmt::print(std::to_string(std::chrono::round<ns>(end_time - start_time).count()/1000000) + "ms)\n");
+        std::cout << fmt::format(std::to_string(std::chrono::round<ns>(end_time - start_time).count()/1000000) + "ms)") << std::endl;
+        //fmt::print(std::to_string(std::chrono::round<ns>(end_time - start_time).count()/1000000) + "ms)\n");
     }
     
     
@@ -106,7 +112,8 @@ void benchmark_svm_kernel_openmp::evaluate_dataset(const dataset &ds) {
         q = std::vector<real_type>(data_ptr_coo->get_height() - 1); // q-Vector
         
         // linear
-        fmt::print("coo (linear) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
+        std::cout << fmt::format("coo (linear) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
+        //fmt::print("coo (linear) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
         QA_cost = data_ptr_coo->get_element(data_ptr_coo->get_height() - 1, data_ptr_coo->get_width() - 1) * cost;
         ret = std::vector<real_type>(data_ptr_coo->get_height(), 0.);
         d = std::vector<real_type>(data_ptr_coo->get_height(), 1.); 
@@ -115,10 +122,12 @@ void benchmark_svm_kernel_openmp::evaluate_dataset(const dataset &ds) {
         plssvm::openmp::device_kernel_linear<real_type>(q, ret, d, *data_ptr_coo, QA_cost, cost, add);
         end_time = std::chrono::high_resolution_clock::now();
         raw_runtimes_coo_linear.push_back(std::chrono::round<ns>(end_time - start_time));
-        fmt::print(std::to_string(std::chrono::round<ns>(end_time - start_time).count()/1000000) + "ms)\n");
+        std::cout << fmt::format(std::to_string(std::chrono::round<ns>(end_time - start_time).count()/1000000) + "ms)") << std::endl;
+        //fmt::print(std::to_string(std::chrono::round<ns>(end_time - start_time).count()/1000000) + "ms)\n");
 
         // polynomial
-        fmt::print("coo (polynomial) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
+        std::cout << fmt::format("coo (polynomial) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
+        //fmt::print("coo (polynomial) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
         QA_cost = data_ptr_coo->get_element(data_ptr_coo->get_height() - 1, data_ptr_coo->get_width() - 1) * cost;
         ret = std::vector<real_type>(data_ptr_coo->get_height(), 0.);
         d = std::vector<real_type>(data_ptr_coo->get_height(), 1.); 
@@ -127,10 +136,12 @@ void benchmark_svm_kernel_openmp::evaluate_dataset(const dataset &ds) {
         plssvm::openmp::device_kernel_poly<real_type>(q, ret, d, *data_ptr_coo, QA_cost, cost, add, degree, gamma, coef0);
         end_time = std::chrono::high_resolution_clock::now();
         raw_runtimes_coo_poly.push_back(std::chrono::round<ns>(end_time - start_time));
-        fmt::print(std::to_string(std::chrono::round<ns>(end_time - start_time).count()/1000000) + "ms)\n");
+        std::cout << fmt::format(std::to_string(std::chrono::round<ns>(end_time - start_time).count()/1000000) + "ms)") << std::endl;
+        //fmt::print(std::to_string(std::chrono::round<ns>(end_time - start_time).count()/1000000) + "ms)\n");
         
         // radial
-        fmt::print("coo (radial) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
+        std::cout << fmt::format("coo (radial) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
+        //fmt::print("coo (radial) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
         QA_cost = data_ptr_coo->get_element(data_ptr_coo->get_height() - 1, data_ptr_coo->get_width() - 1) * cost;
         ret = std::vector<real_type>(data_ptr_coo->get_height(), 0.);
         d = std::vector<real_type>(data_ptr_coo->get_height(), 1.); 
@@ -139,7 +150,8 @@ void benchmark_svm_kernel_openmp::evaluate_dataset(const dataset &ds) {
         plssvm::openmp::device_kernel_radial<real_type>(q, ret, d, *data_ptr_coo, QA_cost, cost, add, gamma);
         end_time = std::chrono::high_resolution_clock::now();
         raw_runtimes_coo_radial.push_back(std::chrono::round<ns>(end_time - start_time));
-        fmt::print(std::to_string(std::chrono::round<ns>(end_time - start_time).count()/1000000) + "ms)\n");
+        std::cout << fmt::format(std::to_string(std::chrono::round<ns>(end_time - start_time).count()/1000000) + "ms)") << std::endl;
+        //fmt::print(std::to_string(std::chrono::round<ns>(end_time - start_time).count()/1000000) + "ms)\n");
     }
     
     // csr
@@ -151,7 +163,8 @@ void benchmark_svm_kernel_openmp::evaluate_dataset(const dataset &ds) {
         q = std::vector<real_type>(data_ptr_csr->get_height() - 1); // q-Vector
 
         // linear
-        fmt::print("csr (linear) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
+        std::cout << fmt::format("csr (linear) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
+        //fmt::print("csr (linear) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
         QA_cost = data_ptr_csr->get_element(data_ptr_csr->get_height() - 1, data_ptr_csr->get_width() - 1) * cost;
         ret = std::vector<real_type>(data_ptr_csr->get_height(), 0.);
         d = std::vector<real_type>(data_ptr_csr->get_height(), 1.); 
@@ -160,10 +173,12 @@ void benchmark_svm_kernel_openmp::evaluate_dataset(const dataset &ds) {
         plssvm::openmp::device_kernel_linear<real_type>(q, ret, d, *data_ptr_csr, QA_cost, cost, add);
         end_time = std::chrono::high_resolution_clock::now();
         raw_runtimes_csr_linear.push_back(std::chrono::round<ns>(end_time - start_time));
-        fmt::print(std::to_string(std::chrono::round<ns>(end_time - start_time).count()/1000000) + "ms)\n");
+        std::cout << fmt::format(std::to_string(std::chrono::round<ns>(end_time - start_time).count()/1000000) + "ms)") << std::endl;
+        //fmt::print(std::to_string(std::chrono::round<ns>(end_time - start_time).count()/1000000) + "ms)\n");
 
         // polynomial
-        fmt::print("csr (polynomial) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
+        std::cout << fmt::format("csr (polynomial) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
+        //fmt::print("csr (polynomial) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
         QA_cost = data_ptr_csr->get_element(data_ptr_csr->get_height() - 1, data_ptr_csr->get_width() - 1) * cost;
         ret = std::vector<real_type>(data_ptr_csr->get_height(), 0.);
         d = std::vector<real_type>(data_ptr_csr->get_height(), 1.); 
@@ -172,10 +187,12 @@ void benchmark_svm_kernel_openmp::evaluate_dataset(const dataset &ds) {
         plssvm::openmp::device_kernel_poly<real_type>(q, ret, d, *data_ptr_csr, QA_cost, cost, add, degree, gamma, coef0);
         end_time = std::chrono::high_resolution_clock::now();
         raw_runtimes_csr_poly.push_back(std::chrono::round<ns>(end_time - start_time));
-        fmt::print(std::to_string(std::chrono::round<ns>(end_time - start_time).count()/1000000) + "ms)\n");
+        std::cout << fmt::format(std::to_string(std::chrono::round<ns>(end_time - start_time).count()/1000000) + "ms)") << std::endl;
+        //fmt::print(std::to_string(std::chrono::round<ns>(end_time - start_time).count()/1000000) + "ms)\n");
 
         // radial
-        fmt::print("csr (radial) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
+        std::cout << fmt::format("csr (radial) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
+        //fmt::print("csr (radial) " + std::to_string(i + 1) + "/" + std::to_string(cycles) + " (");
         QA_cost = data_ptr_csr->get_element(data_ptr_csr->get_height() - 1, data_ptr_csr->get_width() - 1) * cost;
         ret = std::vector<real_type>(data_ptr_csr->get_height(), 0.);
         d = std::vector<real_type>(data_ptr_csr->get_height(), 1.); 
@@ -184,7 +201,8 @@ void benchmark_svm_kernel_openmp::evaluate_dataset(const dataset &ds) {
         plssvm::openmp::device_kernel_radial<real_type>(q, ret, d, *data_ptr_csr, QA_cost, cost, add, gamma);
         end_time = std::chrono::high_resolution_clock::now();
         raw_runtimes_csr_radial.push_back(std::chrono::round<ns>(end_time - start_time));
-        fmt::print(std::to_string(std::chrono::round<ns>(end_time - start_time).count()/1000000) + "ms)\n");
+        std::cout << fmt::format(std::to_string(std::chrono::round<ns>(end_time - start_time).count()/1000000) + "ms)") << std::endl;
+        //fmt::print(std::to_string(std::chrono::round<ns>(end_time - start_time).count()/1000000) + "ms)\n");
     }
     
     sub_benchmark_names.push_back("dense (linear)");

@@ -41,7 +41,7 @@ std::string benchmark::data_to_csv() {
                 + std::to_string(datasets[i].numDatapoints) + ',' 
                 + std::to_string(datasets[i].numFeatures) + ',' 
                 + std::to_string(datasets[i].approxDensity) + ',' 
-                + sub_benchmark_names[i+j] + ',' 
+                + sub_benchmark_names[i * num_data_structures * num_kernel_types + j] + ',' 
                 + std::to_string(runtimes_mean[i * num_data_structures * num_kernel_types + j].count() / 1000000.0) + ',' 
                 + std::to_string(runtimes_median[i * num_data_structures * num_kernel_types + j].count() / 1000000.0) + ','
                 + std::to_string(runtimes_min[i * num_data_structures * num_kernel_types + j].count() / 1000000.0) + ','  

@@ -1,10 +1,11 @@
 #!/bin/bash
 #SBATCH -w argon-tesla1
-#SBATCH --job-name="test"
+#SBATCH --job-name="sparPLS"
 #SBATCH --output=job.out
-#SBATCH --time=01:00:00
+#SBATCH --time=48:00:00
 #SBATCH --ntasks-per-node=8
 #SBATCH --nodes=1
+#SBATCH --gres=gpu # braucht man um innerhalb von SLURM GPUs nutzen zu können
 
 # some enviroment variables get set by slurm, for example:
 echo "working directory="$SLURM_SUBMIT_DIR >> job.out
@@ -14,14 +15,12 @@ module load cuda/11.4.3
 module load cmake/3.18.2
 module list >> job.out
 
-# delete existing build folder - works
-rm -rf build_argon-fs
-
 # build the program - needs adjustment
-mkdir build_argon-fs
+mkdir -p build_argon-fs # -p erstellt den Ordner nur, wenn er noch nicht existiert, so wie ihr es hattet gab es Fehler, wenn der Ordner vorher noch nicht existiert hat
 cd build_argon-fs
-cmake -DCMAKE_BUILD_TYPE=Debug -DPLSSVM_TARGET_PLATFORMS="cpu:avx512" ..
+rm -rf *
+cmake -DCMAKE_BUILD_TYPE=Release -DPLSSVM_TARGET_PLATFORMS="cpu:avx512;nvidia:sm_80" .. # wenn hier kein nvidia target angegeben wird, kommen bei mir Linker Fehler, dann ists klar, dass alles weitere Murks ist
 cmake --build . -j
 
-# run the program - throws error
-srun -n 8 ./plssvm-benchmark
+# run the program
+./plssvm-benchmark > ouput.txt
