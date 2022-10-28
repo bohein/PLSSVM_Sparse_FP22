@@ -38,6 +38,9 @@ class parameter_predict : public parameter<T> {
     using base_type::sycl_implementation_type;
     using base_type::target;
 
+    //SPARSE
+    using base_type::sparse;
+
     using base_type::input_filename;
     using base_type::model_filename;
     using base_type::predict_filename;

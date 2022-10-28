@@ -19,6 +19,7 @@
 #include "plssvm/target_platforms.hpp"                      // plssvm::target_platform
 #include "plssvm/coo.hpp"                                   // plssvm::openmp::coo
 #include "plssvm/csr.hpp"                                   // plssvm::openmp::csr
+#include "plssvm/sparse_types.hpp"
 
 // only necessary for testing (wrapper_for_parse_libsvm_content_sparse())
 #include "plssvm/detail/file_reader.hpp"           // plssvm::detail::file_reader
@@ -242,6 +243,9 @@ class parameter {
     backend_type backend = backend_type::automatic;
     /// The target platform: automatic (depending on the used backend), CPUs or GPUs from NVIDIA, AMD or Intel.
     target_platform target = target_platform::automatic;
+
+    //SPARSE
+    sparse_type sparse = sparse_type::automatic;
 
     /// The kernel invocation type when using SYCL as backend.
     sycl::kernel_invocation_type sycl_kernel_invocation_type = sycl::kernel_invocation_type::automatic;

@@ -20,7 +20,9 @@
 
 #include "plssvm/backend_types.hpp"
 #include "plssvm/kernel_types.hpp"
+#include "plssvm/sparse_types.hpp"
 #include "plssvm/target_platforms.hpp"
+
 
 #include "plssvm/exceptions/exceptions.hpp"
 #include "plssvm/version/version.hpp"

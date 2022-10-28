@@ -18,6 +18,9 @@
 #include "plssvm/exceptions/exceptions.hpp"        // plssvm::invalid_file_format_exception
 #include "plssvm/kernel_types.hpp"                 // plssvm::kernel_type
 
+//Sparse
+#include "plssvm/kernel_types.hpp"                 // plssvm::kernel_type
+
 #include "fmt/chrono.h"   // format std::chrono
 #include "fmt/core.h"     // fmt::format, fmt::print
 #include "fmt/ostream.h"  // can use fmt using operator<< overloads
