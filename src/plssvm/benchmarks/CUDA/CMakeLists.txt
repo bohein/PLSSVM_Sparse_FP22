@@ -48,6 +48,7 @@ set(PLSSVM_SPARSE_CUDA_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/benchmark_svm_kernel_cuda.cu
     ${CMAKE_CURRENT_LIST_DIR}/../../backends/CUDA/sparse/coo_q_kernel.cu
     ${CMAKE_CURRENT_LIST_DIR}/../../backends/CUDA/sparse/coo_svm_kernel.cu
+    ${CMAKE_CURRENT_LIST_DIR}/../../backends/CUDA/sparse/coo_svm_kernel_c.cu
     ${CMAKE_CURRENT_LIST_DIR}/../../backends/CUDA/sparse/csr_q_kernel.cu
     ${CMAKE_CURRENT_LIST_DIR}/../../backends/CUDA/sparse/csr_svm_kernel.cu
     ${CMAKE_CURRENT_LIST_DIR}/../../backends/CUDA/q_kernel.cu
