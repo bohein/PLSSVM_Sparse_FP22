@@ -24,6 +24,8 @@ class benchmark_svm_kernel_cuda : public benchmark {
 
     protected:
         void evaluate_dataset(const dataset& ds) override;
+        void evaluate_cached_kernel(const dataset& ds);
+        void cuda_debug(int cuda_status, int line);
 
         // csvm params
         real_type cost = 1;

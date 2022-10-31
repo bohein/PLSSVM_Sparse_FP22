@@ -17,6 +17,7 @@
 
 #include "plssvm/backends/CUDA/svm_kernel.cuh"
 #include "plssvm/backends/CUDA/sparse/coo_svm_kernel.cuh"
+#include "plssvm/backends/CUDA/sparse/coo_svm_kernel_c.cuh"
 #include "plssvm/backends/CUDA/sparse/csr_svm_kernel.cuh"
 
 #include "plssvm/detail/execution_range.hpp"
@@ -33,12 +34,116 @@ void benchmark_svm_kernel_cuda::run() {
 
     //datasets.insert(datasets.end(), DATAPOINT.begin(), DATAPOINT.end());
     //datasets.insert(datasets.end(), FEATURE.begin(), FEATURE.end());
-    //datasets.insert(datasets.end(), DENSITY.begin(), DENSITY.end());
+    datasets.insert(datasets.end(), DENSITY.begin() + 4, DENSITY.begin() + 11);
     //datasets.insert(datasets.end(), REAL_WORLD.begin(), REAL_WORLD.end());
 
-    //for (auto& ds : datasets) evaluate_dataset(ds);
-    datasets.push_back(FEATURE[18]);
-    evaluate_dataset(FEATURE[18]);
+    for (auto& ds : datasets) evaluate_dataset(ds);
+    //datasets.push_back(DATAPOINT[9]);
+    //evaluate_cached_kernel(DATAPOINT[9]);
+}
+
+void benchmark_svm_kernel_cuda::cuda_debug(int cuda_status, int line) {
+    if (cuda_status != cudaSuccess) {
+        printf("cuda failed: %i\n", cuda_status);
+        throw std::invalid_argument( "line: " + std::to_string(line) );
+    }
+}
+
+void benchmark_svm_kernel_cuda::evaluate_cached_kernel(const dataset& ds) {
+    using real_type = double;
+
+    std::chrono::time_point start_time = std::chrono::high_resolution_clock::now();
+    std::chrono::time_point end_time = std::chrono::high_resolution_clock::now();
+    
+    plssvm::parameter<real_type> params;
+    plssvm::openmp::coo<real_type> data_coo{};
+    plssvm::openmp::csr<real_type> data_csr{};
+    std::vector<size_t> ret_csr;
+    size_t nnz;
+    size_t width;
+    size_t height;
+    size_t last_row_begin;
+
+    std::vector<real_type> q;
+    std::vector<real_type> ret;
+    std::vector<real_type> d;
+    std::vector<size_t> col_ids;
+    std::vector<size_t> row_ids;
+    std::vector<real_type> values;
+    real_type QA_cost;
+    // real_type cost = 1;
+    // real_type add = 1;
+
+    real_type* q_d;
+    real_type* ret_d;
+    real_type* d_d;
+    size_t* col_ids_d;
+    size_t* row_ids_d;
+    real_type* values_d;
+    
+    auto data_ptr_coo = std::make_shared<const plssvm::openmp::coo<real_type>>(std::move(data_coo));
+    params.parse_libsvm_file_sparse(ds.path, data_ptr_coo);
+    
+    auto data_ptr_csr = std::make_shared<const plssvm::openmp::csr<real_type>>(std::move(data_csr));
+    params.parse_libsvm_file_sparse(ds.path, data_ptr_csr);
+    ret_csr = data_ptr_csr -> get_row_offset();
+
+    nnz = data_ptr_coo -> get_nnz();
+    width = data_ptr_coo -> get_width();
+    height = data_ptr_coo -> get_height();
+    last_row_begin = data_ptr_coo -> get_last_row_begin();
+
+    q = std::vector<real_type>(height - 1);
+    ret = std::vector<real_type>((height - 1), 0.0);
+    d = *params.value_ptr.get();
+    col_ids = data_ptr_coo -> get_col_ids();
+    row_ids = data_ptr_coo -> get_row_ids();
+    values = data_ptr_coo -> get_values();
+    QA_cost = data_ptr_coo -> get_element(width - 1, height - 1) * cost;
+    
+    unsigned int block_count_q = (height - 2) / THREAD_BLOCK_SIZE + 1;
+    dim3 grid_q(block_count_q);
+    dim3 block_q(THREAD_BLOCK_SIZE);
+
+    unsigned int block_count_svm = (height - 2) / THREAD_BLOCK_SIZE + 1;
+    dim3 grid_svm(block_count_svm, block_count_svm);
+    dim3 block_svm(THREAD_BLOCK_SIZE, THREAD_BLOCK_SIZE);
+
+    int padding_size = THREAD_BLOCK_SIZE;
+
+    cuda_debug(cudaMalloc((void**)&q_d, sizeof(real_type) * (q.size() + padding_size)), __LINE__);
+    cuda_debug(cudaMalloc((void**)&ret_d, sizeof(real_type) * (ret.size() + padding_size)), __LINE__);
+    cuda_debug(cudaMalloc((void**)&d_d, sizeof(real_type) * (d.size() + padding_size)), __LINE__);
+    cuda_debug(cudaMalloc((void**)&col_ids_d, sizeof(size_t) * (col_ids.size() + padding_size)), __LINE__);
+    cuda_debug(cudaMalloc((void**)&row_ids_d, sizeof(size_t) * (row_ids.size() + padding_size)), __LINE__);
+    cuda_debug(cudaMalloc((void**)&values_d, sizeof(real_type) * (values.size() + padding_size)), __LINE__);
+
+    cuda_debug(cudaMemcpy(q_d, q.data(), sizeof(real_type) * q.size(), cudaMemcpyHostToDevice), __LINE__);
+    cuda_debug(cudaMemcpy(ret_d, ret.data(), sizeof(real_type) * ret.size(), cudaMemcpyHostToDevice), __LINE__);
+    cuda_debug(cudaMemcpy(d_d, d.data(), sizeof(real_type) * d.size(), cudaMemcpyHostToDevice), __LINE__);
+    cuda_debug(cudaMemcpy(col_ids_d, col_ids.data(), sizeof(size_t) * col_ids.size(), cudaMemcpyHostToDevice), __LINE__);
+    cuda_debug(cudaMemcpy(row_ids_d, row_ids.data(), sizeof(size_t) * row_ids.size(), cudaMemcpyHostToDevice), __LINE__);
+    cuda_debug(cudaMemcpy(values_d, values.data(), sizeof(real_type) * values.size(), cudaMemcpyHostToDevice), __LINE__);
+    
+    plssvm::cuda::coo::device_kernel_q_linear<<<grid_q, block_q>>>(q_d, col_ids_d, row_ids_d, values_d, nnz, last_row_begin);
+    cudaDeviceSynchronize();
+    cuda_debug(cudaMemcpy(q.data(), q_d, sizeof(real_type) * q.size(), cudaMemcpyDeviceToHost), __LINE__);
+
+    plssvm::cuda::coo::c::device_kernel_linear<<<grid_svm, block_svm>>>(q_d, ret_d, d_d, col_ids_d, row_ids_d, values_d, QA_cost, cost, nnz, width, height, add);
+    cudaDeviceSynchronize();
+    cuda_debug(cudaMemcpy(ret.data(), ret_d, sizeof(real_type) * ret.size(), cudaMemcpyDeviceToHost), __LINE__);
+
+    for (int index = 0; index < ret.size(); ++index) {
+        std::cout << index << "\t" << ret[index] << "\t" << ret_csr[index] << "\n";
+    }
+    std::cout << "\n";
+
+    cuda_debug(cudaFree(q_d), __LINE__);
+    cuda_debug(cudaFree(ret_d), __LINE__);
+    cuda_debug(cudaFree(d_d), __LINE__);
+    cuda_debug(cudaFree(col_ids_d), __LINE__);
+    cuda_debug(cudaFree(row_ids_d), __LINE__);
+    cuda_debug(cudaFree(values_d), __LINE__);
 }
 
 void benchmark_svm_kernel_cuda::evaluate_dataset(const dataset& ds) {
@@ -186,12 +291,12 @@ void benchmark_svm_kernel_cuda::evaluate_dataset(const dataset& ds) {
         cudaDeviceSynchronize();
        
         start_time = std::chrono::high_resolution_clock::now();
-       // plssvm::cuda::device_kernel_linear<<<grid_svm, block_svm>>>(q_d, ret_d, d_d, data_dense_d, QA_cost, cost, num_rows, num_cols, add, id); //id = 0;
-       // if (cudaPeekAtLastError() != cudaSuccess) {
-       //     printf("q_kernel failed: %i on line %d\n", cudaPeekAtLastError(), __LINE__ - 2);
-       // }
+        plssvm::cuda::device_kernel_linear<<<grid_svm, block_svm>>>(q_d, ret_d, d_d, data_dense_d, QA_cost, cost, num_rows, num_cols, add, id); //id = 0;
+        if (cudaPeekAtLastError() != cudaSuccess) {
+            printf("q_kernel failed: %i on line %d\n", cudaPeekAtLastError(), __LINE__ - 2);
+        }
 
-       // cudaDeviceSynchronize();
+        cudaDeviceSynchronize();
         end_time = std::chrono::high_resolution_clock::now();
        
         raw_runtimes_dense_linear.push_back(std::chrono::round<ns>(end_time - start_time));
@@ -221,12 +326,12 @@ void benchmark_svm_kernel_cuda::evaluate_dataset(const dataset& ds) {
         cudaDeviceSynchronize();
         
         start_time = std::chrono::high_resolution_clock::now();
-        //plssvm::cuda::device_kernel_poly<<<grid_svm, block_svm>>>(q_d, ret_d, d_d, data_dense_d, QA_cost, cost, num_rows, num_cols, add, degree, gamma, coef0);
-        //if (cudaPeekAtLastError() != cudaSuccess) {
-        //    printf("q_kernel failed: %i on line %d\n", cudaPeekAtLastError(), __LINE__ - 2);
-        //}
+        plssvm::cuda::device_kernel_poly<<<grid_svm, block_svm>>>(q_d, ret_d, d_d, data_dense_d, QA_cost, cost, num_rows, num_cols, add, degree, gamma, coef0);
+        if (cudaPeekAtLastError() != cudaSuccess) {
+            printf("q_kernel failed: %i on line %d\n", cudaPeekAtLastError(), __LINE__ - 2);
+        }
 
-        //cudaDeviceSynchronize();
+        cudaDeviceSynchronize();
         end_time = std::chrono::high_resolution_clock::now();
         
         raw_runtimes_dense_poly.push_back(std::chrono::round<ns>(end_time - start_time));
@@ -256,12 +361,12 @@ void benchmark_svm_kernel_cuda::evaluate_dataset(const dataset& ds) {
         cudaDeviceSynchronize();
         
         start_time = std::chrono::high_resolution_clock::now();
-        //plssvm::cuda::device_kernel_radial<<<grid_svm, block_svm>>>(q_d, ret_d, d_d, data_dense_d, QA_cost, cost, num_rows, num_cols, add, gamma);
-        //if (cudaPeekAtLastError() != cudaSuccess) {
-        //    printf("q_kernel failed: %i on line %d\n", cudaPeekAtLastError(), __LINE__ - 2);
-       //}
+        plssvm::cuda::device_kernel_radial<<<grid_svm, block_svm>>>(q_d, ret_d, d_d, data_dense_d, QA_cost, cost, num_rows, num_cols, add, gamma);
+        if (cudaPeekAtLastError() != cudaSuccess) {
+            printf("q_kernel failed: %i on line %d\n", cudaPeekAtLastError(), __LINE__ - 2);
+        }
 
-        //cudaDeviceSynchronize();
+        cudaDeviceSynchronize();
         end_time = std::chrono::high_resolution_clock::now();
        
         raw_runtimes_dense_radial.push_back(std::chrono::round<ns>(end_time - start_time));
