@@ -32,12 +32,14 @@ benchmark_svm_kernel_cuda::benchmark_svm_kernel_cuda() : benchmark{"SVM-Kernels 
 void benchmark_svm_kernel_cuda::run() {
     using real_type = double;
 
-    datasets.insert(datasets.end(), DATAPOINT.begin(), DATAPOINT.end());
-    datasets.insert(datasets.end(), FEATURE.begin(), FEATURE.end());
-    datasets.insert(datasets.end(), DENSITY.begin(), DENSITY.end());
+    //datasets.insert(datasets.end(), DATAPOINT.begin(), DATAPOINT.end());
+    //datasets.insert(datasets.end(), FEATURE.begin(), FEATURE.end());
+    //datasets.insert(datasets.end(), DENSITY.begin(), DENSITY.end());
     //datasets.insert(datasets.end(), REAL_WORLD.begin(), REAL_WORLD.end());
 
-    for (auto& ds : datasets) evaluate_dataset(ds);
+    datasets.push_back(DATAPOINT[9]);
+
+    for (auto& ds : datasets) evaluate_cached_kernel(ds);
     //datasets.push_back(DATAPOINT[9]);
     //evaluate_dataset(DATAPOINT[9]);
 }
@@ -46,7 +48,7 @@ void benchmark_svm_kernel_cuda::cuda_debug(int cuda_status, int line) {
     if (cuda_status != cudaSuccess) {
         printf("cuda failed: %i\n", cuda_status);
         printf("line: %i\n", line);
-        throw std::invalid_argument( "idk, dude" );
+        //throw std::invalid_argument( "idk, dude" );
     }
 }
 
