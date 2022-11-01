@@ -19,7 +19,7 @@ module list >> job.out
 mkdir -p build_argon-fs # -p erstellt den Ordner nur, wenn er noch nicht existiert, so wie ihr es hattet gab es Fehler, wenn der Ordner vorher noch nicht existiert hat
 cd build_argon-fs
 rm -rf *
-cmake -DCMAKE_BUILD_TYPE=Release -DPLSSVM_TARGET_PLATFORMS="cpu:avx512;nvidia:sm_80" .. # wenn hier kein nvidia target angegeben wird, kommen bei mir Linker Fehler, dann ists klar, dass alles weitere Murks ist
+cmake -DCMAKE_BUILD_TYPE=Release -DPLSSVM_TARGET_PLATFORMS="cpu:avx512;nvidia:sm_60" .. # wenn hier kein nvidia target angegeben wird, kommen bei mir Linker Fehler, dann ists klar, dass alles weitere Murks ist
 cmake --build . -j
 
 # run the program

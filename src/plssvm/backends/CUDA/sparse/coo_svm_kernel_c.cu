@@ -125,11 +125,6 @@ __global__ void device_kernel_linear(const real_type *q, real_type *ret, const r
         }
     }
     __syncthreads();
-
-    if (j == 0) {
-        ret[i] = row_beginnings_1[threadIdx.x];
-    }
-    return;
     
     bool global_entries_left = true;
     kernel_index_type checked_entries_1 = 0;
@@ -346,11 +341,6 @@ __global__ void device_kernel_poly(const real_type *q, real_type *ret, const rea
         }
     }
     __syncthreads();
-
-    if (j == 0) {
-        ret[i] = row_beginnings_1[threadIdx.x];
-    }
-    return;
     
     bool global_entries_left = true;
     kernel_index_type checked_entries_1 = 0;
@@ -567,11 +557,6 @@ __global__ void device_kernel_radial(const real_type *q, real_type *ret, const r
         }
     }
     __syncthreads();
-
-    if (j == 0) {
-        ret[i] = row_beginnings_1[threadIdx.x];
-    }
-    return;
     
     bool global_entries_left = true;
     kernel_index_type checked_entries_1 = 0;
