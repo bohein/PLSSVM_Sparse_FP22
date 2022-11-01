@@ -36,9 +36,12 @@ void benchmark_svm_kernel_cuda::run() {
     //datasets.insert(datasets.end(), DENSITY.begin(), DENSITY.end());
     //datasets.insert(datasets.end(), REAL_WORLD.begin(), REAL_WORLD.end());
 
-    //for (auto& ds : datasets) evaluate_dataset(ds);
-    datasets.push_back(FEATURE[18]);
-    evaluate_dataset(FEATURE[18]);
+    datasets.push_back(DENSITY[3]);
+    datasets.push_back(DENSITY[11]);
+
+    for (auto& ds : datasets) evaluate_dataset(ds);
+    //datasets.push_back(FEATURE[18]);
+    //evaluate_dataset(FEATURE[18]);
 }
 
 void benchmark_svm_kernel_cuda::evaluate_dataset(const dataset& ds) {
