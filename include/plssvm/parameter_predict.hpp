@@ -40,6 +40,8 @@ class parameter_predict : public parameter<T> {
 
     //SPARSE
     using base_type::sparse;
+    using base_type::data_coo_ptr;
+    using base_type::data_csr_ptr;
 
     using base_type::input_filename;
     using base_type::model_filename;

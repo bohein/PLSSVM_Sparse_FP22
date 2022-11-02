@@ -53,6 +53,7 @@ parameter_train<T>::parameter_train(int argc, char **argv) {
             ("e,epsilon", "set the tolerance of termination criterion", cxxopts::value<decltype(epsilon)>()->default_value(fmt::format("{}", epsilon)))
             ("b,backend", fmt::format("choose the backend: {}", fmt::join(list_available_backends(), "|")), cxxopts::value<decltype(backend)>()->default_value(detail::as_lower_case(fmt::format("{}", backend))))
             ("p,target_platform", fmt::format("choose the target platform: {}", fmt::join(list_available_target_platforms(), "|")), cxxopts::value<decltype(target)>()->default_value(detail::as_lower_case(fmt::format("{}", target))))
+            ("s,sparse", fmt::format("choose the sparse datastructure: coo or csr."), cxxopts::value<decltype(sparse)>()->default_value(detail::as_lower_case(fmt::format("{}", sparse))))
 #if defined(PLSSVM_HAS_SYCL_BACKEND)
             ("sycl_kernel_invocation_type", "choose the kernel invocation type when using SYCL as backend: automatic|nd_range|hierarchical", cxxopts::value<decltype(sycl_kernel_invocation_type)>()->default_value(detail::as_lower_case(fmt::format("{}", sycl_kernel_invocation_type))))
             ("sycl_implementation_type", fmt::format("choose the SYCL implementation to be used in the SYCL backend: {}", fmt::join(sycl::list_available_sycl_implementations(), "|")), cxxopts::value<decltype(sycl_implementation_type)>()->default_value(detail::as_lower_case(fmt::format("{}", sycl_implementation_type))))
@@ -111,6 +112,9 @@ parameter_train<T>::parameter_train(int argc, char **argv) {
 
     // parse target_platform and cast the value to the respective enum
     target = result["target_platform"].as<decltype(target)>();
+    
+    //SPARSE
+    sparse = result["sparse"].as<decltype(sparse)>(); 
 
 #if defined(PLSSVM_HAS_SYCL_BACKEND)
     // parse kernel invocation type when using SYCL as backend

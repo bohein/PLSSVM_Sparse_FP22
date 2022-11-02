@@ -20,8 +20,8 @@ namespace plssvm {
 
 std::ostream &operator<<(std::ostream &out, const sparse_type sparse) {
     switch (sparse) {
-        case sparse_type::automatic:
-            return out << "automatic";
+        case sparse_type::notSparse:
+            return out << "notSparse";
         case sparse_type::coo:
             return out << "coo";
         case sparse_type::csr:
@@ -35,8 +35,8 @@ std::istream &operator>>(std::istream &in, sparse_type &sparse) {
     in >> str;
     detail::to_lower_case(str);
 
-    if (str == "automatic") {
-        sparse = sparse_type::automatic;
+    if (str == "notSparse") {
+        sparse = sparse_type::notSparse;
     } else if (str == "coo") {
         sparse = sparse_type::coo;
     } else if (str == "csr") {
