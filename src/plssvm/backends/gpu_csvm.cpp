@@ -152,6 +152,7 @@ void gpu_csvm<T, device_ptr_t, queue_t>::setup_data_on_device() {
 
         const std::size_t device_data_size = num_features * (dept_ + boundary_size_);
         data_d_[device] = device_ptr_type{ device_data_size, devices_[device] };
+        //---------->> Hier einfügen für COO und SR
         data_d_[device].memcpy_to_device(transformed_data.data() + feature_ranges_[device] * (dept_ + boundary_size_), 0, device_data_size);
     }
 }

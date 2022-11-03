@@ -266,8 +266,6 @@ class parameter {
     std::shared_ptr<const plssvm::openmp::csr<real_type>> data_csr_ptr{};
     std::shared_ptr<const plssvm::openmp::coo<real_type>> data_coo_ptr{};
 
-
-
     /// The labels associated with each data point.
     std::shared_ptr<const std::vector<real_type>> value_ptr{};
     /// The weights associated with each data point after training.
