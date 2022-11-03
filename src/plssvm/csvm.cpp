@@ -53,9 +53,25 @@ csvm<T>::csvm(const parameter<T> &params) :
         throw exception{ fmt::format("Number of weights ({}) must match the number of data points ({})!", alpha_ptr_->size(), data_ptr_->size()) };
     }
      
-    if(data_ptr_ != nullptr){
-    num_data_points_ = data_ptr_->size();
-    num_features_ = (*data_ptr_)[0].size();
+    switch (sparse_){
+        case sparse_type::notSparse:
+            if(data_ptr_ != nullptr){
+                num_data_points_ = data_ptr_->size();
+                num_features_ = (*data_ptr_)[0].size();
+            }
+            break;
+        case sparse_type::coo:
+            if (data_coo_ptr_ != nullptr){
+                num_data_points_ = data_coo_ptr_->get_nnz();
+                num_features_ = data_coo_ptr_->get_width();
+            }
+        case sparse_type::csr:
+            if(data_csr_ptr_ != nullptr){
+                num_data_points_ = data_csr_ptr_->get_nnz();
+                num_features_ = data_csr_ptr_->get_width();
+            }
+        default:
+            break;
     }
 }
 

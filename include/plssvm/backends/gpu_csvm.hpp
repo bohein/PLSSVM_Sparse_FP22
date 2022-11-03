@@ -45,6 +45,8 @@ class gpu_csvm : public csvm<T> {
     using base_type::coef0_;
     using base_type::cost_;
     using base_type::data_ptr_;
+    using base_type::data_csr_ptr_;
+    using base_type::data_coo_ptr_;
     using base_type::degree_;
     using base_type::epsilon_;
     using base_type::gamma_;
@@ -56,6 +58,7 @@ class gpu_csvm : public csvm<T> {
     using base_type::target_;
     using base_type::value_ptr_;
     using base_type::w_;
+    using base_type::sparse_;
 
   public:
     // Be able to use overloaded base class functions.
@@ -187,6 +190,12 @@ class gpu_csvm : public csvm<T> {
     std::vector<device_ptr_type> data_d_{};
     /// The last row of the data matrix.
     std::vector<device_ptr_type> data_last_d_{};
+
+    //SPARSE Datastructures
+    device_ptr_type sparse_data_last_;
+    device_ptr_type sparse_values_;
+    device_ptr_type sparse_col_data_;
+    device_ptr_type sparse_row_data_;
 };
 
 }  // namespace detail

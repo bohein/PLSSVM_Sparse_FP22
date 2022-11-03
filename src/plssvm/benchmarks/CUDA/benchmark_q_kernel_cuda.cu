@@ -295,7 +295,6 @@ void benchmark_q_kernel_cuda::evaluate_dataset(const dataset &ds) {
             printf("cudaMemcpy failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
         }
 
-
         std::vector<real_type> q((data_ptr_coo -> get_height() - 1) + boundary_size); // q-Vector
         cudaStatus = cudaMemcpy(q_d, q.data(), sizeof(real_type)*q.size(), cudaMemcpyHostToDevice);
         if (cudaStatus != cudaSuccess) {
