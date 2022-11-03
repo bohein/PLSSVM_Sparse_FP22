@@ -9,8 +9,8 @@
 
 #include "plssvm/backends/CUDA/sparse/sparse_q_kernel.hpp"
 #include "plssvm/backends/CUDA/q_kernel.cuh"
-#include "plssvm/backends/CUDA/sparse/coo_q_kernel.cuh"
-#include "plssvm/backends/CUDA/sparse/csr_q_kernel.cuh"
+#include "plssvm/backends/CUDA/sparse/coo/coo_q_kernel.cuh"
+#include "plssvm/backends/CUDA/sparse/csr/csr_q_kernel.cuh"
 #include "plssvm/coo.hpp"
 #include "plssvm/csr.hpp"
 #include "plssvm/benchmarks/benchmark.hpp"

@@ -56,10 +56,12 @@ set(PLSSVM_CUDA_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/../gpu_csvm.cpp
     ${CMAKE_CURRENT_LIST_DIR}/../gpu_device_ptr.cpp
     # sparse
-    ${CMAKE_CURRENT_LIST_DIR}/sparse/coo_q_kernel.cu
-    ${CMAKE_CURRENT_LIST_DIR}/sparse/coo_svm_kernel.cu
-    ${CMAKE_CURRENT_LIST_DIR}/sparse/csr_q_kernel.cu
-    ${CMAKE_CURRENT_LIST_DIR}/sparse/csr_svm_kernel.cu
+    ${CMAKE_CURRENT_LIST_DIR}/sparse/coo/coo_q_kernel.cu
+    ${CMAKE_CURRENT_LIST_DIR}/sparse/coo/coo_svm_kernel.cu
+    ${CMAKE_CURRENT_LIST_DIR}/sparse/coo/csvm.cu
+    ${CMAKE_CURRENT_LIST_DIR}/sparse/csr/csr_q_kernel.cu
+    ${CMAKE_CURRENT_LIST_DIR}/sparse/csr/csr_svm_kernel.cu
+    ${CMAKE_CURRENT_LIST_DIR}/sparse/csr/csvm.cu
     ${CMAKE_CURRENT_LIST_DIR}/sparse/sparse_q_kernel.cu
 )
 

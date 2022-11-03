@@ -48,6 +48,10 @@ namespace plssvm::openmp {}
 /// Namespace containing the C-SVM using the CUDA backend.
 namespace plssvm::cuda {}
 
+namespace plssvm::cuda::coo {}
+
+namespace plssvm::cuda::csr {}
+
 /// Namespace containing CUDA backend specific implementation details. **Should not** directly be used by users.
 namespace plssvm::cuda::detail {}
 

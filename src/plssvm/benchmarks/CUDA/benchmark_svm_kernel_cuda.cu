@@ -12,12 +12,12 @@
 #include "plssvm/benchmarks/CUDA/benchmark_svm_kernel_cuda.cuh"
 
 #include "plssvm/backends/CUDA/q_kernel.cuh"
-#include "plssvm/backends/CUDA/sparse/coo_q_kernel.cuh"
-#include "plssvm/backends/CUDA/sparse/csr_q_kernel.cuh"
+#include "plssvm/backends/CUDA/sparse/coo/coo_q_kernel.cuh"
+#include "plssvm/backends/CUDA/sparse/csr/csr_q_kernel.cuh"
 
 #include "plssvm/backends/CUDA/svm_kernel.cuh"
-#include "plssvm/backends/CUDA/sparse/coo_svm_kernel.cuh"
-#include "plssvm/backends/CUDA/sparse/csr_svm_kernel.cuh"
+#include "plssvm/backends/CUDA/sparse/coo/coo_svm_kernel.cuh"
+#include "plssvm/backends/CUDA/sparse/csr/csr_svm_kernel.cuh"
 
 #include "plssvm/detail/execution_range.hpp"
 
