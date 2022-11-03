@@ -43,7 +43,7 @@ csvm<T>::csvm(const parameter<T> &params) :
     
     if ((data_ptr_ == nullptr && data_coo_ptr_ == nullptr && data_csr_ptr_ == nullptr)) {
         throw exception{ "No data points provided!" };
-    } else if ((data_ptr_->empty() && data_coo_ptr_->empty() && data_csr_ptr_->empty()) {
+    } else if ((data_ptr_ != nullptr && data_ptr_->empty())) {
         throw exception{ "Data set is empty!" };
     } else if (data_ptr_ != nullptr && !std::all_of(data_ptr_->begin(), data_ptr_->end(), [&](const std::vector<real_type> &point) { return point.size() == data_ptr_->front().size(); })) {
         throw exception{ "All points in the data vector must have the same number of features!" };

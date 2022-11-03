@@ -288,12 +288,12 @@ void parameter<T>::parse_file(const std::string &filename, std::shared_ptr<const
 //SPARSE 
 template <typename T>
 void parameter<T>::parse_file(const std::string &filename, std::shared_ptr<const plssvm::openmp::coo<real_type>> &data_ptr_ref) {
-    parse_libsvm_file(filename, data_ptr_ref);
+    parse_libsvm_file_sparse(filename, data_ptr_ref);
 }
 
 template <typename T>
 void parameter<T>::parse_file(const std::string &filename, std::shared_ptr<const plssvm::openmp::csr<real_type>> &data_ptr_ref) {
-    parse_libsvm_file(filename, data_ptr_ref);
+    parse_libsvm_file_sparse(filename, data_ptr_ref);
 }
 
 
@@ -791,17 +791,17 @@ void parameter<T>::parse_model_file(const std::string &filename) {
 
 template <typename T>
 void parameter<T>::parse_train_file(const std::string &filename) {
-    if (sparse_type::notSparse )
+    if (sparse_type::notSparse == sparse )
     {
        parse_file(filename, data_ptr);
     }
 
-    if (sparse_type::coo)
+    if (sparse_type::coo == sparse )
     {
         parse_file(filename, data_coo_ptr);
     }
 
-    if (sparse_type::csr)
+    if (sparse_type::csr == sparse)
     {
         parse_file(filename, data_csr_ptr);
     }
