@@ -128,7 +128,7 @@ auto gpu_csvm<T, device_ptr_t, queue_t>::predict(const std::vector<std::vector<r
 
 template <typename T, typename device_ptr_t, typename queue_t>
 void gpu_csvm<T, device_ptr_t, queue_t>::setup_data_on_device() {
-    // set values of member variables
+    // values of member variables
     dept_ = num_data_points_ - 1;
     boundary_size_ = static_cast<std::size_t>(THREAD_BLOCK_SIZE * INTERNAL_BLOCK_SIZE);
     
@@ -162,20 +162,28 @@ void gpu_csvm<T, device_ptr_t, queue_t>::setup_data_on_device() {
             break;
             }
         case sparse_type::coo:{
-            size_t nnz =  data_coo_ptr_-> get_nnz();
+            size_t nnz =  data_coo_ptr_->get_nnz();
+           
             //add padding 
             plssvm::openmp::coo<real_type> data_coo_padded = *(data_coo_ptr_.get());
             data_coo_padded.add_padding(boundary_size_, 0, 0, 0);
-            auto data_ptr_coo_padded = std::make_shared<const plssvm::openmp::coo<real_type>>(std::move(data_coo_padded));
+            const auto data_ptr_coo_padded = std::make_shared<const plssvm::openmp::coo<real_type>>(std::move(data_coo_padded));
+            
             //initialize data_last on device
-            auto data_last_size = sizeof(real_type)*((data_coo_ptr_ -> get_height() - 1) + boundary_size_);
-            sparse_data_last_ = device_ptr_type{data_last_size , devices_[device] };
-            auto values_size = sizeof(real_type)*( + boundary_size_);
+            auto q_size =  sizeof(real_type)*(data_coo_ptr_->get_height()-1) + boundary_size_;
+            std::vector<real_type> q(q_size); // q-Vector
+            sparse_q_ = device_ptr_type{q_size , devices_[device] };
+            auto values_size =sizeof(real_type)*(nnz + boundary_size_);
             sparse_values_ = device_ptr_type{values_size, devices_[device]};
             auto col_size = sizeof(size_t)*(nnz + boundary_size_);
             sparse_col_data_ = device_ptr_type{col_size , devices_[device]};
             auto row_size = sizeof(size_t)*(nnz + boundary_size_);
             sparse_row_data_ = device_ptr_type{row_size, devices_[device]};
+            //copy data on device
+            sparse_q_.memcpy_to_device(q.data(), 0, q_size); //last row of Matrix aka q-Vector
+            sparse_values_.memcpy_to_device(data_ptr_coo_padded->get_values().data(),0,values_size);
+            sparse_col_data_.memcpy_to_device(data_ptr_coo_padded->get_col_ids().data(),0,col_size);
+            
             break;
             }
         case sparse_type::csr:{

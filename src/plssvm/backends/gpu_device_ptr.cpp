@@ -78,6 +78,7 @@ void gpu_device_ptr<T, queue_t, device_pointer_t>::memcpy_to_device(const std::v
     }
     this->memcpy_to_device(data_to_copy.data(), pos, rcount);
 }
+
 template <typename T, typename queue_t, typename device_pointer_t>
 void gpu_device_ptr<T, queue_t, device_pointer_t>::memcpy_to_device(const_host_pointer_type data_to_copy) {
     PLSSVM_ASSERT(data_ != nullptr, "Invalid data pointer!");
@@ -112,10 +113,12 @@ void gpu_device_ptr<T, queue_t, device_pointer_t>::memcpy_to_host(host_pointer_t
 #if defined(PLSSVM_HAS_CUDA_BACKEND) || defined(PLSSVM_HAS_HIP_BACKEND)
 template class gpu_device_ptr<float, int>;
 template class gpu_device_ptr<double, int>;
+template class gpu_device_ptr<std::size_t, int>;
 #endif
 #if defined(PLSSVM_HAS_OPENCL_BACKEND)
 template class gpu_device_ptr<float, ::plssvm::opencl::detail::command_queue *, cl_mem>;
 template class gpu_device_ptr<double, ::plssvm::opencl::detail::command_queue *, cl_mem>;
+template class gpu_device_ptr<std::size_t, ::plssvm::opencl::detail::command_queue *, cl_mem>;
 #endif
 #if defined(PLSSVM_HAS_SYCL_BACKEND)
 #if defined(PLSSVM_SYCL_BACKEND_HAS_DPCPP)

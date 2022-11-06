@@ -26,15 +26,18 @@ namespace plssvm::detail {
 template <typename T, typename queue_t, typename device_pointer_t = T *>
 class gpu_device_ptr {
     // only float and doubles are allowed
-    static_assert(std::is_same_v<T, float> || std::is_same_v<T, double>, "The template type can only be 'float' or 'double'!");
+    static_assert(std::is_same_v<T, float> || std::is_same_v<T, double> || std::is_same_v<T, std::size_t> , "The template type can only be 'float' or 'double'!");
 
   public:
     /// The type of the values used in the device_ptr.
     using value_type = T;
+    using sparse_type = std::size_t;
     /// The type of the host pointer corresponding to the wrapped device pointer.
     using host_pointer_type = value_type *;
+    using sparse_host_pointer_type = sparse_type *;
     /// The const type of the host pointer corresponding to the wrapped device pointer.
     using const_host_pointer_type = const value_type *;
+    using const_sparse_host_pointer_type = const sparse_type *;
     /// The used size type.
     using size_type = std::size_t;
     /// The type of the device queue used to manipulate the managed device memory.
@@ -167,6 +170,7 @@ class gpu_device_ptr {
      * @throws plssvm::gpu_device_ptr_exception if @p data_to_copy is too small to satisfy the memcpy
      */
     void memcpy_to_device(const std::vector<value_type> &data_to_copy, size_type pos, size_type count);
+
     /**
      * @brief Memcpy device_ptr::size() many values from @p data_to_copy to the device.
      * @param[in] data_to_copy the data to copy onto the device
@@ -181,6 +185,10 @@ class gpu_device_ptr {
      */
     virtual void memcpy_to_device(const_host_pointer_type data_to_copy, size_type pos, size_type count) = 0;
 
+    //SPARSE
+    virtual void memcpy_to_device(sparse_host_pointer_type data_to_copy, size_type pos, size_type count) = 0;
+
+
     /**
      * @brief Memcpy device_ptr::size() many values from the device to the host buffer @p buffer.
      * @param[out] buffer the buffer to copy the data to
@@ -190,7 +198,7 @@ class gpu_device_ptr {
     /**
      * @brief Memcpy up-to @p count many values from the device starting at device pointer position @p pos to the host buffer @p buffer.
      * @details Copies `[p, rcount)` values where `rcount` is the smaller value of @p count and `device_ptr::size() - pos`.
-     * @param[out] buffer the buffer to copy the data to
+     * @param[out] buff<er the buffer to copy the data to
      * @param[in] pos the starting position for the copying in the device pointer
      * @param[in] count the number of elements to copy
      * @throws plssvm::gpu_device_ptr_exception if @p data_to_copy is too small

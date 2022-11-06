@@ -66,6 +66,15 @@ void device_ptr<T>::memcpy_to_device(const_host_pointer_type data_to_copy, const
 }
 
 template <typename T>
+void device_ptr<T>::memcpy_to_device(sparse_host_pointer_type data_to_copy, const size_type pos, const size_type count) {
+    PLSSVM_ASSERT(data_ != nullptr, "Invalid data pointer!");
+    //Sparse OpenCL not implemented yet
+    if (true) {
+        throw backend_exception{ fmt::format("Sparse Datastructure not implemnted yet for OpenCL!", pos, size_) };
+    }
+}
+
+template <typename T>
 void device_ptr<T>::memcpy_to_host(host_pointer_type buffer, const size_type pos, const size_type count) const {
     PLSSVM_ASSERT(data_ != nullptr, "Invalid data pointer!");
 
@@ -78,5 +87,6 @@ void device_ptr<T>::memcpy_to_host(host_pointer_type buffer, const size_type pos
 
 template class device_ptr<float>;
 template class device_ptr<double>;
+template class device_ptr<std::size_t>;
 
 }  // namespace plssvm::opencl::detail

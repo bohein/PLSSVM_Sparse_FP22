@@ -21,7 +21,7 @@ namespace plssvm::cuda::detail {
  */
 template <typename T>
 class device_ptr : public ::plssvm::detail::gpu_device_ptr<T, int> {
-    /// The template base type of the OpenCL device_ptr class.
+    /// The template base type of the CUDA device_ptr class.
     using base_type = ::plssvm::detail::gpu_device_ptr<T, int>;
 
     using base_type::data_;
@@ -35,6 +35,8 @@ class device_ptr : public ::plssvm::detail::gpu_device_ptr<T, int> {
     using base_type::memset;
 
     using typename base_type::const_host_pointer_type;
+    using typename base_type::const_sparse_host_pointer_type;
+    using typename base_type::sparse_host_pointer_type;
     using typename base_type::device_pointer_type;
     using typename base_type::host_pointer_type;
     using typename base_type::queue_type;
@@ -85,6 +87,8 @@ class device_ptr : public ::plssvm::detail::gpu_device_ptr<T, int> {
      * @copydoc plssvm::detail::gpu_device_ptr::memcpy_to_device(const_host_pointer_type, size_type, size_type)
      */
     void memcpy_to_device(const_host_pointer_type data_to_copy, size_type pos, size_type count) override;
+    void memcpy_to_device(sparse_host_pointer_type data_to_copy, size_type pos, size_type count) override;
+
     /**
      * @copydoc plssvm::detail::gpu_device_ptr::memcpy_to_host(host_pointer_type, size_type, size_type) const
      */
@@ -93,5 +97,6 @@ class device_ptr : public ::plssvm::detail::gpu_device_ptr<T, int> {
 
 extern template class device_ptr<float>;
 extern template class device_ptr<double>;
+extern template class device_ptr<std::size_t>;
 
 }  // namespace plssvm::cuda::detail

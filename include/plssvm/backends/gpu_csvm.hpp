@@ -192,7 +192,7 @@ class gpu_csvm : public csvm<T> {
     std::vector<device_ptr_type> data_last_d_{};
 
     //SPARSE Datastructures
-    device_ptr_type sparse_data_last_;
+    device_ptr_type sparse_q_;
     device_ptr_type sparse_values_;
     device_ptr_type sparse_col_data_;
     device_ptr_type sparse_row_data_;
