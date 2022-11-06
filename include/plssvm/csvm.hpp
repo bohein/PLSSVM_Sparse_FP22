@@ -13,6 +13,10 @@
 
 #include "plssvm/kernel_types.hpp"      // plssvm::kernel_type
 #include "plssvm/target_platforms.hpp"  // plssvm::target_platform
+#include "plssvm/sparse_types.hpp"      //plssvm::sparse_types
+
+#include "plssvm/coo.hpp"
+#include "plssvm/csr.hpp"
 
 #include <cstddef>      // std::size_t
 #include <memory>       // std::shared_ptr
@@ -255,8 +259,15 @@ class csvm {
     /// If `true` additional information (e.g. timing information) will be printed during execution.
     const bool print_info_;
 
+    //SPARSE
+    const plssvm::sparse_type sparse_;
+    const std::shared_ptr<const plssvm::openmp::coo<real_type>> data_coo_ptr_{};
+    const std::shared_ptr<const plssvm::openmp::csr<real_type>> data_csr_ptr_{};
+    
     /// The data used the train the SVM.
     const std::shared_ptr<const std::vector<std::vector<real_type>>> data_ptr_{};
+    
+
     /// The labels associated to each data point.
     std::shared_ptr<const std::vector<real_type>> value_ptr_{};
     /// The result of the CG calculation: the weights of the support vectors.

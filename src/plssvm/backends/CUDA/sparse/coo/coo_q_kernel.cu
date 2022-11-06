@@ -5,7 +5,7 @@
  *          See the LICENSE.md file in the project root for full license information.
  */
 
-#include "plssvm/backends/CUDA/sparse/coo_q_kernel.cuh"
+#include "plssvm/backends/CUDA/sparse/coo/coo_q_kernel.cuh"
 
 #include "plssvm/constants.hpp"  // plssvm::kernel_index_type
 #include <stdio.h>

@@ -11,8 +11,8 @@
 #include "plssvm/benchmarks/CUDA/benchmark_q_kernel_cuda.cuh"
 
 #include "plssvm/backends/CUDA/q_kernel.cuh"
-#include "plssvm/backends/CUDA/sparse/coo_q_kernel.cuh"
-#include "plssvm/backends/CUDA/sparse/csr_q_kernel.cuh"
+#include "plssvm/backends/CUDA/sparse/coo/coo_q_kernel.cuh"
+#include "plssvm/backends/CUDA/sparse/csr/csr_q_kernel.cuh"
 #include "plssvm/detail/execution_range.hpp"
 
 
@@ -294,7 +294,6 @@ void benchmark_q_kernel_cuda::evaluate_dataset(const dataset &ds) {
         if (cudaStatus != cudaSuccess) {
             printf("cudaMemcpy failed: %i on line %d\n", cudaStatus, __LINE__ - 2);
         }
-
 
         std::vector<real_type> q((data_ptr_coo -> get_height() - 1) + boundary_size); // q-Vector
         cudaStatus = cudaMemcpy(q_d, q.data(), sizeof(real_type)*q.size(), cudaMemcpyHostToDevice);

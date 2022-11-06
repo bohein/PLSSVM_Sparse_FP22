@@ -15,6 +15,7 @@
 #include "plssvm/csvm.hpp"                   // plssvm::csvm
 #include "plssvm/exceptions/exceptions.hpp"  // plssvm::unsupported_backend_exception
 #include "plssvm/parameter.hpp"              // plssvm::parameter
+#include "plssvm/sparse_types.hpp"
 
 #include <memory>  // std::unique_ptr, std::make_unique
 
@@ -24,6 +25,8 @@
 #endif
 #if defined(PLSSVM_HAS_CUDA_BACKEND)
     #include "plssvm/backends/CUDA/csvm.hpp"  // plssvm::cuda::csvm
+    #include "plssvm/backends/CUDA/sparse/coo/csvm.hpp"  // plssvm::cuda::coo::csvm
+    #include "plssvm/backends/CUDA/sparse/csr/csvm.hpp"  // plssvm::cuda::csr::csvm
 #endif
 #if defined(PLSSVM_HAS_HIP_BACKEND)
     #include "plssvm/backends/HIP/csvm.hpp"  // plssvm::hip::csvm
@@ -63,14 +66,20 @@ template <typename T>
 #else
             throw unsupported_backend_exception{ "No OpenMP backend available!" };
 #endif
-
         case backend_type::cuda:
 #if defined(PLSSVM_HAS_CUDA_BACKEND)
+        switch (params.sparse)
+        {
+        case sparse_type::notSparse:
             return std::make_unique<cuda::csvm<T>>(params);
+        case sparse_type::coo:
+            return std::make_unique<cuda::coo::csvm<T>>(params);
+        case sparse_type::csr:
+            return std::make_unique<cuda::csr::csvm<T>>(params);
+        }
 #else
             throw unsupported_backend_exception{ "No CUDA backend available!" };
 #endif
-
         case backend_type::hip:
 #if defined(PLSSVM_HAS_HIP_BACKEND)
             return std::make_unique<hip::csvm<T>>(params);

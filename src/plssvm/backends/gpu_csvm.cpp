@@ -131,6 +131,7 @@ void gpu_csvm<T, device_ptr_t, queue_t>::setup_data_on_device() {
     // set values of member variables
     dept_ = num_data_points_ - 1;
     boundary_size_ = static_cast<std::size_t>(THREAD_BLOCK_SIZE * INTERNAL_BLOCK_SIZE);
+    
     num_rows_ = dept_ + boundary_size_;
     num_cols_ = num_features_;
     feature_ranges_.reserve(devices_.size() + 1);
@@ -138,21 +139,52 @@ void gpu_csvm<T, device_ptr_t, queue_t>::setup_data_on_device() {
         feature_ranges_.push_back(device * num_cols_ / devices_.size());
     }
 
-    // transform 2D to 1D data
-    const std::vector<real_type> transformed_data = base_type::transform_data(*data_ptr_, boundary_size_, dept_);
+    std::vector<real_type>  transformed_data;
+    if(sparse_ == sparse_type::notSparse){
+        transformed_data = base_type::transform_data(*data_ptr_, boundary_size_, dept_);
+    }
 
     #pragma omp parallel for
     for (typename std::vector<queue_type>::size_type device = 0; device < devices_.size(); ++device) {
         const std::size_t num_features = feature_ranges_[device + 1] - feature_ranges_[device];
 
-        // initialize data_last on device
-        data_last_d_[device] = device_ptr_type{ num_features + boundary_size_, devices_[device] };
-        data_last_d_[device].memset(0);
-        data_last_d_[device].memcpy_to_device(data_ptr_->back().data() + feature_ranges_[device], 0, num_features);
+        switch (sparse_){
+        case sparse_type::notSparse:{
 
-        const std::size_t device_data_size = num_features * (dept_ + boundary_size_);
-        data_d_[device] = device_ptr_type{ device_data_size, devices_[device] };
-        data_d_[device].memcpy_to_device(transformed_data.data() + feature_ranges_[device] * (dept_ + boundary_size_), 0, device_data_size);
+            // initialize data_last on device
+            data_last_d_[device] = device_ptr_type{ num_features + boundary_size_, devices_[device] };
+            data_last_d_[device].memset(0);
+            data_last_d_[device].memcpy_to_device(data_ptr_->back().data() + feature_ranges_[device], 0, num_features);
+
+            const std::size_t device_data_size = num_features * (dept_ + boundary_size_);
+            data_d_[device] = device_ptr_type{ device_data_size, devices_[device] };
+            data_d_[device].memcpy_to_device(transformed_data.data() + feature_ranges_[device] * (dept_ + boundary_size_), 0, device_data_size);
+            break;
+            }
+        case sparse_type::coo:{
+            size_t nnz =  data_coo_ptr_-> get_nnz();
+            //add padding 
+            plssvm::openmp::coo<real_type> data_coo_padded = *(data_coo_ptr_.get());
+            data_coo_padded.add_padding(boundary_size_, 0, 0, 0);
+            auto data_ptr_coo_padded = std::make_shared<const plssvm::openmp::coo<real_type>>(std::move(data_coo_padded));
+            //initialize data_last on device
+            auto data_last_size = sizeof(real_type)*((data_coo_ptr_ -> get_height() - 1) + boundary_size_);
+            sparse_data_last_ = device_ptr_type{data_last_size , devices_[device] };
+            auto values_size = sizeof(real_type)*( + boundary_size_);
+            sparse_values_ = device_ptr_type{values_size, devices_[device]};
+            auto col_size = sizeof(size_t)*(nnz + boundary_size_);
+            sparse_col_data_ = device_ptr_type{col_size , devices_[device]};
+            auto row_size = sizeof(size_t)*(nnz + boundary_size_);
+            sparse_row_data_ = device_ptr_type{row_size, devices_[device]};
+            break;
+            }
+        case sparse_type::csr:{
+            //add padding
+           break;
+           }
+    }
+
+        
     }
 }
 

@@ -20,7 +20,7 @@ namespace plssvm {
  * @brief Enum class for all possible datastructures.
  */
 enum class sparse_type {
-    automatic, //CSR
+    notSparse, //Default, not a sparse Matrix
     /** COO Datastructure: TODO: WIKIPEDIA LINK */
     coo,
     /** CSR Datastructure: TODO: WIKIPEDIA LINK */

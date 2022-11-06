@@ -204,9 +204,9 @@ class parameter {
      */
     void parse_file(const std::string &filename, std::shared_ptr<const std::vector<std::vector<real_type>>> &data_ptr_ref);
 
-    void parse_file_coo(const std::string &filename, std::shared_ptr<const plssvm::openmp::coo<real_type>> &data_ptr_ref);
+    void parse_file(const std::string &filename, std::shared_ptr<const plssvm::openmp::coo<real_type>> &data_ptr_ref);
 
-    void parse_file_csr(const std::string &filename, std::shared_ptr<const plssvm::openmp::csr<real_type>> &data_ptr_ref);
+    void parse_file(const std::string &filename, std::shared_ptr<const plssvm::openmp::csr<real_type>> &data_ptr_ref);
 
     /**
      * @brief Parse the given file as training data. If the file is in the arff format (has the `.arff` extension), the arff parser is used, otherwise the LIBSVM parser is used.
@@ -245,7 +245,7 @@ class parameter {
     target_platform target = target_platform::automatic;
 
     //SPARSE
-    sparse_type sparse = sparse_type::automatic;
+    sparse_type sparse = sparse_type::notSparse;
 
     /// The kernel invocation type when using SYCL as backend.
     sycl::kernel_invocation_type sycl_kernel_invocation_type = sycl::kernel_invocation_type::automatic;
@@ -261,6 +261,11 @@ class parameter {
 
     /// The data used the train the SVM.
     std::shared_ptr<const std::vector<std::vector<real_type>>> data_ptr{};
+
+    /// The data used the train the SVM Sparse COO Version
+    std::shared_ptr<const plssvm::openmp::csr<real_type>> data_csr_ptr{};
+    std::shared_ptr<const plssvm::openmp::coo<real_type>> data_coo_ptr{};
+
     /// The labels associated with each data point.
     std::shared_ptr<const std::vector<real_type>> value_ptr{};
     /// The weights associated with each data point after training.

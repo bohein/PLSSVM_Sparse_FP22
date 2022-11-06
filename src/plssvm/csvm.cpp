@@ -39,28 +39,47 @@ namespace plssvm {
 
 template <typename T>
 csvm<T>::csvm(const parameter<T> &params) :
-    target_{ params.target }, kernel_{ params.kernel }, degree_{ params.degree }, gamma_{ params.gamma }, coef0_{ params.coef0 }, cost_{ params.cost }, epsilon_{ params.epsilon }, print_info_{ params.print_info }, data_ptr_{ params.data_ptr }, value_ptr_{ params.value_ptr }, alpha_ptr_{ params.alpha_ptr }, bias_{ -params.rho } {
-    if (data_ptr_ == nullptr) {
+    target_{ params.target }, kernel_{ params.kernel }, sparse_{params.sparse}, degree_{ params.degree }, gamma_{ params.gamma }, coef0_{ params.coef0 }, cost_{ params.cost }, epsilon_{ params.epsilon }, print_info_{ params.print_info }, data_ptr_{ params.data_ptr }, data_coo_ptr_{params.data_coo_ptr}, data_csr_ptr_{params.data_csr_ptr},  value_ptr_{ params.value_ptr }, alpha_ptr_{ params.alpha_ptr }, bias_{ -params.rho } {
+    
+    if ((data_ptr_ == nullptr && data_coo_ptr_ == nullptr && data_csr_ptr_ == nullptr)) {
         throw exception{ "No data points provided!" };
-    } else if (data_ptr_->empty()) {
+    } else if ((data_ptr_ != nullptr && data_ptr_->empty())) {
         throw exception{ "Data set is empty!" };
-    } else if (!std::all_of(data_ptr_->begin(), data_ptr_->end(), [&](const std::vector<real_type> &point) { return point.size() == data_ptr_->front().size(); })) {
+    } else if (data_ptr_ != nullptr && !std::all_of(data_ptr_->begin(), data_ptr_->end(), [&](const std::vector<real_type> &point) { return point.size() == data_ptr_->front().size(); })) {
         throw exception{ "All points in the data vector must have the same number of features!" };
-    } else if (data_ptr_->front().empty()) {
+    } else if (data_ptr_ != nullptr && data_ptr_->front().empty()) {
         throw exception{ "No features provided for the data points!" };
-    } else if (alpha_ptr_ != nullptr && alpha_ptr_->size() != data_ptr_->size()) {
+    } else if (data_ptr_ != nullptr && alpha_ptr_ != nullptr && alpha_ptr_->size() != data_ptr_->size()) {
         throw exception{ fmt::format("Number of weights ({}) must match the number of data points ({})!", alpha_ptr_->size(), data_ptr_->size()) };
     }
-
-    num_data_points_ = data_ptr_->size();
-    num_features_ = (*data_ptr_)[0].size();
+     
+    switch (sparse_){
+        case sparse_type::notSparse:
+            if(data_ptr_ != nullptr){
+                num_data_points_ = data_ptr_->size();
+                num_features_ = (*data_ptr_)[0].size();
+            }
+            break;
+        case sparse_type::coo:
+            if (data_coo_ptr_ != nullptr){
+                num_data_points_ = data_coo_ptr_->get_nnz();
+                num_features_ = data_coo_ptr_->get_width();
+            }
+        case sparse_type::csr:
+            if(data_csr_ptr_ != nullptr){
+                num_data_points_ = data_csr_ptr_->get_nnz();
+                num_features_ = data_csr_ptr_->get_width();
+            }
+        default:
+            break;
+    }
 }
 
 template <typename T>
 void csvm<T>::write_model(const std::string &model_name) {
     auto start_time = std::chrono::steady_clock::now();
 
-    PLSSVM_ASSERT(data_ptr_ != nullptr, "No data is provided!");  // exception in constructor
+    PLSSVM_ASSERT((data_ptr_ != nullptr || data_coo_ptr_ != nullptr || data_csr_ptr_ != nullptr), "No data is provided!");  // exception in constructor
 
     if (alpha_ptr_ == nullptr) {
         throw exception{ "No alphas given! Maybe a call to 'learn()' is missing?" };
@@ -207,7 +226,7 @@ template <typename T>
 void csvm<T>::learn() {
     using namespace plssvm::operators;
 
-    PLSSVM_ASSERT(data_ptr_ != nullptr, "No data is provided!");  // exception in constructor
+    PLSSVM_ASSERT((data_ptr_ != nullptr || data_coo_ptr_ != nullptr || data_csr_ptr_ != nullptr), "No data is provided!");  // exception in constructor
 
     if (value_ptr_ == nullptr) {
         throw exception{ "No labels given for training! Maybe the data is only usable for prediction?" };
@@ -235,8 +254,10 @@ void csvm<T>::learn() {
         }
         #pragma omp section  // generate right-hand side from equation
         {
-            b.pop_back();
-            b -= value_ptr_->back();
+            if(data_ptr_ != nullptr){
+                b.pop_back();
+                b -= value_ptr_->back();
+            }
         }
         #pragma omp section  // generate bottom right from A
         {

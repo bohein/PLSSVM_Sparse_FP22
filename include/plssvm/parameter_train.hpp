@@ -43,10 +43,16 @@ class parameter_train : public parameter<T> {
     using base_type::model_filename;
     using base_type::predict_filename;
 
+    //SPARSE
+    using base_type::sparse;
+    using base_type::data_coo_ptr;
+    using base_type::data_csr_ptr;
+
     using base_type::alpha_ptr;
     using base_type::data_ptr;
     using base_type::test_data_ptr;
     using base_type::value_ptr;
+
 
     using base_type::rho;
 

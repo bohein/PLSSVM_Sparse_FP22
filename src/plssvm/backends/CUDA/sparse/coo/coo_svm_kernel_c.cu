@@ -5,7 +5,7 @@
  *          See the LICENSE.md file in the project root for full license information.
  */
 
-#include "plssvm/backends/CUDA/sparse/coo_svm_kernel_c.cuh"
+#include "plssvm/backends/CUDA/sparse/coo/coo_svm_kernel_c.cuh"
 
 #include "plssvm/backends/CUDA/detail/atomics.cuh"  // atomicAdd
 #include "plssvm/constants.hpp"                     // plssvm::INTERNAL_BLOCK_SIZE, plssvm::kernel_index_type

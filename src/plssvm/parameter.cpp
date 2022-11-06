@@ -19,7 +19,7 @@
 #include "plssvm/kernel_types.hpp"                 // plssvm::kernel_type
 
 //Sparse
-#include "plssvm/kernel_types.hpp"                 // plssvm::kernel_type
+#include "plssvm/sparse_types.hpp"                 // plssvm::kernel_type
 
 #include "fmt/chrono.h"   // format std::chrono
 #include "fmt/core.h"     // fmt::format, fmt::print
@@ -284,6 +284,18 @@ void parameter<T>::parse_file(const std::string &filename, std::shared_ptr<const
         parse_libsvm_file(filename, data_ptr_ref);
     }
 }
+
+//SPARSE 
+template <typename T>
+void parameter<T>::parse_file(const std::string &filename, std::shared_ptr<const plssvm::openmp::coo<real_type>> &data_ptr_ref) {
+    parse_libsvm_file_sparse(filename, data_ptr_ref);
+}
+
+template <typename T>
+void parameter<T>::parse_file(const std::string &filename, std::shared_ptr<const plssvm::openmp::csr<real_type>> &data_ptr_ref) {
+    parse_libsvm_file_sparse(filename, data_ptr_ref);
+}
+
 
 // read and parse a libsvm file
 template <typename T>
@@ -779,9 +791,23 @@ void parameter<T>::parse_model_file(const std::string &filename) {
 
 template <typename T>
 void parameter<T>::parse_train_file(const std::string &filename) {
-    parse_file(filename, data_ptr);
+    if (sparse_type::notSparse == sparse )
+    {
+       parse_file(filename, data_ptr);
+    }
+
+    if (sparse_type::coo == sparse )
+    {
+        parse_file(filename, data_coo_ptr);
+    }
+
+    if (sparse_type::csr == sparse)
+    {
+        parse_file(filename, data_csr_ptr);
+    }
+
     if (value_ptr == nullptr) {
-        throw invalid_file_format_exception{ "Missing labels for train file!" };
+            throw invalid_file_format_exception{ "Missing labels for train file!" };
     }
 }
 

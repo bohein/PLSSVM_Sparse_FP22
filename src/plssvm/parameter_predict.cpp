@@ -47,7 +47,7 @@ parameter_predict<T>::parameter_predict(int argc, char **argv) {
         .add_options()
             ("b,backend", fmt::format("choose the backend: {}", fmt::join(list_available_backends(), "|")), cxxopts::value<decltype(backend)>()->default_value(detail::as_lower_case(fmt::format("{}", backend))))
             ("p,target_platform", fmt::format("choose the target platform: {}", fmt::join(list_available_target_platforms(), "|")), cxxopts::value<decltype(target)>()->default_value(detail::as_lower_case(fmt::format("{}", target))))
-            ("s,sparse", fmt::format("choose the sparse datastructure: ,coo or csr"), cxxopts::value<decltype(sparse)>()->default_value(detail::as_lower_case(fmt::format("{}", sparse))))
+            ("s,sparse", fmt::format("choose the sparse datastructure: coo or csr."), cxxopts::value<decltype(sparse)>()->default_value(detail::as_lower_case(fmt::format("{}", sparse))))
 #if defined(PLSSVM_HAS_SYCL_BACKEND)
             ("sycl_implementation_type", fmt::format("choose the SYCL implementation to be used in the SYCL backend: {}", fmt::join(sycl::list_available_sycl_implementations(), "|")), cxxopts::value<decltype(sycl_implementation_type)>()->default_value(detail::as_lower_case(fmt::format("{}", sycl_implementation_type))))
 #endif
