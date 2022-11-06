@@ -58,8 +58,10 @@ set(PLSSVM_CUDA_SOURCES
     # sparse
     ${CMAKE_CURRENT_LIST_DIR}/sparse/coo_q_kernel.cu
     ${CMAKE_CURRENT_LIST_DIR}/sparse/coo_svm_kernel.cu
+    ${CMAKE_CURRENT_LIST_DIR}/sparse/coo_predict_kernel.cu
     ${CMAKE_CURRENT_LIST_DIR}/sparse/csr_q_kernel.cu
     ${CMAKE_CURRENT_LIST_DIR}/sparse/csr_svm_kernel.cu
+    ${CMAKE_CURRENT_LIST_DIR}/sparse/csr_predict_kernel.cu
     ${CMAKE_CURRENT_LIST_DIR}/sparse/sparse_q_kernel.cu
 )
 
