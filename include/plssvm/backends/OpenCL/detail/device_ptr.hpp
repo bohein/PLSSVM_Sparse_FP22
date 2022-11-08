@@ -43,6 +43,8 @@ class device_ptr : public ::plssvm::detail::gpu_device_ptr<T, command_queue *, c
     using typename base_type::queue_type;
     using typename base_type::size_type;
     using typename base_type::value_type;
+    using typename base_type::const_sparse_host_pointer_type;
+    using typename base_type::sparse_host_pointer_type;
 
     /**
      * @brief Default construct a device_ptr with a size of 0.
@@ -87,6 +89,8 @@ class device_ptr : public ::plssvm::detail::gpu_device_ptr<T, command_queue *, c
      * @copydoc plssvm::detail::gpu_device_ptr::memcpy_to_device(const_host_pointer_type, size_type, size_type)
      */
     void memcpy_to_device(const_host_pointer_type data_to_copy, size_type pos, size_type count) override;
+    void memcpy_to_device(sparse_host_pointer_type data_to_copy, size_type pos, size_type count) override;
+
     /**
      * @copydoc plssvm::detail::gpu_device_ptr::memcpy_to_host(host_pointer_type, size_type, size_type) const
      */
@@ -95,5 +99,6 @@ class device_ptr : public ::plssvm::detail::gpu_device_ptr<T, command_queue *, c
 
 extern template class device_ptr<float>;
 extern template class device_ptr<double>;
+extern template class device_ptr<std::size_t>;
 
 }  // namespace plssvm::opencl::detail
