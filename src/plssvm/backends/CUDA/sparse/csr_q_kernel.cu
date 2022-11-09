@@ -10,7 +10,6 @@
 
 #include "plssvm/constants.hpp"  // plssvm::kernel_index_type
 
-// UNTESTED
 namespace plssvm::cuda::csr {
 template <typename real_type>
 

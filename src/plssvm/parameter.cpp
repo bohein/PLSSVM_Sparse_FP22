@@ -116,7 +116,6 @@ void parse_libsvm_content(const file_reader &f, const std::size_t start, std::ve
     }
 }
 
-// TODO: parallelize (modifications to spm_formats.hpp/spm_formats.cpp likely necessary)
 template <typename real_type>
 void parse_libsvm_content_sparse(const file_reader &f, const std::size_t start, plssvm::openmp::coo<real_type> &data, std::vector<real_type> &values) {
     std::exception_ptr parallel_exception;
@@ -193,7 +192,6 @@ void parse_libsvm_content_sparse(const file_reader &f, const std::size_t start, 
     for (auto it = rows.begin(); it != rows.end(); it++) data.append(*it);
 }
 
-// TODO: parallelize (modifications to spm_formats.hpp/spm_formats.cpp likely necessary)
 template <typename real_type>
 void parse_libsvm_content_sparse(const file_reader &f, const std::size_t start, plssvm::openmp::csr<real_type> &data, std::vector<real_type> &values) {
     std::exception_ptr parallel_exception;
@@ -330,7 +328,7 @@ void parameter<T>::parse_libsvm_file(const std::string &filename, std::shared_pt
     }
 }
 
-// read and parse a libsvm file sparse
+// read and parse a libsvm file sparse into coo
 template <typename T>
 void parameter<T>::parse_libsvm_file_sparse(const std::string &filename, std::shared_ptr<const plssvm::openmp::coo<real_type>> &data_ptr_ref) {
     auto start_time = std::chrono::steady_clock::now();

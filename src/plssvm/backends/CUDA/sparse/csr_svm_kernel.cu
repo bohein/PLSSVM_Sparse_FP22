@@ -1,5 +1,5 @@
 /**
- * @author Paul Arlt, Pascal Miliczek
+ * @author Pascal Miliczek
  * @copyright 2018-today The PLSSVM project - All Rights Reserved
  * @license This file is part of the PLSSVM project which is released under the MIT license.
  *          See the LICENSE.md file in the project root for full license information.
@@ -10,7 +10,6 @@
 #include "plssvm/backends/CUDA/detail/atomics.cuh"  // atomicAdd
 #include "plssvm/constants.hpp"                     // plssvm::INTERNAL_BLOCK_SIZE, plssvm::kernel_index_type
 
-// UNTESTED
 namespace plssvm::cuda::csr {
 
 template <typename real_type>
@@ -182,7 +181,7 @@ __global__ void device_kernel_radial(const real_type *q, real_type *ret, const r
             kernel_index_type row_2_index = row_2_start_indices[y];
             real_type matr_ix_jy = 0.0;
 
-            // calc sq. e. dist
+            // calc squared euclidean dist
             while (row_1_index < row_1_end_indices[x] && row_2_index < row_2_end_indices[y]) {
                 if (col_ids[row_1_index] == col_ids[row_2_index]) {
                     matr_ix_jy += (values[row_1_index] - values[row_2_index]) * (values[row_1_index] - values[row_2_index]);

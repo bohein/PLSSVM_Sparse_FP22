@@ -5,7 +5,7 @@
  * @license This file is part of the PLSSVM project which is released under the MIT license.
  *          See the LICENSE.md file in the project root for full license information.
  *
- * @brief Defines data structure for sparse matrices in CSR format
+ * @brief Defines a data structure for sparse matrices in CSR format
  */
 #include <algorithm>
 #include <iterator>
@@ -23,7 +23,7 @@ csr<T>::csr()
     , empty_row_buffer(0)
 { }
 
-// 0/1 index
+
 template <typename T>
 void csr<T>::insert_element(const size_t col_id, const size_t row_id, const real_type value) {
     if(row_offset.size() > row_id + 1){
@@ -37,7 +37,7 @@ void csr<T>::insert_element(const size_t col_id, const size_t row_id, const real
     nnz++;
     col_ids.push_back(col_id);
     values.push_back(value);
-    //TODO Groesse
+    
     height = std::max(height, row_id + 1);
     width = std::max(width, col_id + 1);
 }
@@ -59,7 +59,6 @@ void csr<T>::append(const csr<real_type> &other) {
     size_t old_max_offset = col_ids.size();
     size_t old_row_offset_end = row_offset.size();
 
-    // TODO: potentially parallelize
     col_ids.insert(col_ids.end(), other.col_ids.begin(), other.col_ids.end());
     row_offset.insert(row_offset.end(), other.row_offset.begin(), other.row_offset.end());
     values.insert(values.end(), other.values.begin(), other.values.end());
@@ -86,21 +85,20 @@ T csr<T>::get_element(const size_t col_id, const size_t row_id) const {
     if (row_id + 1 > height) {
         return static_cast<real_type>(0);
     } 
-    // case: first occurence found
     else {
         size_t last_to_check = nnz;
         if(row_id + 1 < height){
             last_to_check = row_offset[row_id + 1];
         }
-        // check col_ids / row_ids for valid (cold_id, row_id) pair until one is either found or confirmed nonexistent
+        // check col_ids for valid cold_id until one is either found or confirmed nonexistent
         for (size_t i = row_offset[row_id]; i < last_to_check; i++)
         {
-            // case: valid (cold_id, row_id) pair found
+            // case: valid cold_id found
             if (col_ids[i] == col_id) {
                 return values[i];
             }
         }
-        // case: (cold_id, row_id) does not exist
+        // case: cold_id does not exist
         return static_cast<real_type>(0);
     }
 
@@ -123,18 +121,6 @@ T csr<T>::get_row_dot_product(const size_t row_id_1, const size_t row_id_2) cons
     if(row_id_2 + 1 < height){
         row_2_end = row_offset[row_id_2 + 1];
     }
-    
-    // multiply matching col_ids
-   // while (row_1_start < row_1_end && row_2_start < row_2_end) {
-        // matching col_ids, else increment
-   //     if (col_ids[row_1_start] == col_ids[row_2_start]) {
-   //         result += values[row_1_start++] * values[row_2_start++];
-   //     } else if (col_ids[row_1_start] < col_ids[row_2_start]) {
-   //         row_1_start++;
-   //     } else {
-   //        row_2_start++;
-   //     }
-    //}
 
     #pragma omp parallel for collapse(2) reduction(+ : result)
     for (size_t i = row_1_start; i < row_1_end; ++i) {
@@ -169,29 +155,13 @@ T csr<T>::get_row_squared_euclidean_dist(const size_t row_id_1, const size_t row
         row_2_end = row_offset[row_id_2 + 1];
     }
 
-    // multiply matching col_ids
-   // while (row_1_start < row_1_end && row_2_start < row_2_end) {
-        // matching col_ids, else increment
-    //    if (col_ids[row_1_start] == col_ids[row_2_start]) {
-   //         result += (values[row_1_start] - values[row_2_start]) * (values[row_1_start] - values[row_2_start]);
-    //        row_1_start++;
-    //        row_2_start++;
-     //   } else if (col_ids[row_1_start] < col_ids[row_2_start]) {
-     //       result += values[row_1_start] * values[row_1_start];
-      //      row_1_start++;
-     //   } else {
-       //    result += values[row_2_start] * values[row_2_start];
-      //     row_2_start++;
-       // }
-   // }
-
-    // exploit assumtion that row 1 and row 2 have few non-zero dimensions in common
+    // exploit assumption that row 1 and row 2 have few non-zero dimensions in common
     #pragma omp parallel for reduction(+ : result)
     for (size_t i = row_1_start; i < row_1_end; ++i) {
         result += values[i] * values[i];
     }
         
-    // exploit assumtion that row 1 and row 2 have few non-zero dimensions in common   
+    // exploit assumption that row 1 and row 2 have few non-zero dimensions in common   
     #pragma omp parallel for reduction(+ : result)
     for (size_t i = row_2_start; i < row_2_end; ++i) {
         result += values[i] * values[i];
