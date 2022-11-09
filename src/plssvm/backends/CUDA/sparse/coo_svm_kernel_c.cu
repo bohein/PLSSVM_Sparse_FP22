@@ -10,9 +10,6 @@
 #include "plssvm/backends/CUDA/detail/atomics.cuh"  // atomicAdd
 #include "plssvm/constants.hpp"                     // plssvm::INTERNAL_BLOCK_SIZE, plssvm::kernel_index_type
 
-#include <iostream>
-
-// UNTESTED
 namespace plssvm::cuda::coo::c {
 
 template <typename real_type>
