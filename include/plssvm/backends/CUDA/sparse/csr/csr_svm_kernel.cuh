@@ -1,10 +1,10 @@
 /**
- * @author Paul Arlt, Pascal Miliczek
+ * @author Pascal Miliczek
  * @copyright 2018-today The PLSSVM project - All Rights Reserved
  * @license This file is part of the PLSSVM project which is released under the MIT license.
  *          See the LICENSE.md file in the project root for full license information.
  *
- * @brief Defines the kernel functions for the C-SVM using the CUDA backend and COO-data representation.
+ * @brief Defines the kernel functions for the C-SVM using the CUDA backend and CSR-data representation.
  */
 
 #pragma once
